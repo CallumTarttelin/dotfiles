@@ -16,6 +16,9 @@
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.home-manager.follows = "hm";
     };
+    hardware = {
+      url = "github:NixOS/nixos-hardware/master";
+    };
   };
 
   outputs = inputs @ {flake-parts, ...}:
