@@ -22,6 +22,7 @@
     flake-parts.lib.mkFlake {inherit inputs;} {
       imports = [
         ./hosts
+        ./modules
         # To import a flake module
         # 1. Add foo to inputs
         # 2. Add foo as a parameter to the outputs function
