@@ -1,9 +1,14 @@
-{ config, lib, pkgs, agenix, devenv, ... }:
 {
+  config,
+  lib,
+  pkgs,
+  agenix,
+  devenv,
+  ...
+}: {
   imports = [
     ./hardware-configuration.nix
   ];
-
 
   boot.loader = {
     efi.canTouchEfiVariables = true;
