@@ -14,5 +14,14 @@
         ]
         ++ sharedModules;
     };
+    nixwork = nixosSystem {
+      modules =
+        [
+          ./nixwork
+          ../modules/desktop.nix
+          inputs.hardware.nixosModules.framework-13-7040-amd
+        ]
+        ++ sharedModules;
+    };
   };
 }
