@@ -1,0 +1,6 @@
+{
+  imports = [
+    ../../wayland
+    ../../neovim.nix
+  ];
+}
