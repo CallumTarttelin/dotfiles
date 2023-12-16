@@ -1,6 +1,7 @@
 {
   inputs,
   sharedModules,
+  homeImports,
   ...
 }: {
   flake.nixosConfigurations = let
@@ -11,6 +12,7 @@
         [
           ./nixshark
           ../modules/desktop.nix
+          {home-manager.users.tarttelin.imports = homeImports."tarttelin@nixshark";}
         ]
         ++ sharedModules;
     };
@@ -19,6 +21,7 @@
         [
           ./nixwork
           ../modules/desktop.nix
+          {home-manager.users.tarttelin.imports = homeImports."tarttelin@nixwork";}
           inputs.hardware.nixosModules.framework-13-7040-amd
         ]
         ++ sharedModules;
