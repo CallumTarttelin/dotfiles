@@ -6,6 +6,13 @@
 }: {
   home.packages = with pkgs; [
     grimblast
+
+    # Called from current config startup
+    mako
+    waybar
+    foot
+    wmname
+    wofi
   ];
 
   # enable hyprland
@@ -28,7 +35,6 @@
       # See https://wiki.hyprland.org/Configuring/Keywords/ for more
 
       # Execute your favorite apps at launch
-      exec-once = hyprpaper
       exec-once = waybar
       exec-once = wmname LG3D
       exec-once = mako
