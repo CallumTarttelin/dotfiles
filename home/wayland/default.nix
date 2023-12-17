@@ -23,6 +23,22 @@
     wl-screenrec
   ];
 
+  systemd.user.services.polkit-gnome = {
+    Unit = {
+      Description = "PolicyKit Authentication Agent";
+      After = ["graphical-session-pre.target"];
+      PartOf = ["graphical-session.target"];
+    };
+
+    Service = {
+      ExecStart = "${pkgs.polkit_gnome}/libexec/polkit-gnome-authentication-agent-1";
+    };
+
+    Install = {
+      WantedBy = ["graphical-session.target"];
+    };
+  };
+
   # make stuff work on wayland
   home.sessionVariables = {
     QT_QPA_PLATFORM = "wayland";

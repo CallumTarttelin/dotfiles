@@ -5,8 +5,8 @@
 }: {
   programs.neovim = {
     enable = true;
-    viAlias = cfg.aliases;
-    vimAlias = cfg.aliases;
+    viAlias = true;
+    vimAlias = true;
   };
 
   home.packages = with pkgs; [

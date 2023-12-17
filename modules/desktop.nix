@@ -35,5 +35,15 @@
     pulseaudio.enable = lib.mkForce false;
   };
 
+  programs = {
+    dconf.enable = true;
+    kdeconnect.enable = true;
+    seahorse.enable = true;
+  };
+  security = {
+    pam.services.swaylock.text = "auth include login";
+  };
+  services.gnome.gnome-keyring.enable = true;
+
   environment.variables.NIXOS_OZONE_WL = "1";
 }
