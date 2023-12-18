@@ -11,6 +11,7 @@
       modules =
         [
           ./nixshark
+          ../modules/yubikey.nix
           {home-manager.users.tarttelin.imports = homeImports."tarttelin@nixshark";}
         ]
         ++ desktopModules;
@@ -19,6 +20,7 @@
       modules =
         [
           ./nixwork
+          ../modules/yubikey.nix
           {home-manager.users.tarttelin.imports = homeImports."tarttelin@nixwork";}
           inputs.hardware.nixosModules.framework-13-7040-amd
         ]
