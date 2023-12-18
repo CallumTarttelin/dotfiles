@@ -14,6 +14,8 @@
     efi.canTouchEfiVariables = true;
     systemd-boot.enable = true;
   };
+  
+  networking.hostName = "nixwork";
 
   system.stateVersion = "23.11";
 }
