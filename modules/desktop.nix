@@ -22,6 +22,7 @@
 
   hardware = {
     opengl = {
+      enable = true;
       extraPackages = with pkgs; [
         libva
         vaapiVdpau
@@ -39,6 +40,7 @@
     dconf.enable = true;
     kdeconnect.enable = true;
     seahorse.enable = true;
+    xwayland.enable = true;
   };
   security = {
     pam.services.swaylock.text = "auth include login";
