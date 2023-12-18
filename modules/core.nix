@@ -47,7 +47,7 @@
 
   users.users.tarttelin = {
     isNormalUser = true;
-    extraGroups = ["wheel" "libvirtd" "docker" "networkmanager" "podman" "input"];
+    extraGroups = ["wheel" "libvirtd" "docker" "networkmanager" "podman" "input" "yubikey"];
     shell = pkgs.zsh;
     hashedPasswordFile = config.age.secrets.tarttelin.path;
   };
