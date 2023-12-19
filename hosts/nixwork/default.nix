@@ -15,5 +15,7 @@
     rocmPackages.clr.icd
   ];
 
+  services.fwupd.enable = true;
+
   system.stateVersion = "23.11";
 }
