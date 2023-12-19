@@ -29,6 +29,7 @@
       self.nixosModules.desktop
       self.nixosModules.logiops
       self.nixosModules.atuin
+      self.nixosModules.regreet
     ]
     ++ sharedModules;
 in {
@@ -47,5 +48,6 @@ in {
     desktop = import ./desktop.nix;
     logiops = import ./logiops;
     atuin = import ./atuin.nix;
+    regreet = import ./regreet.nix;
   };
 }

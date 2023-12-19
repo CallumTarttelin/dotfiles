@@ -3,6 +3,9 @@
     ./hyprland.nix
     ./hyprpaper.nix
     ./idle.nix
+    ./mako.nix
+    ./waybar.nix
+    ./wofi.nix
   ];
 
   home.packages = with pkgs; [
