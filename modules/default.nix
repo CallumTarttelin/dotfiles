@@ -28,6 +28,7 @@
     [
       self.nixosModules.desktop
       self.nixosModules.regreet
+      self.nixosModules.logiops
     ]
     ++ sharedModules;
 in {
@@ -45,5 +46,6 @@ in {
     network = import ./network.nix;
     desktop = import ./desktop.nix;
     regreet = import ./regreet.nix;
+    logiops = import ./logiops;
   };
 }
