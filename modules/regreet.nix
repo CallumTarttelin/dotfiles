@@ -1,9 +1,4 @@
-{
-  pkgs,
-  inputs,
-  default,
-  ...
-}: {
+_: {
   programs.regreet = {
     enable = true;
     cageArgs = ["-s" "-m" "last"];

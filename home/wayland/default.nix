@@ -1,11 +1,4 @@
-{
-  pkgs,
-  lib,
-  self,
-  inputs,
-  config,
-  ...
-}: {
+{pkgs, ...}: {
   imports = [
     ./hyprland.nix
     ./hyprpaper.nix

@@ -1,9 +1,6 @@
 {
   config,
   pkgs,
-  self,
-  inputs,
-  lib,
   ...
 }: {
   time.timeZone = "Europe/London";

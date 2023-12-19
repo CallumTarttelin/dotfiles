@@ -1,8 +1,6 @@
 {
   pkgs,
-  inputs,
   lib,
-  default,
   ...
 }: {
   xdg.configFile."hypr/hyprpaper.conf".text = ''
