@@ -5,9 +5,7 @@
 }: let
   dconf = "${pkgs.dconf}/bin/dconf";
 
-  dconfDark = lib.hm.dag.entryAfter ["dconfSettings"] ''
-    ${dconf} write /org/gnome/desktop/interface/color-scheme "'prefer-dark'"
-  '';
+  dconfDark = ''${dconf} write /org/gnome/desktop/interface/color-scheme "'prefer-dark'"'';
 in {
   imports = [
     ./neovim.nix
@@ -25,5 +23,15 @@ in {
   };
 
   # set dark as default theme
-  home.activation = {inherit dconfDark;};
+  systemd.user.services.dconf-dark = {
+    Unit = {
+      Description = "Set dconf to be dark mode";
+      PartOf = ["graphical-session.target"];
+    };
+    Service = {
+      ExecStart = dconfDark;
+      Restart = "on-failure";
+    };
+    Install.WantedBy = ["graphical-session.target"];
+  };
 }

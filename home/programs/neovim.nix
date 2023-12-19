@@ -13,7 +13,7 @@
     clang-tools
     nodePackages.pyright
     typescript
-    #      java-language-server
+    java-language-server
     kotlin-language-server
   ];
 }
