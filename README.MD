@@ -13,12 +13,8 @@ There is probably far more than this, but at least.
 Copied a bunch of stuff from [here github.com/fufexan/dotfiles](https://github.com/fufexan/dotfiles)
 
 ## TODO
-- Wofi config
-- Mako config
-- Waybar config
 - Clean up hyprland conf
 - Maybe auto syncthing, just copy file contents from age
-- XDG settings in home manager
 - Maybe power management? idk
 - Bluetooth etc. where it makes sense
 - SSH stuff
