@@ -1,11 +1,4 @@
-{
-  config,
-  pkgs,
-  self,
-  inputs,
-  lib,
-  ...
-}: {
+{pkgs, ...}: {
   services.udev = {
     enable = true;
     extraRules = ''

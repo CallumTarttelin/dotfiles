@@ -1,8 +1,6 @@
 {
-  self,
   inputs,
   withSystem,
-  module_args,
   ...
 }: let
   sharedModules = [

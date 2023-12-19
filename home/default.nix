@@ -1,8 +1,4 @@
-{
-  lib,
-  self,
-  ...
-}: {
+_: {
   home = {
     username = "tarttelin";
     homeDirectory = "/home/tarttelin";

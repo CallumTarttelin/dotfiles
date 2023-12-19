@@ -1,11 +1,4 @@
-{
-  config,
-  lib,
-  pkgs,
-  agenix,
-  devenv,
-  ...
-}: {
+{pkgs, ...}: {
   imports = [
     ./hardware-configuration.nix
   ];
