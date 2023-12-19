@@ -11,10 +11,6 @@
 
       aws.disabled = true;
       gcloud.disabled = true;
-
-      python.symbol = " ";
-      rust.symbol = " ";
-      nodejs.symbol = " ";
     };
   };
 }

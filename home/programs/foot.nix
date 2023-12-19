@@ -1,4 +1,4 @@
-{default, ...}: {
+_: {
   programs.foot = {
     enable = true;
 
