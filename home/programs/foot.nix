@@ -4,7 +4,7 @@
 
     settings = {
       main = {
-        font = "${default.terminal.font}:size=${toString default.terminal.size}";
+        font = "JetBrainsMono Nerd Font Mono:size=12";
       };
       colors = {
         alpha = 0.6;

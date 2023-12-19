@@ -68,11 +68,6 @@
           unfunction kitty-integration
         fi
       ''}
-
-      ${lib.optionalString config.services.atuin.enable ''
-        eval "$(atuin gen-completion --shell zsh)"
-        eval "$(atuin init zsh --disable-up-arrow)"
-      ''}
     '';
 
     shellAliases =
