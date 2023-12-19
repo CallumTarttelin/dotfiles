@@ -30,9 +30,9 @@ in {
     procps
     pavucontrol
   ];
-  systemd.enable = true;
   programs.waybar = {
     enable = true;
+    systemd.enable = true;
     settings.mainBar = {
       layer = "top";
       height = 30;
