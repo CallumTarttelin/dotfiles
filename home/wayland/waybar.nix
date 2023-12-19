@@ -30,6 +30,7 @@ in {
     procps
     pavucontrol
   ];
+  systemd.enable = true;
   programs.waybar = {
     enable = true;
     settings.mainBar = {
@@ -130,7 +131,6 @@ in {
         tooltip = false;
       };
     };
-    systemd.enable = true;
     style = ''
       * {
           border: none;

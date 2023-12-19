@@ -30,7 +30,6 @@
       # See https://wiki.hyprland.org/Configuring/Keywords/ for more
 
       # Execute your favorite apps at launch
-      exec-once = waybar
       exec-once = wmname LG3D
       exec-once = mako
       exec-once = /usr/bin/gnome-keyring-daemon --start --components=ssh,secrets
