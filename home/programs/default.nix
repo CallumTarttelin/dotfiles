@@ -11,6 +11,7 @@
 in {
   imports = [
     ./neovim.nix
+    ./foot.nix
   ];
 
   programs = {
