@@ -17,5 +17,10 @@
 
   networking.hostName = "nixwork";
 
+  environment.systemPackages = with pkgs; [
+    rocmPackages.clr
+    rocmPackages.clr.icd
+  ];
+
   system.stateVersion = "23.11";
 }
