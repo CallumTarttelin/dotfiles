@@ -24,8 +24,6 @@ in {
     };
   };
 
-  services.syncthing.enable = true;
-
   # set dark as default theme
   home.activation = {inherit dconfDark;};
 }
