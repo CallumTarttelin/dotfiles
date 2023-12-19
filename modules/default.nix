@@ -27,7 +27,6 @@
   desktopModules =
     [
       self.nixosModules.desktop
-      self.nixosModules.regreet
       self.nixosModules.logiops
       self.nixosModules.atuin
     ]
@@ -46,7 +45,6 @@ in {
     core = import ./core.nix;
     network = import ./network.nix;
     desktop = import ./desktop.nix;
-    regreet = import ./regreet.nix;
     logiops = import ./logiops;
     atuin = import ./atuin.nix;
   };
