@@ -6,6 +6,7 @@
   sharedModules = [
     ../.
     ../programs
+    ../shell
   ];
 
   homeImports = {
