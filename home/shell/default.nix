@@ -5,10 +5,10 @@
   ...
 }: {
   imports = [
-    ./atuin.zsh
-    ./cli.zsh
-    ./zsh.zsh
-    ./starship.zsh
+    ./atuin.nix
+    ./cli.nix
+    ./zsh.nix
+    ./starship.nix
   ];
 
   home.sessionVariables = {

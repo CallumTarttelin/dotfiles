@@ -27,6 +27,7 @@
         ./hosts
         ./modules
         ./home/profiles
+        ./lib
         # To import a flake module
         # 1. Add foo to inputs
         # 2. Add foo as a parameter to the outputs function
