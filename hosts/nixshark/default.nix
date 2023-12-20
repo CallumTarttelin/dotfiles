@@ -1,4 +1,4 @@
-{pkgs, ...}: {
+{pkgs, inputs, ...}: {
   imports = [
     ./hardware-configuration.nix
   ];
@@ -8,11 +8,14 @@
     systemd-boot.enable = true;
   };
 
-  networking.hostName = "shark";
+  networking.hostName = "nixshark";
 
   environment.systemPackages = with pkgs; [
     rocmPackages.clr
     rocmPackages.clr.icd
+
+    inputs.agenix.packages.x86_64-linux.default
+    inputs.devenv.packages.x86_64-linux.devenv
   ];
 
   services.syncthing = {

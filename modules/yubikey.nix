@@ -11,5 +11,8 @@
     yubikey-manager-qt
     yubikey-personalization
     yubikey-personalization-gui
+    age-plugin-yubikey
   ];
+
+  services.pcscd.enable = true;
 }

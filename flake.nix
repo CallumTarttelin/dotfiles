@@ -19,6 +19,9 @@
     hardware = {
       url = "github:NixOS/nixos-hardware/master";
     };
+    devenv = {
+      url = "github:cachix/devenv";
+    };
   };
 
   outputs = inputs @ {flake-parts, ...}:

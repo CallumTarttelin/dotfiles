@@ -1,4 +1,4 @@
-{pkgs, ...}: {
+{pkgs, inputs, ...}: {
   imports = [
     ./hardware-configuration.nix
   ];
@@ -13,6 +13,9 @@
   environment.systemPackages = with pkgs; [
     rocmPackages.clr
     rocmPackages.clr.icd
+
+    inputs.agenix.packages.x86_64-linux.default
+    inputs.devenv.packages.x86_64-linux.devenv
   ];
 
   services.fwupd.enable = true;
