@@ -9,6 +9,7 @@
     ./cli.nix
     ./zsh.nix
     ./starship.nix
+    ./nix.nix
   ];
 
   home.sessionVariables = {
