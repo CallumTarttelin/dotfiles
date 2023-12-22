@@ -1,11 +1,8 @@
 {
   config,
-  pkgs,
   lib,
   ...
 }: {
-  home.sessionVariables.FZF_DEFAULT_COMMAND="${pkgs.fd}/bin/fd --type f";
-
   programs.zsh = {
     enable = true;
     enableAutosuggestions = true;
@@ -18,7 +15,7 @@
     dotDir = ".config/zsh";
     history = {
       expireDuplicatesFirst = true;
-      path = "${config.xdg.dataHome}/zsh_history";
+      path = "${config.xdg.cacheHome}/zsh_history";
     };
 
     initExtra = ''

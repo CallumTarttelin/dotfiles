@@ -22,7 +22,9 @@
     skim = {
       enable = true;
       enableZshIntegration = true;
-      defaultCommand = "rg --files --hidden";
+      defaultCommand = "fd --type f";
+      fileWidgetCommand = "fd --type f";
+      changeDirWidgetCommand = "fd --type d";
       changeDirWidgetOptions = [
         "--preview 'eza --icons --git --color always -T -L 3 {} | head -200'"
         "--exact"
