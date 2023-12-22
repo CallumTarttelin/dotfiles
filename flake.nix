@@ -16,6 +16,10 @@
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.home-manager.follows = "hm";
     };
+    fenix = {
+      url = "github:nix-community/fenix/monthly";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     hardware = {
       url = "github:NixOS/nixos-hardware/master";
     };
@@ -43,7 +47,12 @@
         pkgs,
         system,
         ...
-      }: {
+      }: let
+        fenixPackages = inputs'.fenix.packages."${system}";
+      in {
+        packages = {
+          default = fenixPackages.default.toolchain;
+        };
         # Per-system attributes can be defined here. The self' and inputs'
         # module parameters provide easy access to attributes of the same
         # system.

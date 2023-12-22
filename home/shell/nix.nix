@@ -3,6 +3,8 @@
     alejandra
     deadnix
     statix
+    comma
+    nix-index
   ];
 
   programs.direnv = {
