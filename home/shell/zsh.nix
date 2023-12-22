@@ -1,10 +1,11 @@
 {
-  inputs,
   config,
   pkgs,
   lib,
   ...
 }: {
+  home.sessionVariables.FZF_DEFAULT_COMMAND="${pkgs.fd}/bin/fd --type f";
+
   programs.zsh = {
     enable = true;
     enableAutosuggestions = true;
