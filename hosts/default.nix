@@ -12,6 +12,7 @@
         [
           ./nixshark
           ../modules/yubikey.nix
+          ../modules/games.nix
           {home-manager.users.tarttelin.imports = homeImports."tarttelin@nixshark";}
         ]
         ++ desktopModules;
