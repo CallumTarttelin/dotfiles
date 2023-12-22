@@ -17,6 +17,9 @@
     # utils
     wl-clipboard
     wl-screenrec
+
+    # blue light filter
+    gammastep
   ];
 
   systemd.user.services.polkit-gnome = {

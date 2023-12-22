@@ -6,6 +6,5 @@
     ../../programs/keepass.nix
     ../../programs/communication.nix
     ../../programs/media.nix
-    ../../programs/games/steam.nix
   ];
 }
