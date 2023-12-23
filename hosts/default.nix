@@ -14,6 +14,11 @@
           ../modules/yubikey.nix
           ../modules/games.nix
           {home-manager.users.tarttelin.imports = homeImports."tarttelin@nixshark";}
+          inputs.hardware.nixosModules.common-pc
+          inputs.hardware.nixosModules.common-pc-ssd
+          inputs.hardware.nixosModules.common-cpu-amd
+          inputs.hardware.nixosModules.common-cpu-amd-pstate
+          inputs.hardware.nixosModules.common-gpu-amd
         ]
         ++ desktopModules;
     };
