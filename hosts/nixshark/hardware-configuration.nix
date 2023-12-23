@@ -11,10 +11,7 @@
   boot = {
     initrd.availableKernelModules = ["nvme" "xhci_pci" "ahci" "usbhid" "sd_mod"];
     initrd.kernelModules = ["amdgpu"];
-    # https://github.com/NixOS/nixos-hardware/blob/master/common/cpu/amd/pstate.nix
-    # https://www.kernel.org/doc/html/latest/admin-guide/pm/amd-pstate.html
-    kernelParams = ["initcall_blacklist=acpi_cpufreq_init"];
-    kernelModules = ["kvm-amd" "amd-pstate"];
+    kernelModules = ["kvm-amd"];
     extraModulePackages = [];
   };
 
@@ -48,8 +45,6 @@
   # networking.interfaces.enp5s0.useDHCP = lib.mkDefault true;
   # networking.interfaces.virbr0.useDHCP = lib.mkDefault true;
   # networking.interfaces.wlan0.useDHCP = lib.mkDefault true;
-
-  services.fstrim.enable = true;
 
   nixpkgs.hostPlatform = lib.mkDefault "x86_64-linux";
   hardware.cpu.amd.updateMicrocode = lib.mkDefault config.hardware.enableRedistributableFirmware;

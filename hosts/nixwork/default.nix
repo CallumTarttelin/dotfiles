@@ -18,6 +18,8 @@
     inputs.devenv.packages.x86_64-linux.devenv
   ];
 
+  services.power-profiles-daemon.enable = true;
+
   services.fwupd.enable = true;
 
   system.stateVersion = "23.11";
