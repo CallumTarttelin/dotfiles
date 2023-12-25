@@ -3,4 +3,6 @@
     discord
     slack
   ];
+
+  services.easyeffects.enable = true;
 }
