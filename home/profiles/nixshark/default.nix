@@ -6,5 +6,6 @@
     ../../programs/keepass.nix
     ../../programs/communication.nix
     ../../programs/media.nix
+    ../../programs/drawing.nix
   ];
 }
