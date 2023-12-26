@@ -13,6 +13,7 @@
           ./nixshark
           ../modules/yubikey.nix
           ../modules/games.nix
+          ../modules/bluetooth.nix
           {home-manager.users.tarttelin.imports = homeImports."tarttelin@nixshark";}
           inputs.hardware.nixosModules.common-pc
           inputs.hardware.nixosModules.common-pc-ssd
@@ -27,6 +28,7 @@
         [
           ./nixwork
           ../modules/yubikey.nix
+          ../modules/bluetooth.nix
           {home-manager.users.tarttelin.imports = homeImports."tarttelin@nixwork";}
           inputs.hardware.nixosModules.framework-13-7040-amd
         ]
