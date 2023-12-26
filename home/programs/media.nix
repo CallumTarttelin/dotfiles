@@ -17,6 +17,7 @@
 
   home.packages = with pkgs; [
     spotify
+    sony-headphones-client
   ];
 
 }
