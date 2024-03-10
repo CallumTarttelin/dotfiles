@@ -18,7 +18,16 @@
   programs = {
     bat.enable = true;
     btop.enable = true;
-    eza.enable = true;
+    zoxide = {
+      enable = true;
+      enableZshIntegration = true;
+    };
+    eza = {
+      enable = true;
+      icons = true;
+      git = true;
+      enableAliases = true;
+    };
     skim = {
       enable = true;
       enableZshIntegration = true;
