@@ -21,7 +21,7 @@
 
 
       # See https://wiki.hyprland.org/Configuring/Monitors/
-      monitor=DP-1,preferred,1920x0,1
+      monitor=DP-1,preferred,1920x0,1,vrr,1
       monitor=DP-2,preferred,0x0,1
       monitor=HDMI-A-1,preferred,4480x0,1
       monitor=,preferred,auto,1
@@ -37,7 +37,6 @@
 
       # Not quite sure what this does, but apparently it's good to do
       exec-once = dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP
-      exec-once = systemctl --user restart xdg-desktop-portal.service
       exec-once = systemctl --user restart xdg-desktop-portal-gtk.service
       exec-once = systemctl --user restart xdg-desktop-portal-hyprland.service
 
@@ -130,18 +129,17 @@
           workspace_swipe = off
       }
 
-      # Example per-device config
-      # See https://wiki.hyprland.org/Configuring/Keywords/#executing for more
-      device:epic-mouse-v1 {
-          sensitivity = -0.5
-      }
-
       # Example windowrule v1
       # windowrule = float, ^(kitty)$
       # Example windowrule v2
       # windowrulev2 = float,class:^(kitty)$,title:^(kitty)$
       # See https://wiki.hyprland.org/Configuring/Window-Rules/ for more
 
+      windowrulev2 = opacity 0.0 override 0.0 override,class:^(xwaylandvideobridge)$
+      windowrulev2 = noanim,class:^(xwaylandvideobridge)$
+      windowrulev2 = noinitialfocus,class:^(xwaylandvideobridge)$
+      windowrulev2 = maxsize 1 1,class:^(xwaylandvideobridge)$
+      windowrulev2 = noblur,class:^(xwaylandvideobridge)$
 
       # See https://wiki.hyprland.org/Configuring/Keywords/ for more
       $mainMod = SUPER
@@ -151,12 +149,13 @@
       bind = $shiftMod, Q, killactive
       bind = $mainMod, RETURN, exec, foot
       bind = $mainMod, M, exit,
-      # bind = $mainMod, E, exec, dolphin
       bind = $mainMod, V, togglefloating,
       bind = $mainMod, D, exec, wofi --show drun
       # bind = $mainMod, P, pseudo, # dwindle
       # bind = $mainMod, J, togglesplit, # dwindle
       bind = $mainMod, F, fullscreen,
+      bind = $mainMod, E, exec, firefox
+      bind = $shiftMod, E, exec, firefox -private-window
 
       # Move focus with mainMod + arrow keys
       bind = $mainMod, left, movefocus, l
