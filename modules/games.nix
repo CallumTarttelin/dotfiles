@@ -5,6 +5,7 @@
     gamemode
     mangohud
     steam-run
+    r2modman
   ];
 
   nixpkgs.config.packageOverrides = pkgs: {

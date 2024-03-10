@@ -5,9 +5,6 @@
 }: {
   time.timeZone = "Europe/London";
 
-  # Probably not great but oh well
-  security.sudo.wheelNeedsPassword = false;
-
   # TODO move this to a better place
   environment.variables.FLAKE = "/home/tarttelin/Documents/nixtest/newconfig";
 

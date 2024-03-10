@@ -25,6 +25,7 @@
     cargo-outdated
     aoc-cli
     gcc
+    xdg-utils
 
     # Use the 'withComponents' package generator to define a Rust toolchain
     (inputs.fenix.packages.x86_64-linux.complete.withComponents [
