@@ -14,10 +14,6 @@
     enable = true;
     description = "Logitech Configuration Daemon";
 
-    unitConfig = {
-      Type = "simple";
-    };
-
     serviceConfig = {
       ExecStart = "${pkgs.logiops}/bin/logid";
     };
