@@ -74,22 +74,9 @@
         ip = "ip --color";
         sizeof = "du -sh";
 
-        l = "eza -l";
-        ls = "eza";
-        la = "eza -a";
-        lal = "eza -a -l";
-        ll = "eza -l";
-        lt = "eza -T -L 2 -I node_modules";
-        lat = "eza -a -T -L 2 -I node_modules";
-        ltt = "eza -T -L 3 -I node_modules";
-        latt = "eza -a -T -L 3 -I node_modules";
-        lttt = "eza -T -L 4 -I node_modules";
-        lattt = "eza -a -T -L 4 -I node_modules";
-
         us = "systemctl --user";
         rs = "sudo systemctl";
       }
       // lib.optionalAttrs (config.programs.bat.enable == true) {cat = "bat";};
-    shellGlobalAliases = {eza = "eza --icons --git";};
   };
 }
