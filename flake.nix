@@ -26,6 +26,9 @@
     devenv = {
       url = "github:cachix/devenv";
     };
+    oldpkgs = {
+      url = "https://github.com/NixOS/nixpkgs/archive/47dabda9be453ae62c0920992b62f08c825c6440.tar.gz";
+    };
   };
 
   outputs = inputs @ {flake-parts, ...}:
