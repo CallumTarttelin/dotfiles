@@ -7,5 +7,7 @@
     ../../programs/communication.nix
     ../../programs/media.nix
     ../../programs/drawing.nix
+    ../../programs/languages.nix
+    ../../programs/work.nix
   ];
 }
