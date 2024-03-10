@@ -79,5 +79,9 @@
   };
   services.gnome.gnome-keyring.enable = true;
 
+  environment.systemPackages = with pkgs; [
+    xwaylandvideobridge
+  ];
+
   environment.variables.NIXOS_OZONE_WL = "1";
 }
