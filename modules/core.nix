@@ -5,13 +5,20 @@
 }: {
   time.timeZone = "Europe/London";
 
-  # TODO move this to a better place
-  environment.variables.FLAKE = "/home/tarttelin/Documents/nixtest/newconfig";
-
-  environment.systemPackages = [
+  environment.systemPackages = with pkgs; [
     # Needed for flakes
-    pkgs.git
+    git
+    neovim
   ];
+
+  programs.nh = {
+    enable = true;
+    clean = {
+      enable = true;
+      extraArgs = "--keep 5 --keep-since 3d";
+    };
+    flake = "/home/tarttelin/Documents/dotfiles";
+  };
 
   environment.pathsToLink = ["/share/zsh"];
   programs.zsh = {
@@ -50,6 +57,11 @@
     secrets = {
       root.file = ../secrets/root.age;
       tarttelin.file = ../secrets/tarttelin.age;
+      borgpass = {
+        file = ../secrets/borgpass.age;
+        path = "/root/borgbackup/passphrase";
+      };
+      borgrepo.file = ../secrets/borgrepo.age;
     };
     identityPaths = ["/root/.ssh/id_rsa"];
   };

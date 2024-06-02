@@ -11,6 +11,11 @@
 
       aws.disabled = true;
       gcloud.disabled = true;
+
+      cmd_duration = {
+        min_time = 500;
+        format = "Took [$duration](bold yellow)";
+      };
     };
   };
 }

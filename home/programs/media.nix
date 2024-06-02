@@ -15,8 +15,18 @@
     };
   };
 
+  programs.zathura = {
+    enable = true;
+    options = {
+      database = "sqlite";
+    };
+  };
+
   home.packages = with pkgs; [
     spotify
+    pulsemixer
+    qpwgraph
+    helvum
   ];
 
 }
