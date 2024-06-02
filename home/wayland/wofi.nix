@@ -13,7 +13,7 @@
       width = "15%";
       lines = "15";
       line_wrap = "word";
-      term = "foot";
+      term = "wezterm";
       allow_markup = true;
       always_parse_args = true;
       show_all = true;

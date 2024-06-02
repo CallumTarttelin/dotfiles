@@ -10,18 +10,27 @@
 
   networking.hostName = "nixwork";
 
-  environment.systemPackages = with pkgs; [
-    rocmPackages.clr
-    rocmPackages.clr.icd
+  hardware.amdgpu.opencl = true;
 
+  environment.systemPackages = with pkgs; [
     inputs.agenix.packages.x86_64-linux.default
-    inputs.devenv.packages.x86_64-linux.devenv
+    devenv
+
+    powertop
+    xdg-utils
   ];
 
   services.power-profiles-daemon.enable = true;
   powerManagement.cpuFreqGovernor = "powersave";
 
+  services.syncthing = {
+    enable = true;
+    user = "tarttelin";
+    dataDir = "/home/tarttelin/sync";
+    configDir = "/home/tarttelin/.config/syncthing";
+  };
+
   services.fwupd.enable = true;
 
-  system.stateVersion = "23.11";
+  system.stateVersion = "24.05";
 }

@@ -6,6 +6,7 @@
     mako
     waybar
     foot
+    wezterm
     wmname
     wofi
   ];
@@ -147,7 +148,7 @@
 
       # Example binds, see https://wiki.hyprland.org/Configuring/Binds/ for more
       bind = $shiftMod, Q, killactive
-      bind = $mainMod, RETURN, exec, foot
+      bind = $mainMod, RETURN, exec, wezterm
       bind = $mainMod, M, exit,
       bind = $mainMod, V, togglefloating,
       bind = $mainMod, D, exec, wofi --show drun
@@ -156,6 +157,7 @@
       bind = $mainMod, F, fullscreen,
       bind = $mainMod, E, exec, firefox
       bind = $shiftMod, E, exec, firefox -private-window
+      bind = , PRINT, exec, ${pkgs.grimblast}/bin/grimblast copysave area
 
       # Move focus with mainMod + arrow keys
       bind = $mainMod, left, movefocus, l

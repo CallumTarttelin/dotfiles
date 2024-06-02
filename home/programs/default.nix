@@ -10,6 +10,7 @@ in {
   imports = [
     ./neovim.nix
     ./foot.nix
+    ./wezterm.nix
   ];
 
   programs = {

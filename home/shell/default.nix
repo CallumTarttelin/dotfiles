@@ -8,6 +8,7 @@
     ./atuin.nix
     ./cli.nix
     ./zsh.nix
+    ./nushell.nix
     ./starship.nix
     ./nix.nix
   ];

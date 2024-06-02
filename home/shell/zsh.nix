@@ -5,7 +5,7 @@
 }: {
   programs.zsh = {
     enable = true;
-    enableAutosuggestions = true;
+    autosuggestion.enable = true;
     autocd = true;
     dirHashes = {
       dl = "$HOME/Downloads";
@@ -73,6 +73,8 @@
         grep = "grep --color";
         ip = "ip --color";
         sizeof = "du -sh";
+
+        icat = "wezterm imgcat";
 
         us = "systemctl --user";
         rs = "sudo systemctl";

@@ -13,6 +13,9 @@
     file
     jq
     ripgrep
+    htop
+    killall
+    nushell
   ];
 
   programs = {
@@ -21,12 +24,13 @@
     zoxide = {
       enable = true;
       enableZshIntegration = true;
+      enableNushellIntegration = true;
     };
     eza = {
       enable = true;
       icons = true;
       git = true;
-      enableAliases = true;
+      enableNushellIntegration = true;
     };
     skim = {
       enable = true;

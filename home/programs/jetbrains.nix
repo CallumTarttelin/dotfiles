@@ -5,6 +5,7 @@
     jetbrains.webstorm
     jetbrains.pycharm-professional
     jetbrains-toolbox
+    zed-editor
   ];
 
   programs.vscode = {
