@@ -1,4 +1,8 @@
 _: {
-  services.atuin.enable = true;
-  services.atuin.openRegistration = true;
+  services.atuin = {
+    enable = true;
+    openRegistration = true;
+    host = "0.0.0.0";
+    port = 8888;
+  };
 }

@@ -28,7 +28,6 @@
     [
       self.nixosModules.desktop
       self.nixosModules.logiops
-      self.nixosModules.atuin
       self.nixosModules.greeter
     ]
     ++ sharedModules;

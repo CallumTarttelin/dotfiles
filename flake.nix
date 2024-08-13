@@ -20,6 +20,10 @@
       url = "github:nix-community/fenix/monthly";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    deploy-rs = {
+      url = "github:serokell/deploy-rs";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     hardware = {
       url = "github:NixOS/nixos-hardware/master";
     };
@@ -28,7 +32,7 @@
     };
   };
 
-  outputs = inputs @ {flake-parts, ...}:
+  outputs = inputs @ {self, flake-parts, ...}:
     flake-parts.lib.mkFlake {inherit inputs;} {
       imports = [
         ./hosts
@@ -47,12 +51,7 @@
         pkgs,
         system,
         ...
-      }: let
-        fenixPackages = inputs'.fenix.packages."${system}";
-      in {
-        packages = {
-          default = fenixPackages.default.toolchain;
-        };
+      }: {
         # Per-system attributes can be defined here. The self' and inputs'
         # module parameters provide easy access to attributes of the same
         # system.
@@ -61,6 +60,13 @@
         # The usual flake attributes can be defined here, including system-
         # agnostic ones like nixosModule and system-enumerating ones, although
         # those are more easily expressed in perSystem.
+        deploy.nodes.nixie = {
+          hostname = "nixie";
+          profiles.system = {
+            user = "root";
+            path = inputs.deploy-rs.lib.x86_64-linux.activate.nixos self.nixosConfigurations.nixie;
+          };
+        };
       };
     };
 }

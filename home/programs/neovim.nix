@@ -11,7 +11,7 @@
     gopls
     # Rust language server installed separately with rust config
     clang-tools
-    nodePackages.pyright
+    pyright
     typescript
     java-language-server
     kotlin-language-server

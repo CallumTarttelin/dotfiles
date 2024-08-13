@@ -8,7 +8,7 @@
     systemd-boot.enable = true;
   };
 
-  networking.hostName = "nixwork";
+  networking.hostName = "nixie";
 
   environment.systemPackages = with pkgs; [
     inputs.agenix.packages.x86_64-linux.default
@@ -16,17 +16,20 @@
 
     powertop
     xdg-utils
-    deploy-rs
   ];
-
-  services.power-profiles-daemon.enable = true;
-  powerManagement.cpuFreqGovernor = "powersave";
 
   services.syncthing = {
     enable = true;
     user = "tarttelin";
     dataDir = "/home/tarttelin/sync";
     configDir = "/home/tarttelin/.config/syncthing";
+    guiAddress = "0.0.0.0:8384";
+  };
+
+  services.forgejo = {
+    enable = true;
+    database.type = "postgres";
+    lfs.enable = true;
   };
 
   services.fwupd.enable = true;

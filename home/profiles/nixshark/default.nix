@@ -9,5 +9,6 @@
     ../../programs/drawing.nix
     ../../programs/languages.nix
     ../../programs/work.nix
+    ../../programs/electronics.nix
   ];
 }

@@ -15,6 +15,7 @@
   homeImports = {
     "tarttelin@nixshark" = [./nixshark] ++ sharedModules;
     "tarttelin@nixwork" = [./nixwork] ++ sharedModules;
+    "tarttelin@nixie" = [./nixie] ++ sharedModules;
   };
 
   inherit (inputs.hm.lib) homeManagerConfiguration;
@@ -31,6 +32,10 @@ in {
       };
       "tarttelin@nixwork" = homeManagerConfiguration {
         modules = homeImports."tarttelin@nixwork";
+        inherit pkgs;
+      };
+      "tarttelin@nixie" = homeManagerConfiguration {
+        modules = homeImports."tarttelin@nixie";
         inherit pkgs;
       };
     });
