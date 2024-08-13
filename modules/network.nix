@@ -8,9 +8,11 @@
   };
 
   networking = {
-    firewall.enable = true;
-    firewall.checkReversePath = "loose";
-    firewall.trustedInterfaces = [ "tailscale0" ];
+    firewall = {
+      enable = true;
+      checkReversePath = "loose";
+      trustedInterfaces = [ "tailscale0" ];
+    };
 
     networkmanager = {
       enable = true;

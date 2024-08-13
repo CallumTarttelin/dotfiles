@@ -1,6 +1,7 @@
 {
   inputs,
   desktopModules,
+  sharedModules,
   homeImports,
   ...
 }: {
@@ -35,6 +36,20 @@
           inputs.hardware.nixosModules.framework-13-7040-amd
         ]
         ++ desktopModules;
+    };
+    nixie = nixosSystem {
+      modules =
+        [
+          ./nixie
+          ../modules/bluetooth.nix
+          ../modules/virtualization.nix
+          ../modules/atuin.nix
+          {home-manager.users.tarttelin.imports = homeImports."tarttelin@nixie";}
+          inputs.hardware.nixosModules.common-pc
+          inputs.hardware.nixosModules.common-pc-ssd
+          inputs.hardware.nixosModules.common-cpu-intel
+        ]
+        ++ sharedModules;
     };
   };
 }

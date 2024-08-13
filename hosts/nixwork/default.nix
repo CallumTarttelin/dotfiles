@@ -10,14 +10,13 @@
 
   networking.hostName = "nixwork";
 
-  hardware.amdgpu.opencl = true;
-
   environment.systemPackages = with pkgs; [
     inputs.agenix.packages.x86_64-linux.default
     devenv
 
     powertop
     xdg-utils
+    deploy-rs
   ];
 
   services.power-profiles-daemon.enable = true;
