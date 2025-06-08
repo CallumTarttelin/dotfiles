@@ -11,6 +11,7 @@ in {
     ./neovim.nix
     ./foot.nix
     ./wezterm.nix
+    ./ghostty.nix
   ];
 
   programs = {
@@ -22,6 +23,10 @@ in {
       enable = true;
     };
   };
+
+  home.packages = [
+    pkgs.obsidian
+  ];
 
   # set dark as default theme
   systemd.user.services.dconf-dark = {

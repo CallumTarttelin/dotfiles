@@ -7,16 +7,16 @@
     useRoutingFeatures = "both";
   };
 
+  services.connman = {
+    enable = true;
+    wifi.backend = "iwd";
+  };
+
   networking = {
     firewall = {
       enable = true;
       checkReversePath = "loose";
-      trustedInterfaces = [ "tailscale0" ];
-    };
-
-    networkmanager = {
-      enable = true;
-      wifi.powersave = true;
+      trustedInterfaces = ["tailscale0"];
     };
 
     nameservers = [

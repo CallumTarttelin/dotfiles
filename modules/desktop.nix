@@ -10,13 +10,15 @@
 
       # normal fonts
       noto-fonts
-      noto-fonts-cjk
+      noto-fonts-cjk-sans
       noto-fonts-emoji
       roboto
       (google-fonts.override {fonts = ["Inter"];})
 
       # nerdfonts
-      (nerdfonts.override {fonts = ["FiraCode" "JetBrainsMono"];})
+      # (nerdfonts.override {fonts = ["FiraCode" "JetBrainsMono"];})
+      nerd-fonts.fira-code
+      nerd-fonts.jetbrains-mono
     ];
 
     # causes more issues than it solves
@@ -40,6 +42,7 @@
     alsa.support32Bit = true;
     pulse.enable = true;
   };
+  services.pulseaudio.enable = lib.mkForce false;
 
   xdg.portal = {
     enable = true;
@@ -64,7 +67,6 @@
         libvdpau-va-gl
       ];
     };
-    pulseaudio.enable = lib.mkForce false;
   };
 
   programs = {
@@ -77,10 +79,6 @@
     pam.services.swaylock.text = "auth include login";
   };
   services.gnome.gnome-keyring.enable = true;
-
-  environment.systemPackages = with pkgs; [
-    xwaylandvideobridge
-  ];
 
   environment.variables.NIXOS_OZONE_WL = "1";
 }

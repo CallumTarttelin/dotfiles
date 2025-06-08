@@ -16,9 +16,22 @@
     htop
     killall
     nushell
+    glow
+    zellij
   ];
 
   programs = {
+    tmux = {
+      enable = true;
+      terminal = "xterm-ghostty";
+    };
+    yazi = {
+      enable = true;
+      settings.manager = {
+        show_hidden = true;
+        show_symlink = true;
+      };
+    };
     bat.enable = true;
     btop.enable = true;
     zoxide = {
@@ -28,7 +41,7 @@
     };
     eza = {
       enable = true;
-      icons = true;
+      icons = "auto";
       git = true;
       enableNushellIntegration = true;
     };

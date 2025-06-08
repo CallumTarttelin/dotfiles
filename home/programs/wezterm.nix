@@ -23,7 +23,7 @@ _: {
         bottom = 0,
       }
 
-      config.enable_wayland = false
+      config.enable_wayland = true
 
       return config
     '';

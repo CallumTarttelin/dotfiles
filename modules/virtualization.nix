@@ -1,8 +1,4 @@
-{
-  pkgs,
-  ...
-}: {
-
+{pkgs, ...}: {
   virtualisation.podman = {
     enable = true;
 
@@ -15,6 +11,9 @@
     };
   };
   virtualisation.oci-containers.backend = "podman";
+  virtualisation.libvirtd.enable = true;
+  virtualisation.spiceUSBRedirection.enable = true;
+  programs.virt-manager.enable = true;
 
   environment.systemPackages = with pkgs; [
     podman-desktop
@@ -22,5 +21,4 @@
     podman-tui
     podman-compose
   ];
-
 }

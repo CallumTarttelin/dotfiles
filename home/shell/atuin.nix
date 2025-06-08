@@ -7,6 +7,8 @@
       dialect = "uk";
       sync_address = "http://nixie.tail86813.ts.net:8888";
       sync_frequency = "0";
+      enter_accept = true;
+      inline_height = 10;
     };
   };
 }
