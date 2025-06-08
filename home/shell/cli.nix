@@ -18,6 +18,8 @@
     nushell
     glow
     zellij
+
+    git-agecrypt
   ];
 
   programs = {
