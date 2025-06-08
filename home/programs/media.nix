@@ -1,5 +1,4 @@
 {pkgs, ...}: {
-
   programs.feh = {
     enable = true;
   };
@@ -28,5 +27,4 @@
     qpwgraph
     helvum
   ];
-
 }

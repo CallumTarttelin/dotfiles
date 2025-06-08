@@ -1,13 +1,17 @@
 {
   config,
   pkgs,
+  home-manager,
   ...
 }: {
   time.timeZone = "Europe/London";
 
+  home-manager.backupFileExtension = "BACKUP";
+
   environment.systemPackages = with pkgs; [
     # Needed for flakes
     git
+    gh
     neovim
   ];
 
@@ -62,8 +66,11 @@
         path = "/root/borgbackup/passphrase";
       };
       borgrepo.file = ../secrets/borgrepo.age;
+      forgejo-runner.file = ../secrets/forgejo-runner.age;
+      yubi.file = ../secrets/yubi.age;
+      cloudflare.file = ../secrets/cloudflare.age;
     };
-    identityPaths = ["/root/.ssh/id_rsa"];
+    identityPaths = ["/root/.ssh/id_rsa" "/home/tarttelin/.ssh/id_nixshark" "/home/tarttelin/.ssh/id_nixie" "/home/tarttelin/.ssh/id_nixwork"];
   };
 
   nixpkgs.config.allowUnfree = true;

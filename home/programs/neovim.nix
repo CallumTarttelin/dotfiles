@@ -1,19 +1,8 @@
-{pkgs, ...}: {
-  programs.neovim = {
-    enable = true;
-    viAlias = true;
-    vimAlias = true;
-  };
-
-  home.packages = with pkgs; [
-    # Add LSPs
-    nil
-    gopls
-    # Rust language server installed separately with rust config
-    clang-tools
-    pyright
-    typescript
-    java-language-server
-    kotlin-language-server
+{
+  inputs,
+  ...
+}: {
+  home.packages = [
+    inputs.nvim.packages.x86_64-linux.default
   ];
 }

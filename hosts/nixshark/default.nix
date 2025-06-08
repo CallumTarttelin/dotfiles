@@ -1,4 +1,8 @@
-{pkgs, inputs, ...}: {
+{
+  pkgs,
+  inputs,
+  ...
+}: {
   imports = [
     ./hardware-configuration.nix
     ./backup.nix
@@ -12,17 +16,16 @@
   networking.hostName = "nixshark";
 
   # This adds the Fenix overlay to the flake's package scope
-  nixpkgs.overlays = [ inputs.fenix.overlays.default ];
+  # nixpkgs.overlays = [inputs.fenix.overlays.default];
 
   environment.systemPackages = with pkgs; [
-    powertop
 
     inputs.agenix.packages.x86_64-linux.default
     devenv
 
     openssl
     cargo-generate
-    cargo-outdated
+    #cargo-outdated
     aoc-cli
     gcc
     gnumake
@@ -34,14 +37,23 @@
     deploy-rs
 
     # Use the 'withComponents' package generator to define a Rust toolchain
-    (inputs.fenix.packages.x86_64-linux.complete.withComponents [
-      "cargo"
-      "clippy"
-      "rust-src"
-      "rustc"
-      "rustfmt"
-    ])
+    # (inputs.fenix.packages.x86_64-linux.complete.withComponents [
+    #   "cargo"
+    #   "clippy"
+    #   "rust-src"
+    #   "rustc"
+    #   "rustfmt"
+    # ])
+    protobuf
+    protobufc
 
+    kubectl
+    kubernetes-helm
+    k9s
+    stern
+    kubectx
+    fluxcd
+    yq-go
   ];
 
   boot.kernelPackages = pkgs.linuxPackages_latest;
@@ -52,7 +64,7 @@
 
   powerManagement = {
     enable = true;
-    powertop.enable = true;
+    powertop.enable = false;
   };
 
   services.syncthing = {
@@ -69,8 +81,8 @@
 
   systemd.services.disable-wakeups = {
     description = "Disable GPP0 wakeup trigger";
-    wantedBy = [ "multi-user.target" ];
-    after = [ "systemd-udev-settle.service" ];
+    wantedBy = ["multi-user.target"];
+    after = ["systemd-udev-settle.service"];
     script = ''
       if grep -q "GPP0.*enabled" /proc/acpi/wakeup; then
         echo GPP0 > /proc/acpi/wakeup

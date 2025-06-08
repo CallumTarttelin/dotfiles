@@ -1,4 +1,8 @@
-{pkgs, inputs, ...}: {
+{
+  pkgs,
+  inputs,
+  ...
+}: {
   imports = [
     ./hardware-configuration.nix
   ];
@@ -14,7 +18,6 @@
     inputs.agenix.packages.x86_64-linux.default
     devenv
 
-    powertop
     xdg-utils
     deploy-rs
   ];

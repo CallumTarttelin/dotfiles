@@ -9,11 +9,30 @@
     wezterm
     wmname
     wofi
+    posy-cursors
+    bibata-cursors
+    hyprsunset
+    hyprshot
+    hyprpolkitagent
   ];
+
+  # systemd.user.services.hyprpolkitagent.service.wantedBy = [ "graphical-session.target" ];
+
+  home.pointerCursor = {
+    gtk.enable = true;
+    # x11.enable = true;
+    package = pkgs.bibata-cursors;
+    name = "Bibata-Modern-Classic";
+    size = 16;
+  };
 
   # enable hyprland
   wayland.windowManager.hyprland = {
     enable = true;
+    systemd = {
+      variables = ["--all"];
+      enable = true;
+    };
     extraConfig = ''
       #
       # Please note not all available settings / options are set here.
@@ -23,8 +42,8 @@
 
       # See https://wiki.hyprland.org/Configuring/Monitors/
       monitor=DP-1,preferred,1920x0,1,vrr,1
-      monitor=DP-2,preferred,0x0,1
       monitor=HDMI-A-1,preferred,4480x0,1
+      monitor=DP-2,preferred,0x0,1
       monitor=,preferred,auto,1
 
 
@@ -34,10 +53,10 @@
       exec-once = wmname LG3D
       exec-once = mako
       exec-once = /usr/bin/gnome-keyring-daemon --start --components=ssh,secrets
+      exec-once = systemctl --user start hyprpolkitagent
       exec-once = foot --server
 
       # Not quite sure what this does, but apparently it's good to do
-      exec-once = dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP
       exec-once = systemctl --user restart xdg-desktop-portal-gtk.service
       exec-once = systemctl --user restart xdg-desktop-portal-hyprland.service
 
@@ -46,6 +65,9 @@
 
       # Some default env vars.
       env = XCURSOR_SIZE,24
+      cursor {
+          no_hardware_cursors = true
+      }
 
       # For all categories, see https://wiki.hyprland.org/Configuring/Variables/
       input {
@@ -80,10 +102,12 @@
       decoration {
           # See https://wiki.hyprland.org/Configuring/Variables/ for more
           rounding = 1
-          drop_shadow = yes
-          shadow_range = 4
-          shadow_render_power = 3
-          col.shadow = rgba(1a1a1aee)
+          shadow {
+              enabled = true
+              range = 4
+              render_power = 3
+              color = rgba(1a1a1aee)
+          }
 
           blur {
               enabled = yes
@@ -148,7 +172,7 @@
 
       # Example binds, see https://wiki.hyprland.org/Configuring/Binds/ for more
       bind = $shiftMod, Q, killactive
-      bind = $mainMod, RETURN, exec, wezterm
+      bind = $mainMod, RETURN, exec, ghostty
       bind = $mainMod, M, exit,
       bind = $mainMod, V, togglefloating,
       bind = $mainMod, D, exec, wofi --show drun

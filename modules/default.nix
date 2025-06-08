@@ -18,7 +18,7 @@
     }
 
     inputs.agenix.nixosModules.default
-    inputs.hm.nixosModule
+    inputs.hm.nixosModules.default
     module_args
 
     self.nixosModules.core

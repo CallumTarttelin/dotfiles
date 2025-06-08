@@ -1,5 +1,8 @@
-{pkgs, config, ...}: {
-
+{
+  pkgs,
+  config,
+  ...
+}: {
   programs.java = {
     enable = true;
     package = pkgs.jdk21;
@@ -17,12 +20,15 @@
     nodejs_20
     deno
     bun
+    deno
     python3
     gleam
     erlang
     elixir
     ocaml
     zig
-  ];
 
+    python313Packages.ptpython
+    poetry
+  ];
 }

@@ -1,6 +1,7 @@
 {
   config,
   lib,
+  pkgs,
   ...
 }: {
   programs.zsh = {
@@ -18,7 +19,7 @@
       path = "${config.xdg.cacheHome}/zsh_history";
     };
 
-    initExtra = ''
+    initContent = ''
       # search history based on what's typed in the prompt
       autoload -U history-search-end
       zle -N history-beginning-search-backward-end history-search-end
@@ -53,6 +54,17 @@
       zstyle ':completion:*' verbose true
       _comp_options+=(globdots)
 
+      ${lib.optionalString config.programs.yazi.enable ''
+        function y() {
+            local tmp="$(mktemp -t "yazi-cwd.XXXXXX")"
+            ${pkgs.yazi}/bin/yazi "$@" --cwd-file="$tmp"
+            if cwd="$(cat -- "$tmp")" && [ -n "$cwd" ] && [ "$cwd" != "$PWD" ]; then
+                builtin cd -- "$cwd"
+            fi
+            rm -f -- "$tmp"
+        }
+      ''}
+
       ${lib.optionalString config.services.gpg-agent.enable ''
         gnupg_path=$(ls $XDG_RUNTIME_DIR/gnupg)
         export SSH_AUTH_SOCK="$XDG_RUNTIME_DIR/gnupg/$gnupg_path/S.gpg-agent.ssh"
@@ -78,6 +90,9 @@
 
         us = "systemctl --user";
         rs = "sudo systemctl";
+
+        vi = "nvim";
+        vim = "nvim";
       }
       // lib.optionalAttrs (config.programs.bat.enable == true) {cat = "bat";};
   };

@@ -30,9 +30,17 @@
     oldpkgs = {
       url = "https://github.com/NixOS/nixpkgs/archive/47dabda9be453ae62c0920992b62f08c825c6440.tar.gz";
     };
+    nvim = {
+      url = "./flakes/nvim";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
-  outputs = inputs @ {self, flake-parts, ...}:
+  outputs = inputs @ {
+    self,
+    flake-parts,
+    ...
+  }:
     flake-parts.lib.mkFlake {inherit inputs;} {
       imports = [
         ./hosts
