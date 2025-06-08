@@ -1,0 +1,5 @@
+[config]
+"hosts/nixshark/backup.nix" = [
+    "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHxgENtK22oTNndrl3ODUJvxFO9EVJ+M2qv7Zfel04Dw ssh@callumtarttelin.com",
+    "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAINNbVyvd7na036VTmMkgG94N/Mc2KJkAfZgNQODa5zhX ssh@callumtarttelin.com",
+]
