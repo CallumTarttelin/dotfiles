@@ -20,6 +20,8 @@
 
     xdg-utils
     deploy-rs
+
+    connmanFull
   ];
 
   services.power-profiles-daemon.enable = true;

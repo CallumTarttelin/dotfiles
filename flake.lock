@@ -337,14 +337,15 @@
         ]
       },
       "locked": {
-        "path": "./flakes/nvim",
+        "lastModified": 1,
+        "narHash": "sha256-eFhmuqPUJE3q6GXITitpPGnJy8LkkNcZSd1b8/Y+JUY=",
+        "path": "/nix/store/ld5waayfn0vy8ghvl6r0jymnqaxbv7hp-source/flakes/nvim",
         "type": "path"
       },
       "original": {
-        "path": "./flakes/nvim",
+        "path": "/nix/store/ld5waayfn0vy8ghvl6r0jymnqaxbv7hp-source/flakes/nvim",
         "type": "path"
-      },
-      "parent": []
+      }
     },
     "oldpkgs": {
       "locked": {
