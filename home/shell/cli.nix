@@ -20,6 +20,7 @@
     zellij
 
     git-agecrypt
+    git-credential-keepassxc
   ];
 
   programs = {

@@ -25,7 +25,7 @@
       "1.0.0.1"
     ];
     search = [
-      "tail86813.ts.net"
+      "oryx-harmonic.ts.net"
     ];
   };
 
