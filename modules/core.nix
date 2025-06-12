@@ -69,6 +69,9 @@
       forgejo-runner.file = ../secrets/forgejo-runner.age;
       yubi.file = ../secrets/yubi.age;
       cloudflare.file = ../secrets/cloudflare.age;
+
+      k8s-minio.file = ../secrets/k8s-minio.age;
+      k8s-grafana.file = ../secrets/k8s-grafana.age;
     };
     identityPaths = ["/root/.ssh/id_rsa" "/home/tarttelin/.ssh/id_nixshark" "/home/tarttelin/.ssh/id_nixie" "/home/tarttelin/.ssh/id_nixwork"];
   };
