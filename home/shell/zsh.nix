@@ -13,7 +13,7 @@
       docs = "$HOME/Documents";
       dots = "$HOME/Documents/dotfiles";
     };
-    dotDir = ".config/zsh";
+    dotDir = "${config.xdg.configHome}/zsh";
     history = {
       expireDuplicatesFirst = true;
       path = "${config.xdg.cacheHome}/zsh_history";
@@ -93,6 +93,8 @@
 
         vi = "nvim";
         vim = "nvim";
+
+        ex = "hyprctl dispatch exec";
       }
       // lib.optionalAttrs (config.programs.bat.enable == true) {cat = "bat";};
   };

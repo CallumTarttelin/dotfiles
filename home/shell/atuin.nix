@@ -8,7 +8,8 @@
       sync_address = "http://nixie.oryx-harmonic.ts.net:8888";
       sync_frequency = "0";
       enter_accept = true;
-      inline_height = 10;
+      style = "full";
+      inline_height = 0;
     };
   };
 }

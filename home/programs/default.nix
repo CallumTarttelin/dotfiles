@@ -26,6 +26,8 @@ in {
 
   home.packages = [
     pkgs.obsidian
+    pkgs.bruno
+    pkgs.websocat
   ];
 
   # set dark as default theme

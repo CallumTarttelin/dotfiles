@@ -7,12 +7,14 @@
     useRoutingFeatures = "both";
   };
 
-  services.connman = {
-    enable = true;
-    wifi.backend = "iwd";
-  };
+  services.resolved.enable = true;
+  systemd.network.enable = true;
 
   networking = {
+    wireless.iwd.enable = true;
+    useNetworkd = true;
+    nftables.enable = true;
+
     firewall = {
       enable = true;
       checkReversePath = "loose";

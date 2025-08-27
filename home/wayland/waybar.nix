@@ -23,7 +23,7 @@
   '';
 in {
   services.mpd = {
-    enable = true;
+    enable = false;
   };
   home.packages = with pkgs; [
     playerctl

@@ -21,7 +21,6 @@
   environment.systemPackages = with pkgs; [
 
     inputs.agenix.packages.x86_64-linux.default
-    devenv
 
     openssl
     cargo-generate
@@ -54,6 +53,9 @@
     kubectx
     fluxcd
     yq-go
+
+    claude-code
+    opencode
   ];
 
   boot.kernelPackages = pkgs.linuxPackages_latest;
