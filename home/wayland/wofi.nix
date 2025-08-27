@@ -10,8 +10,9 @@
       yoffset = "0px";
       hide_scroll = "true";
       show = "drun";
-      width = "15%";
+      # width = "15%";
       lines = "15";
+      height = "150px";
       line_wrap = "word";
       term = "wezterm";
       allow_markup = true;

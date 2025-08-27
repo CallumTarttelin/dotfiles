@@ -19,6 +19,8 @@
     glow
     zellij
 
+    lsof
+
     git-agecrypt
     git-credential-keepassxc
   ];

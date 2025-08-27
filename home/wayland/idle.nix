@@ -12,33 +12,34 @@
   '';
 in {
   # screen idle
-  services.swayidle = {
-    enable = true;
-    events = [
-      {
-        event = "before-sleep";
-        command = "${pkgs.systemd}/bin/loginctl lock-session";
-      }
-      {
-        event = "lock";
-        command = "${pkgs.swaylock}/bin/swaylock";
-      }
-    ];
-    timeouts = [
-      {
-        timeout = 600;
-        command = suspendScript.outPath;
-      }
-    ];
-  };
-
-  systemd.user.services.swayidle.Install.WantedBy = lib.mkForce ["hyprland-session.target"];
-
-  programs.swaylock = {
+  services.hypridle = {
     enable = true;
     settings = {
-      color = "000000";
-      ignore-empty-password = true;
+      general = {
+        lock_cmd = "pidof hyprlock || hyprlock";
+        before_sleep_cmd = "loginctl lock-session";
+        after_sleep_cmd = "hyprctl dispatch dpms on";
+      };
+      listener = [
+        {
+          timeout = 600;
+          on-timeout = suspendScript.outPath;
+        }
+      ];
+    };
+  };
+
+  systemd.user.services.hypridle.Install.WantedBy = lib.mkForce ["hyprland-session.target"];
+
+  programs.hyprlock = {
+    enable = true;
+    settings = {
+      background = {
+        color = "#000000";
+      };
+      general = {
+        ignore_empty_input = true;
+      };
     };
   };
 }

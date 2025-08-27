@@ -17,7 +17,8 @@
 
   home.packages = with pkgs; [
     maven
-    nodejs_20
+    nodejs_24
+    pnpm
     deno
     bun
     deno

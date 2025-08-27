@@ -1,7 +1,7 @@
 {pkgs, ...}: {
   home.packages = with pkgs; [
     krita
-    audacity
+    # audacity
     easyeffects
   ];
 }
