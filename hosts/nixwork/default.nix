@@ -1,6 +1,7 @@
 {
   pkgs,
   inputs,
+  lib,
   ...
 }: {
   imports = [
@@ -20,11 +21,30 @@
     xdg-utils
     deploy-rs
 
-    connmanFull
+    # connmanFull
+
+    claude-code
+    opencode
+    mitmproxy
+    mitmproxy2swagger
+    waydroid-helper
+    cmst
+    connman-gtk
   ];
+
+  virtualisation.waydroid.enable = true;
+  programs.adb.enable = true;
 
   services.power-profiles-daemon.enable = true;
   powerManagement.cpuFreqGovernor = "powersave";
+
+  services.connman = {
+    enable = true;
+    wifi.backend = "iwd";
+  };
+
+  systemd.network.enable =  lib.mkDefault false;
+  networking.networkmanager.enable = lib.mkDefault false;
 
   services.syncthing = {
     enable = true;
