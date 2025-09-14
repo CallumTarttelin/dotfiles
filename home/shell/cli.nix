@@ -23,6 +23,8 @@
 
     git-agecrypt
     git-credential-keepassxc
+
+    openssl
   ];
 
   programs = {
