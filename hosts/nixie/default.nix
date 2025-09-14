@@ -69,25 +69,25 @@
     '';
     virtualHosts = {
       "hello.callumtarttelin.com".extraConfig = ''
-        tls /var/lib/acme/callumtarttelin.com/cert.pem /var/lib/acme/callumtarttelin.com/key.pem {
+        tls /var/lib/acme/callumtarttelin.com/fullchain.pem /var/lib/acme/callumtarttelin.com/key.pem {
           protocols tls1.3
         }
         respond "OK"
       '';
       "git.callumtarttelin.com".extraConfig = ''
-        tls /var/lib/acme/callumtarttelin.com/cert.pem /var/lib/acme/callumtarttelin.com/key.pem {
+        tls /var/lib/acme/callumtarttelin.com/fullchain.pem /var/lib/acme/callumtarttelin.com/key.pem {
           protocols tls1.3
         }
         reverse_proxy http://localhost:3000
       '';
       "sync.callumtarttelin.com".extraConfig = ''
-        tls /var/lib/acme/callumtarttelin.com/cert.pem /var/lib/acme/callumtarttelin.com/key.pem {
+        tls /var/lib/acme/callumtarttelin.com/fullchain.pem /var/lib/acme/callumtarttelin.com/key.pem {
           protocols tls1.3
         }
         reverse_proxy http://localhost:8384
       '';
       "vault.callumtarttelin.com".extraConfig = ''
-        tls /var/lib/acme/callumtarttelin.com/cert.pem /var/lib/acme/callumtarttelin.com/key.pem {
+        tls /var/lib/acme/callumtarttelin.com/fullchain.pem /var/lib/acme/callumtarttelin.com/key.pem {
           protocols tls1.3
         }
         reverse_proxy http://localhost:8812
