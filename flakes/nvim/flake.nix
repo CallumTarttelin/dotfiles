@@ -1,49 +1,45 @@
 {
-  description = "Neovim config flake";
+  description = "Neovim config flake using NixVim";
 
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs?ref=nixos-unstable";
-    gen-luarc = {
-      url = "github:mrcjkb/nix-gen-luarc-json";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
+    nixpkgs.url = "github:nixos/nixpkgs/nixpkgs-unstable";
+    nixvim.url = "github:nix-community/nixvim";
+    flake-parts.url = "github:hercules-ci/flake-parts";
   };
 
-  outputs = inputs @ {
-    self,
-    nixpkgs,
+  outputs = {
+    nixvim,
+    flake-parts,
     ...
-  }: let
-    system = "x86_64-linux";
-    pkgs = import nixpkgs {
-      inherit system;
-      overlays = [
-        inputs.gen-luarc.overlays.default
+  } @ inputs:
+    flake-parts.lib.mkFlake {inherit inputs;} {
+      systems = [
+        "x86_64-linux"
+        "aarch64-linux"
       ];
+
+      perSystem = {system, ...}: let
+        pkgs = import inputs.nixpkgs {
+          inherit system;
+        };
+        nixvim' = nixvim.legacyPackages.${system};
+        nvim = nixvim'.makeNixvimWithModule {
+          inherit pkgs;
+          module = import ./config;
+        };
+      in {
+        packages = {
+          nvim = nvim;
+          default = nvim;
+        };
+
+        devShells.default = pkgs.mkShell {
+          buildInputs = [
+            pkgs.nil # Nix language server
+            pkgs.alejandra # Nix formatter
+            nvim
+          ];
+        };
+      };
     };
-    nvimPkg = import ./nix/default.nix {inherit pkgs;};
-    # helloPkg = nixpkgs.legacyPackages.x86_64-linux.hello;
-  in {
-    inherit pkgs;
-    packages.${system} = {
-      nvim = nvimPkg;
-      default = nvimPkg;
-    };
-    devshells.${system}.default = pkgs.mkShell {
-      buildInputs = [
-        pkgs.lua-language-server
-        pkgs.nil
-        pkgs.stylua
-        pkgs.luajitPackages.luacheck
-        pkgs.nvim-dev
-        nvimPkg
-      ];
-      shellHook = ''
-        # symlink the .luarc.json generated in the overlay
-        ln -fs ${pkgs.nvim-luarc-json} .luarc.json
-        # allow quick iteration of lua configs
-        ln -Tfns $PWD/nvim ~/.config/nvim-dev
-      '';
-    };
-  };
 }
