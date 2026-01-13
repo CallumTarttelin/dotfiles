@@ -13,6 +13,7 @@
     git
     gh
     neovim
+    bubblewrap
   ];
 
   programs.nh = {

@@ -63,6 +63,11 @@
       # Source a file (multi-file configs)
       # source = ~/.config/hypr/myColors.conf
 
+      misc {
+          disable_splash_rendering = true
+
+      }
+
       # Some default env vars.
       env = XCURSOR_SIZE,24
       cursor {

@@ -1,7 +1,7 @@
 {pkgs, ...}: {
   home.packages = with pkgs; [
-    # kicad
-    # ngspice
+    kicad
+    ngspice
     # ghdl
     # logisim-evolution
   ];

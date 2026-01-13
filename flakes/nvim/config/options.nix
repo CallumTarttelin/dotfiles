@@ -1,4 +1,7 @@
 {
+  # Enable lazy loading provider
+  plugins.lz-n.enable = true;
+
   # Leader key
   globals = {
     mapleader = " ";

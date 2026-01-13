@@ -16,6 +16,14 @@
       options.desc = "Open diagnostic [Q]uickfix list";
     }
 
+    # Show diagnostic in floating window
+    {
+      mode = "n";
+      key = "<leader>e";
+      action.__raw = "vim.diagnostic.open_float";
+      options.desc = "Show diagnostic [E]rror messages";
+    }
+
     # Exit terminal mode
     {
       mode = "t";

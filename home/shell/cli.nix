@@ -7,7 +7,7 @@
     zip
     unzip
 
-    du-dust
+    dust
     duf
     fd
     file
@@ -18,6 +18,9 @@
     nushell
     glow
     zellij
+    jujutsu
+    lazyjj
+    jjui
 
     lsof
 

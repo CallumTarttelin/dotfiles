@@ -3,7 +3,7 @@
     enable = true;
     settings = {
       default_session = {
-        command = "${pkgs.tuigreet}/bin/tuigreet --time --remember --cmd Hyprland";
+        command = "${pkgs.tuigreet}/bin/tuigreet --time --remember --cmd start-hyprland";
         user = "greeter";
       };
     };
@@ -18,7 +18,7 @@
       hyprland = {
         prettyName = "Hyprland";
         comment = "Hyprland compositor managed by UWSM";
-        binPath = "/run/current-system/sw/bin/Hyprland";
+        binPath = "/run/current-system/sw/bin/start-hyprland";
       };
     };
   };

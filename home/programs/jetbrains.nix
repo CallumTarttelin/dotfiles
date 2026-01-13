@@ -1,9 +1,8 @@
 {pkgs, ...}: {
   home.packages = with pkgs; [
-    jetbrains.idea-ultimate
+    jetbrains.idea
     jetbrains.rust-rover
     jetbrains.clion
     zed-editor
   ];
-
 }

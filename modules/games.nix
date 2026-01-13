@@ -4,11 +4,12 @@
     gamemode
     mangohud
     steam-run
-    protonup
+    protonup-ng
     protonup-qt
     protontricks
     oversteer
     linuxConsoleTools
+    ckan
   ];
 
   nixpkgs.config.packageOverrides = pkgs: {

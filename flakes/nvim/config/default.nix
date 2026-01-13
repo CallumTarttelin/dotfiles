@@ -8,5 +8,6 @@
     ./treesitter.nix
     ./formatting.nix
     ./plugins.nix
+    ./debug.nix
   ];
 }

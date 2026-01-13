@@ -1,66 +1,59 @@
 {
-  plugins.luasnip = {
+  plugins.blink-cmp = {
     enable = true;
-    fromVscode = [{}]; # Load friendly-snippets
-  };
-
-  plugins.cmp = {
-    enable = true;
-    autoEnableSources = true;
 
     settings = {
-      snippet = {
-        expand = ''
-          function(args)
-            require('luasnip').lsp_expand(args.body)
-          end
-        '';
+      keymap = {
+        preset = "none";
+        "<C-n>" = ["select_next" "fallback"];
+        "<C-p>" = ["select_prev" "fallback"];
+        "<C-b>" = ["scroll_documentation_up" "fallback"];
+        "<C-f>" = ["scroll_documentation_down" "fallback"];
+        "<C-y>" = ["accept" "fallback"];
+        "<C-Space>" = ["show" "show_documentation" "hide_documentation"];
+        "<C-l>" = ["snippet_forward" "fallback"];
+        "<C-h>" = ["snippet_backward" "fallback"];
       };
 
       completion = {
-        completeopt = "menu,menuone,noinsert";
+        accept = {
+          auto_brackets.enabled = true;
+        };
+        documentation = {
+          auto_show = true;
+          auto_show_delay_ms = 200;
+        };
+        list.selection = {
+          preselect = true;
+          auto_insert = true;
+        };
+        menu.draw = {
+          columns = [
+            {__unkeyed-1 = "kind_icon";}
+            {
+              __unkeyed-1 = "label";
+              __unkeyed-2 = "label_description";
+              gap = 1;
+            }
+            {__unkeyed-1 = "kind";}
+          ];
+        };
       };
 
-      sources = [
-        {name = "nvim_lsp";}
-        {name = "luasnip";}
-        {name = "path";}
-        {name = "nvim_lsp_signature_help";}
-      ];
+      signature = {
+        enabled = true;
+      };
 
-      mapping = {
-        # Select next/previous item
-        "<C-n>" = "cmp.mapping.select_next_item()";
-        "<C-p>" = "cmp.mapping.select_prev_item()";
+      sources = {
+        default = ["lsp" "path" "snippets" "buffer"];
+      };
 
-        # Scroll documentation
-        "<C-b>" = "cmp.mapping.scroll_docs(-4)";
-        "<C-f>" = "cmp.mapping.scroll_docs(4)";
-
-        # Accept completion
-        "<C-y>" = "cmp.mapping.confirm({ select = true })";
-
-        # Manually trigger completion
-        "<C-Space>" = "cmp.mapping.complete()";
-
-        # Snippet navigation
-        "<C-l>" = ''
-          cmp.mapping(function()
-            local luasnip = require('luasnip')
-            if luasnip.expand_or_locally_jumpable() then
-              luasnip.expand_or_jump()
-            end
-          end, { 'i', 's' })
-        '';
-        "<C-h>" = ''
-          cmp.mapping(function()
-            local luasnip = require('luasnip')
-            if luasnip.locally_jumpable(-1) then
-              luasnip.jump(-1)
-            end
-          end, { 'i', 's' })
-        '';
+      snippets = {
+        preset = "default";
       };
     };
   };
+
+  # Friendly snippets for common language snippets
+  plugins.friendly-snippets.enable = true;
 }
