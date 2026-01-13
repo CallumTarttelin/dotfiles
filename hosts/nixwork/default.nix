@@ -24,16 +24,18 @@
     # connmanFull
 
     claude-code
+    socat
+    bubblewrap
     opencode
     mitmproxy
     mitmproxy2swagger
     waydroid-helper
     cmst
     connman-gtk
+    android-tools
   ];
 
   virtualisation.waydroid.enable = true;
-  programs.adb.enable = true;
 
   services.power-profiles-daemon.enable = true;
   powerManagement.cpuFreqGovernor = "powersave";
@@ -43,15 +45,8 @@
     wifi.backend = "iwd";
   };
 
-  systemd.network.enable =  lib.mkDefault false;
+  systemd.network.enable = lib.mkDefault false;
   networking.networkmanager.enable = lib.mkDefault false;
-
-  services.syncthing = {
-    enable = true;
-    user = "tarttelin";
-    dataDir = "/home/tarttelin/sync";
-    configDir = "/home/tarttelin/.config/syncthing";
-  };
 
   services.fwupd.enable = true;
 

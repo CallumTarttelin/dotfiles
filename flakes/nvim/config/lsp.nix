@@ -2,6 +2,25 @@
   plugins.lsp = {
     enable = true;
 
+    # Lazy load LSP on filetypes that have servers configured
+    lazyLoad.settings.ft = [
+      "lua"
+      "c"
+      "cpp"
+      "python"
+      "rust"
+      "go"
+      "bash"
+      "sh"
+      "nix"
+      "java"
+      "kotlin"
+      "typescript"
+      "javascript"
+      "typescriptreact"
+      "javascriptreact"
+    ];
+
     keymaps = {
       # Diagnostic keymaps are set in keymaps.nix
 
@@ -74,7 +93,7 @@
         };
       };
       clangd.enable = true;
-      pyright.enable = true;
+      ty.enable = true;
       rust_analyzer = {
         enable = true;
         installCargo = false;
@@ -90,5 +109,8 @@
   };
 
   # Fidget for LSP progress notifications
-  plugins.fidget.enable = true;
+  plugins.fidget = {
+    enable = true;
+    lazyLoad.settings.event = "LspAttach";
+  };
 }

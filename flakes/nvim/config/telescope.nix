@@ -2,6 +2,9 @@
   plugins.telescope = {
     enable = true;
 
+    # Lazy load on Telescope command
+    lazyLoad.settings.cmd = "Telescope";
+
     extensions = {
       fzf-native.enable = true;
       ui-select.enable = true;

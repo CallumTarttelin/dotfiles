@@ -35,14 +35,6 @@
     nss
   ];
 
-  services.syncthing = {
-    enable = true;
-    user = "tarttelin";
-    dataDir = "/home/tarttelin/sync";
-    configDir = "/home/tarttelin/.config/syncthing";
-    guiAddress = "0.0.0.0:8384";
-  };
-
   networking.firewall.allowedTCPPorts = [80 443];
 
   security.acme = {
@@ -55,9 +47,9 @@
       dnsResolver = "1.1.1.1:53";
       dnsPropagationCheck = true;
       extraDomainNames = [
-        "callumtarttelin.com"
         "*.callumtarttelin.com"
       ];
+      reloadServices = ["caddy"];
       environmentFile = config.age.secrets.cloudflare.path;
     };
   };

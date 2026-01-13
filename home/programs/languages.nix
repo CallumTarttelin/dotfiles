@@ -28,6 +28,10 @@
     elixir
     ocaml
     zig
+    air
+    lazygit
+
+    awscli2
 
     python313Packages.ptpython
     poetry

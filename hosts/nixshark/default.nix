@@ -55,6 +55,8 @@
     yq-go
 
     claude-code
+    socat
+    bubblewrap
     opencode
   ];
 
@@ -67,13 +69,6 @@
   powerManagement = {
     enable = true;
     powertop.enable = false;
-  };
-
-  services.syncthing = {
-    enable = true;
-    user = "tarttelin";
-    dataDir = "/home/tarttelin/sync";
-    configDir = "/home/tarttelin/.config/syncthing";
   };
 
   services.udev.extraRules = ''

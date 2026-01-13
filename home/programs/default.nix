@@ -12,6 +12,7 @@ in {
     ./foot.nix
     ./wezterm.nix
     ./ghostty.nix
+    ./syncthing.nix
   ];
 
   programs = {
@@ -26,8 +27,9 @@ in {
 
   home.packages = [
     pkgs.obsidian
-    pkgs.bruno
+    # pkgs.bruno
     pkgs.websocat
+    pkgs.google-chrome
   ];
 
   # set dark as default theme
