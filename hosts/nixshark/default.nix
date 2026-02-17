@@ -19,7 +19,6 @@
   # nixpkgs.overlays = [inputs.fenix.overlays.default];
 
   environment.systemPackages = with pkgs; [
-
     inputs.agenix.packages.x86_64-linux.default
 
     openssl
