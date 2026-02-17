@@ -293,8 +293,18 @@
         n_lines = 500;
       };
 
-      # Add/delete/replace surroundings
-      surround = {};
+      # Add/delete/replace surroundings (using gz prefix to keep s working normally)
+      surround = {
+        mappings = {
+          add = "gza";
+          delete = "gzd";
+          find = "gzf";
+          find_left = "gzF";
+          highlight = "gzh";
+          replace = "gzr";
+          update_n_lines = "gzn";
+        };
+      };
 
       # Simple statusline
       statusline = {

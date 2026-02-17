@@ -54,6 +54,8 @@
     yq-go
 
     claude-code
+    codex
+    codex-acp
     socat
     bubblewrap
     opencode
