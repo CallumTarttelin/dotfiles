@@ -3,5 +3,6 @@
     krita
     # audacity
     easyeffects
+    blender
   ];
 }

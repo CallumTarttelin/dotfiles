@@ -34,6 +34,6 @@
     awscli2
 
     python313Packages.ptpython
-    poetry
+    # poetry
   ];
 }

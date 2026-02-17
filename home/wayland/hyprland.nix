@@ -160,12 +160,6 @@
       # windowrulev2 = float,class:^(kitty)$,title:^(kitty)$
       # See https://wiki.hyprland.org/Configuring/Window-Rules/ for more
 
-      windowrulev2 = opacity 0.0 override 0.0 override,class:^(xwaylandvideobridge)$
-      windowrulev2 = noanim,class:^(xwaylandvideobridge)$
-      windowrulev2 = noinitialfocus,class:^(xwaylandvideobridge)$
-      windowrulev2 = maxsize 1 1,class:^(xwaylandvideobridge)$
-      windowrulev2 = noblur,class:^(xwaylandvideobridge)$
-
       # See https://wiki.hyprland.org/Configuring/Keywords/ for more
       $mainMod = SUPER
       $shiftMod = SUPER_SHIFT
