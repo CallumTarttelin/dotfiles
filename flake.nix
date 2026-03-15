@@ -34,6 +34,10 @@
       url = "./flakes/nvim";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    llm-agents = {
+      url = "github:numtide/llm-agents.nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs = inputs @ {
@@ -63,6 +67,7 @@
         # Per-system attributes can be defined here. The self' and inputs'
         # module parameters provide easy access to attributes of the same
         # system.
+        packages = import ./pkgs {inherit pkgs;};
       };
       flake = {
         # The usual flake attributes can be defined here, including system-

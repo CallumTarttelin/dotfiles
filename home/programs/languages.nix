@@ -34,6 +34,7 @@
     awscli2
 
     python313Packages.ptpython
+    uv
     # poetry
   ];
 }

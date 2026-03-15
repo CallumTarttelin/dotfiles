@@ -8,5 +8,6 @@
     ../../programs/media.nix
     ../../programs/languages.nix
     ../../programs/work.nix
+    ../../programs/llms.nix
   ];
 }

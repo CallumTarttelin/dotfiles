@@ -10,5 +10,6 @@
     ../../programs/languages.nix
     ../../programs/work.nix
     ../../programs/electronics.nix
+    ../../programs/llms.nix
   ];
 }

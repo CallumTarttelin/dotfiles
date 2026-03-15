@@ -53,12 +53,8 @@
     fluxcd
     yq-go
 
-    claude-code
-    codex
-    codex-acp
     socat
     bubblewrap
-    opencode
   ];
 
   boot.kernelPackages = pkgs.linuxPackages_latest;
