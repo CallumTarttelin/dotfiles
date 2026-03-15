@@ -23,10 +23,8 @@
 
     # connmanFull
 
-    claude-code
     socat
     bubblewrap
-    opencode
     mitmproxy
     mitmproxy2swagger
     waydroid-helper

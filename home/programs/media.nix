@@ -25,6 +25,5 @@
     spotify
     pulsemixer
     qpwgraph
-    helvum
   ];
 }
