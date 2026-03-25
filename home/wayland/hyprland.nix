@@ -235,6 +235,14 @@
       # bind = ,mouse:276,pass,(Discord)
       # bind = ,mouse:275,pass,(Discord)
 
+      # Media keys
+      bindl = , XF86AudioPlay, exec, ${pkgs.playerctl}/bin/playerctl play-pause
+      bindl = , XF86AudioNext, exec, ${pkgs.playerctl}/bin/playerctl next
+      bindl = , XF86AudioPrev, exec, ${pkgs.playerctl}/bin/playerctl previous
+      bindel = , XF86AudioRaiseVolume, exec, ${pkgs.wireplumber}/bin/wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+
+      bindel = , XF86AudioLowerVolume, exec, ${pkgs.wireplumber}/bin/wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-
+      bindl = , XF86AudioMute, exec, ${pkgs.wireplumber}/bin/wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle
+
       # Move/resize windows with mainMod + LMB/RMB and dragging
       bindm = $mainMod, mouse:272, movewindow
       bindm = $mainMod, mouse:273, resizewindow

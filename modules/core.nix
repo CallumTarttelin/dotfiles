@@ -1,10 +1,15 @@
 {
   config,
+  inputs,
   pkgs,
   home-manager,
   ...
 }: {
   time.timeZone = "Europe/London";
+
+  # Pin nixpkgs for `nix shell`, `nix run`, `nix-shell` to match flake.lock
+  nix.registry.nixpkgs.flake = inputs.nixpkgs;
+  nix.nixPath = ["nixpkgs=${inputs.nixpkgs}"];
 
   home-manager.backupFileExtension = "BACKUP";
 
@@ -38,6 +43,7 @@
 
     builders-use-substitutes = true;
     experimental-features = ["nix-command" "flakes"];
+    accept-flake-config = true;
 
     keep-derivations = true;
     keep-outputs = true;
