@@ -6,6 +6,7 @@
 }: let
   sharedModules = [
     module_args
+    inputs.nix-index-database.hmModules.nix-index
     ../.
     ../programs
     ../shell

@@ -36,6 +36,9 @@
     };
     llm-agents = {
       url = "github:numtide/llm-agents.nix";
+    };
+    nix-index-database = {
+      url = "github:nix-community/nix-index-database";
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };
@@ -67,7 +70,10 @@
         # Per-system attributes can be defined here. The self' and inputs'
         # module parameters provide easy access to attributes of the same
         # system.
-        packages = import ./pkgs {inherit pkgs;};
+        packages = import ./pkgs {
+          inherit pkgs;
+          flake = "/home/tarttelin/Documents/dotfiles";
+        };
       };
       flake = {
         # The usual flake attributes can be defined here, including system-
