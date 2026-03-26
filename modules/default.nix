@@ -46,6 +46,7 @@
     self.nixosModules.mako
     self.nixosModules.wofi
     self.nixosModules.myZsh
+    self.nixosModules.neovim
 
     # Bundled packages (always available, no feature flag)
     self.nixosModules.social
