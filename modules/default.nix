@@ -44,13 +44,34 @@
     self.nixosModules.starship
     self.nixosModules.mako
     self.nixosModules.wofi
+
+    # Bundled packages (always available, no feature flag)
+    self.nixosModules.social
+    self.nixosModules.editors
+    self.nixosModules.office
+    self.nixosModules.llms
+    self.nixosModules.security
+    self.nixosModules.media
+    self.nixosModules.drawing
+    self.nixosModules.electronics
+    self.nixosModules.work
+    self.nixosModules.go-tools
+    self.nixosModules.jvm-tools
+    self.nixosModules.web-tools
+    self.nixosModules.python-tools
+    self.nixosModules.beam-tools
+    self.nixosModules.misc-langs
+    self.nixosModules.k8s-tools
+    self.nixosModules.build-tools
+    self.nixosModules.cloud-tools
   ];
 in {
   imports = [
-    # Auto-discover all flake-parts modules under features/, system/, and wrapped/
+    # Auto-discover all flake-parts modules
     (import ../lib/import-modules.nix lib ./features)
     (import ../lib/import-modules.nix lib ./system)
     (import ../lib/import-modules.nix lib ./wrapped)
+    (import ../lib/import-modules.nix lib ./bundles)
     {
       _module.args = {
         inherit module_args allModules;

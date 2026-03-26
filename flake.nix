@@ -63,13 +63,15 @@
         config,
         self',
         inputs',
-        pkgs,
         system,
         ...
-      }: {
-        # Per-system attributes can be defined here. The self' and inputs'
-        # module parameters provide easy access to attributes of the same
-        # system.
+      }: let
+        pkgs = import inputs.nixpkgs {
+          inherit system;
+          config.allowUnfree = true;
+        };
+      in {
+        _module.args.pkgs = pkgs;
         packages = import ./pkgs {
           inherit pkgs;
           flake = "/home/tarttelin/Documents/dotfiles";

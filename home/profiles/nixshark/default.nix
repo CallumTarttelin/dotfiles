@@ -2,14 +2,13 @@
   imports = [
     ../../wayland
     ../../programs
-    ../../programs/jetbrains.nix
-    ../../programs/keepass.nix
-    ../../programs/communication.nix
-    ../../programs/media.nix
-    ../../programs/drawing.nix
+    # HM modules that still need HM (programs.java, programs.go, programs.gradle)
     ../../programs/languages.nix
-    ../../programs/work.nix
-    ../../programs/electronics.nix
-    ../../programs/llms.nix
+    # HM modules with config (programs.mpv, programs.feh, programs.zathura)
+    ../../programs/media.nix
   ];
+
+  # Bundled packages are now nixosModules loaded via modules/bundles/
+  # Old HM imports removed: jetbrains, keepass, communication, drawing,
+  # electronics, work, llms, office
 }
