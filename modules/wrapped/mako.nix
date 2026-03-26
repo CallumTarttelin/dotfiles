@@ -13,6 +13,7 @@
         wrapProgram $out/bin/mako \
           --add-flags "--config=${makoConf}"
       '';
+      meta.mainProgram = "mako";
     };
   };
 

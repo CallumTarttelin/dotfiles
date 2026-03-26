@@ -11,6 +11,7 @@
           --add-flags "--theme='Monokai Remastered'" \
           --add-flags "--window-decoration=false"
       '';
+      meta.mainProgram = "ghostty";
     };
   };
 
