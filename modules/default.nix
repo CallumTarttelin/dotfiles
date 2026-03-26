@@ -64,6 +64,7 @@
     self.nixosModules.k8s-tools
     self.nixosModules.build-tools
     self.nixosModules.cloud-tools
+    self.nixosModules.rust-tools
   ];
 in {
   imports = [

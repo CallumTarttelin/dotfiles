@@ -15,25 +15,13 @@
 
   networking.hostName = "nixie";
 
+  # Packages not yet in bundles
   environment.systemPackages = with pkgs; [
     inputs.agenix.packages.x86_64-linux.default
-
     xdg-utils
-
-    # Use the 'withComponents' package generator to define a Rust toolchain
-    (inputs.fenix.packages.x86_64-linux.complete.withComponents [
-      "cargo"
-      "clippy"
-      "rust-src"
-      "rustc"
-      "rustfmt"
-    ])
-    gcc
-    gnumake
-    protobuf
-    protobufc
     nss
   ];
+  # Moved to bundles: rust-tools, build-tools
 
   networking.firewall.allowedTCPPorts = [80 443];
 
