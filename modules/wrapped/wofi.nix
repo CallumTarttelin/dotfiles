@@ -101,6 +101,7 @@
           --add-flags "--conf=${wofiConf}" \
           --add-flags "--style=${wofiStyle}"
       '';
+      meta.mainProgram = "wofi";
     };
   };
 

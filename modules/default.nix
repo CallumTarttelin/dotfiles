@@ -32,8 +32,7 @@
     self.nixosModules.yubikey
     self.nixosModules.gaming
     self.nixosModules.virtualization
-    self.nixosModules.desktop
-    self.nixosModules.greeter
+    self.nixosModules.hyprland-desktop
     self.nixosModules.logiops
     self.nixosModules.atuin-server
     self.nixosModules.k3s

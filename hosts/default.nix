@@ -19,8 +19,15 @@
           inputs.hardware.nixosModules.common-gpu-amd
           {
             features = {
-              desktop.enable = true;
-              greeter.enable = true;
+              hyprland-desktop = {
+                enable = true;
+                monitors = [
+                  "DP-1,preferred,1920x0,1,vrr,1"
+                  "HDMI-A-1,preferred,4480x0,1"
+                  "DP-2,preferred,0x0,1"
+                  ",preferred,auto,1"
+                ];
+              };
               logiops.enable = true;
               bluetooth.enable = true;
               yubikey.enable = true;
@@ -40,8 +47,10 @@
           inputs.hardware.nixosModules.framework-13-7040-amd
           {
             features = {
-              desktop.enable = true;
-              greeter.enable = true;
+              hyprland-desktop = {
+                enable = true;
+                monitors = ["eDP-1,preferred,auto,1"];
+              };
               logiops.enable = true;
               bluetooth.enable = true;
               yubikey.enable = true;
