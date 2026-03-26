@@ -15,47 +15,17 @@
 
   networking.hostName = "nixshark";
 
-  # This adds the Fenix overlay to the flake's package scope
-  # nixpkgs.overlays = [inputs.fenix.overlays.default];
-
+  # Packages not yet in bundles
   environment.systemPackages = with pkgs; [
     inputs.agenix.packages.x86_64-linux.default
-
-    openssl
-    cargo-generate
-    #cargo-outdated
-    aoc-cli
-    gcc
-    gnumake
-
     xdg-utils
-
+    aoc-cli
     via
     vial
-    deploy-rs
-
-    # Use the 'withComponents' package generator to define a Rust toolchain
-    # (inputs.fenix.packages.x86_64-linux.complete.withComponents [
-    #   "cargo"
-    #   "clippy"
-    #   "rust-src"
-    #   "rustc"
-    #   "rustfmt"
-    # ])
-    protobuf
-    protobufc
-
-    kubectl
-    kubernetes-helm
-    k9s
-    stern
-    kubectx
-    fluxcd
-    yq-go
-
     socat
     bubblewrap
   ];
+  # Moved to bundles: rust-tools, build-tools, k8s-tools, cloud-tools
 
   boot.kernelPackages = pkgs.linuxPackages_latest;
 
