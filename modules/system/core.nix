@@ -2,6 +2,7 @@
   flake.nixosModules.core = {
     config,
     inputs,
+    lib,
     pkgs,
     ...
   }: {
@@ -59,7 +60,7 @@
     users.users.tarttelin = {
       isNormalUser = true;
       extraGroups = ["wheel" "libvirtd" "docker" "networkmanager" "podman" "input" "yubikey" "adbusers"];
-      shell = pkgs.zsh;
+      shell = lib.mkDefault pkgs.zsh;
       hashedPasswordFile = config.age.secrets.tarttelin.path;
     };
 

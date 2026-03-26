@@ -26,6 +26,7 @@
               yubikey.enable = true;
               gaming.enable = true;
               virtualization.enable = true;
+              shell.enable = true;
             };
           }
         ]
@@ -45,6 +46,7 @@
               bluetooth.enable = true;
               yubikey.enable = true;
               virtualization.enable = true;
+              shell.enable = true;
             };
           }
         ]
@@ -63,6 +65,7 @@
               bluetooth.enable = true;
               virtualization.enable = true;
               atuin-server.enable = true;
+              shell.enable = true;
             };
           }
         ]
