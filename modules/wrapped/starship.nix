@@ -21,6 +21,7 @@
         wrapProgram $out/bin/starship \
           --set STARSHIP_CONFIG "${starshipConf}"
       '';
+      meta.mainProgram = "starship";
     };
   };
 

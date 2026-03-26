@@ -37,6 +37,7 @@
     self.nixosModules.logiops
     self.nixosModules.atuin-server
     self.nixosModules.k3s
+    self.nixosModules.shell
 
     # Wrapped packages (always available, no feature flag)
     self.nixosModules.ghostty
@@ -44,6 +45,7 @@
     self.nixosModules.starship
     self.nixosModules.mako
     self.nixosModules.wofi
+    self.nixosModules.myZsh
 
     # Bundled packages (always available, no feature flag)
     self.nixosModules.social
