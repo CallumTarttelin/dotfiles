@@ -173,7 +173,7 @@
             --set ZDOTDIR "${zdotdir}" \
             --prefix PATH : ${lib.makeBinPath runtimeInputs}
         '';
-        passthru = pkgs.zsh.passthru // {shellPath = "/bin/zsh";};
+        passthru = {shellPath = "/bin/zsh";};
       });
   };
 
