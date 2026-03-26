@@ -37,12 +37,20 @@
     self.nixosModules.logiops
     self.nixosModules.atuin-server
     self.nixosModules.k3s
+
+    # Wrapped packages (always available, no feature flag)
+    self.nixosModules.ghostty
+    self.nixosModules.foot
+    self.nixosModules.starship
+    self.nixosModules.mako
+    self.nixosModules.wofi
   ];
 in {
   imports = [
-    # Auto-discover all flake-parts modules under features/ and system/
+    # Auto-discover all flake-parts modules under features/, system/, and wrapped/
     (import ../lib/import-modules.nix lib ./features)
     (import ../lib/import-modules.nix lib ./system)
+    (import ../lib/import-modules.nix lib ./wrapped)
     {
       _module.args = {
         inherit module_args allModules;

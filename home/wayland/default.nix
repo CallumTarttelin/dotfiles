@@ -3,16 +3,13 @@
     ./hyprland.nix
     ./hyprpaper.nix
     ./idle.nix
-    ./mako.nix
-    ./waybar.nix
-    ./wofi.nix
+    # mako, waybar, wofi now wrapped packages in modules/wrapped/
   ];
 
   home.packages = with pkgs; [
     # screenshot
     grim
     slurp
-    waybar
 
     # utils
     wl-clipboard

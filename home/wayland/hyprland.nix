@@ -2,13 +2,9 @@
   home.packages = with pkgs; [
     grimblast
 
-    # Called from current config startup
-    mako
-    waybar
-    foot
+    # mako, waybar, foot, wofi now wrapped packages in modules/wrapped/
     wezterm
     wmname
-    wofi
     posy-cursors
     bibata-cursors
     hyprsunset
