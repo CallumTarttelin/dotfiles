@@ -2,7 +2,8 @@
   perSystem = {pkgs, ...}: {
     packages.jvm-tools = pkgs.buildEnv {
       name = "jvm-tools";
-      paths = with pkgs; [jdk21 gradle maven];
+      # jdk21 and gradle installed via HM programs.java/programs.gradle
+      paths = with pkgs; [maven];
     };
   };
 

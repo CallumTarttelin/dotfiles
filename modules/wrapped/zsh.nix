@@ -84,6 +84,7 @@
       eval "$(${lib.getExe self'.packages.myStarship} init zsh)"
       eval "$(atuin init zsh)"
       eval "$(direnv hook zsh)"
+      source ${pkgs.nix-direnv}/share/nix-direnv/direnvrc
 
       # skim
       source ${pkgs.skim}/share/skim/key-bindings.zsh
@@ -126,6 +127,7 @@
       pkgs.lsof
       pkgs.atuin
       pkgs.direnv
+      pkgs.nix-direnv
       pkgs.yazi
       pkgs.tmux
       pkgs.zip
@@ -137,7 +139,6 @@
       pkgs.jjui
       pkgs.git-agecrypt
       pkgs.git-credential-keepassxc
-      pkgs.nushell
       # nix tools
       pkgs.alejandra
       pkgs.deadnix

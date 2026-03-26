@@ -1,8 +1,6 @@
-{pkgs, ...}: {
-  programs.feh = {
-    enable = true;
-  };
-
+# HM programs with config that aren't wrapped/bundled yet.
+# feh, spotify, pulsemixer, qpwgraph are in modules/bundles/media.nix
+{...}: {
   programs.mpv = {
     enable = true;
     config = {
@@ -20,10 +18,4 @@
       database = "sqlite";
     };
   };
-
-  home.packages = with pkgs; [
-    spotify
-    pulsemixer
-    qpwgraph
-  ];
 }
