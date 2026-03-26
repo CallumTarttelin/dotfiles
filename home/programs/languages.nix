@@ -1,6 +1,8 @@
+# HM modules for env var setup (JAVA_HOME, GOPATH, GRADLE_HOME).
+# Packages are in modules/bundles/ (go-tools, jvm-tools, web-tools, etc.)
 {
-  pkgs,
   config,
+  pkgs,
   ...
 }: {
   programs.java = {
@@ -14,27 +16,4 @@
   };
 
   programs.go.enable = true;
-
-  home.packages = with pkgs; [
-    maven
-    nodejs_24
-    pnpm
-    deno
-    bun
-    deno
-    python3
-    gleam
-    erlang
-    elixir
-    ocaml
-    zig
-    air
-    lazygit
-
-    awscli2
-
-    python313Packages.ptpython
-    uv
-    # poetry
-  ];
 }

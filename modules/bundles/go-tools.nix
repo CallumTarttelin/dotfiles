@@ -2,7 +2,8 @@
   perSystem = {pkgs, ...}: {
     packages.go-tools = pkgs.buildEnv {
       name = "go-tools";
-      paths = with pkgs; [go air lazygit];
+      # go installed via HM programs.go (sets GOPATH etc.)
+      paths = with pkgs; [air lazygit];
     };
   };
 

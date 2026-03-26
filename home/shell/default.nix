@@ -1,28 +1,16 @@
 {
   config,
-  lib,
-  pkgs,
   ...
 }: {
   imports = [
-    ./atuin.nix
-    ./cli.nix
-    ./zsh.nix
+    # zsh, cli, atuin, starship replaced by wrapped packages
     ./nushell.nix
-    # starship is now a wrapped package in modules/wrapped/starship.nix
     ./nix.nix
   ];
 
   home.sessionVariables = {
     LESSHISTFILE = "${config.xdg.cacheHome}/less/history";
     LESSKEY = "${config.xdg.configHome}/less/lesskey";
-
-    EDITOR = "nvim";
-    MANPAGER = "sh -c 'col -bx | bat -l man -p'";
-    MANROFFOPT = "-c";
     DIRENV_LOG_FORMAT = "";
-
-    # auto-run programs using nix-index-database
-    NIX_AUTO_RUN = "1";
   };
 }
