@@ -44,6 +44,7 @@
     self.nixosModules.starship
     self.nixosModules.mako
     self.nixosModules.wofi
+    self.nixosModules.waybar
     self.nixosModules.myZsh
     self.nixosModules.neovim
 
