@@ -9,7 +9,7 @@
     ./cli.nix
     ./zsh.nix
     ./nushell.nix
-    ./starship.nix
+    # starship is now a wrapped package in modules/wrapped/starship.nix
     ./nix.nix
   ];
 

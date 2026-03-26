@@ -9,9 +9,9 @@
 in {
   imports = [
     ./neovim.nix
-    ./foot.nix
+    # foot is now a wrapped package in modules/wrapped/foot.nix
     ./wezterm.nix
-    ./ghostty.nix
+    # ghostty is now a wrapped package in modules/wrapped/ghostty.nix
     ./syncthing.nix
   ];
 
