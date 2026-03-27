@@ -21,6 +21,7 @@
             features = {
               hyprland-desktop = {
                 enable = true;
+                desktopShell = "noctalia";
                 monitors = [
                   "DP-1,preferred,1920x0,1,vrr,1"
                   "HDMI-A-1,preferred,4480x0,1"
