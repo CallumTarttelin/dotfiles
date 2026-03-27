@@ -31,12 +31,17 @@ Item {
     screen: root.screen
     oppositeDirection: BarService.getPillDirection(root)
     icon: Lib.IwdService.signalIcon
-    text: Lib.IwdService.connected ? Lib.IwdService.ssid : "Disconnected"
+    text: Lib.IwdService.connected ? Lib.IwdService.ssid : pluginApi?.tr("widget.disconnected")
     tooltipText: {
       if (!Lib.IwdService.connected)
-        return "Wi-Fi disconnected";
-      return Lib.IwdService.ssid + " (" + Lib.IwdService.signalDbm + " dBm)"
-           + (Lib.IwdService.ipv4 ? "\n" + Lib.IwdService.ipv4 : "");
+        return pluginApi?.tr("widget.tooltip.disconnected");
+      var tip = pluginApi?.tr("widget.tooltip.connected", {
+        "ssid": Lib.IwdService.ssid,
+        "dbm": Lib.IwdService.signalDbm
+      });
+      if (Lib.IwdService.ipv4)
+        tip += "\n" + Lib.IwdService.ipv4;
+      return tip;
     }
 
     onClicked: {

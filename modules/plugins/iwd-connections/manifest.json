@@ -2,16 +2,20 @@
   "id": "iwd-connections",
   "name": "IWD Connections",
   "version": "0.1.0",
-  "minNoctaliaVersion": "0.1.0",
+  "minNoctaliaVersion": "4.7.1",
   "author": "tarttelin",
   "description": "Wi-Fi management via iwd/networkd, replacing NetworkManager-dependent built-in",
   "license": "MIT",
+  "tags": ["Bar", "Panel", "Control Center"],
   "entryPoints": {
     "main": "Main.qml",
     "barWidget": "BarWidget.qml",
     "controlCenterWidget": "ControlCenterWidget.qml",
     "panel": "Panel.qml",
     "settings": "Settings.qml"
+  },
+  "dependencies": {
+    "plugins": []
   },
   "metadata": {
     "defaultSettings": {

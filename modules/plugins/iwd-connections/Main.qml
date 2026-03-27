@@ -1,9 +1,25 @@
 import QtQuick
+import Quickshell
+import Quickshell.Io
+import qs.Commons
 import "lib" as Lib
 
 // Background entry point. Applies saved settings and starts IwdService polling.
 Item {
+  id: root
   property var pluginApi: null
+
+  IpcHandler {
+    target: "plugin:iwd-connections"
+
+    function toggle() {
+      if (pluginApi) {
+        pluginApi.withCurrentScreen(screen => {
+          pluginApi.togglePanel(screen);
+        });
+      }
+    }
+  }
 
   Component.onCompleted: {
     if (pluginApi && pluginApi.pluginSettings) {

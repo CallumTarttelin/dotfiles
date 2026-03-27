@@ -9,8 +9,8 @@ NIconButtonHot {
 
   icon: Lib.IwdService.signalIcon
   tooltipText: Lib.IwdService.connected
-    ? "Wi-Fi: " + Lib.IwdService.ssid
-    : "Wi-Fi: Disconnected"
+    ? pluginApi?.tr("cc.tooltip.connected", { "ssid": Lib.IwdService.ssid })
+    : pluginApi?.tr("cc.tooltip.disconnected")
 
   hot: Lib.IwdService.connected
 

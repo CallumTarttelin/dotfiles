@@ -1,6 +1,8 @@
 {
   inputs,
   allModules,
+  sharedModules,
+  desktopModules,
   homeImports,
   ...
 }: {
@@ -79,7 +81,7 @@
             };
           }
         ]
-        ++ allModules;
+        ++ sharedModules;
     };
   };
 }
