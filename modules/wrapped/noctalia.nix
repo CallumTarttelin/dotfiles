@@ -12,11 +12,8 @@
     stateFile = ./_noctalia-state.json;
     hasState = builtins.pathExists stateFile;
 
-    configDir = pkgs.runCommand "noctalia-config" {} ''
-      mkdir -p $out/noctalia
-      ${lib.optionalString hasState ''
-        ${pkgs.jq}/bin/jq '.settings' ${stateFile} > $out/noctalia/settings.json
-      ''}
+    settingsFile = pkgs.runCommand "noctalia-settings" {} ''
+      ${pkgs.jq}/bin/jq '.settings' ${stateFile} > $out
     '';
 
     wrapped =
@@ -28,7 +25,7 @@
           nativeBuildInputs = [pkgs.makeWrapper];
           postBuild = ''
             wrapProgram $out/bin/noctalia-shell \
-              --set XDG_CONFIG_HOME "${configDir}"
+              --set NOCTALIA_SETTINGS_FILE "${settingsFile}"
           '';
           meta.mainProgram = "noctalia-shell";
         }
@@ -41,18 +38,32 @@
       echo "Saved noctalia state to $dest"
       echo "Run 'nh os switch' to bake it in"
     '';
+
+    restartScript = pkgs.writeShellScriptBin "noctalia-restart" ''
+      echo "Clearing QML cache..."
+      rm -rf "''${XDG_CACHE_HOME:-$HOME/.cache}/noctalia-qs/qmlcache"
+      echo "Restarting noctalia-shell..."
+      systemctl --user restart noctalia-shell.service
+    '';
   in {
     packages.myNoctalia = wrapped;
     packages.noctalia-save = saveScript;
+    packages.noctalia-restart = restartScript;
   };
 
   flake.nixosModules.noctalia = {pkgs, ...}: {
-    home-manager.users.tarttelin.home.packages = [
-      self.packages.${pkgs.stdenv.hostPlatform.system}.myNoctalia
-      self.packages.${pkgs.stdenv.hostPlatform.system}.noctalia-save
-      pkgs.fastfetch
-      pkgs.openhue-cli
-      pkgs.gpu-screen-recorder
-    ];
+    home-manager.users.tarttelin = {
+      home.packages = [
+        self.packages.${pkgs.stdenv.hostPlatform.system}.myNoctalia
+        self.packages.${pkgs.stdenv.hostPlatform.system}.noctalia-save
+        self.packages.${pkgs.stdenv.hostPlatform.system}.noctalia-restart
+        pkgs.fastfetch
+        pkgs.openhue-cli
+        pkgs.gpu-screen-recorder
+      ];
+
+      # Install iwd-connections plugin to noctalia config dir
+      home.file.".config/noctalia/plugins/iwd-connections".source = ../plugins/iwd-connections;
+    };
   };
 }
