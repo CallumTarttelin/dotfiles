@@ -126,7 +126,10 @@
             "drawerEnabled": true,
             "hidePassive": false,
             "id": "Tray",
-            "pinned": []
+            "pinned": [
+              "Discord",
+              "spotify-client"
+            ]
           },
           {
             "hideWhenZero": false,
@@ -137,11 +140,11 @@
             "unreadBadgeColor": "primary"
           },
           {
-            "displayMode": "onhover",
-            "iconColor": "none",
-            "id": "Volume",
-            "middleClickCommand": "pwvucontrol || pavucontrol",
-            "textColor": "none"
+            "defaultSettings": {
+              "iface": "wlan0",
+              "pollInterval": 5000
+            },
+            "id": "plugin:iwd-connections"
           },
           {
             "iconColor": "none",
@@ -175,7 +178,7 @@
       "screenOverrides": []
     },
     "general": {
-      "avatarImage": "/home/tarttelin/.face",
+      "avatarImage": "/home/tarttelin/Downloads/Saskcow_Icon_Blue__Orange.png",
       "dimmerOpacity": 0.2,
       "showScreenCorners": false,
       "forceBlackScreenCorners": false,
@@ -363,7 +366,11 @@
       "shortcuts": {
         "left": [
           {
-            "id": "Network"
+            "defaultSettings": {
+              "iface": "wlan0",
+              "pollInterval": 5000
+            },
+            "id": "plugin:iwd-connections"
           },
           {
             "id": "Bluetooth"

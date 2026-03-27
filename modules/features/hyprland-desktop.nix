@@ -21,9 +21,7 @@
 
     standardPackages = [selfpkgs.myWaybar selfpkgs.myMako selfpkgs.myWofi];
 
-    noctaliaExecOnce = lib.optionals isNoctalia [
-      "${lib.getExe selfpkgs.myNoctalia}"
-    ];
+    noctaliaExecOnce = []; # noctalia managed via systemd user service for restart-on-rebuild
 
     ipc = "${lib.getExe selfpkgs.myNoctalia} ipc call";
 
@@ -187,7 +185,20 @@
           Install.WantedBy = ["graphical-session.target"];
         };
 
-        # Noctalia: started via exec-once (systemd deprecated by noctalia upstream)
+        # Noctalia: systemd user service so it restarts on rebuild (store path change)
+        systemd.user.services.noctalia-shell = lib.mkIf isNoctalia {
+          Unit = {
+            Description = "Noctalia desktop shell";
+            PartOf = ["graphical-session.target"];
+            After = ["graphical-session.target"];
+          };
+          Service = {
+            ExecStart = "${lib.getExe selfpkgs.myNoctalia}";
+            Restart = "on-failure";
+            RestartSec = 1;
+          };
+          Install.WantedBy = ["graphical-session.target"];
+        };
 
         # Hyprpaper - not needed with noctalia (has built-in wallpaper management)
         services.hyprpaper = lib.mkIf isStandard {
