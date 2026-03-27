@@ -10,9 +10,8 @@
     inherit default inputs self;
   };
 
-  # All feature + system nixosModules are auto-registered via flake-parts imports
-  # below. These lists collect them for hosts/default.nix to use.
-  allModules = [
+  # Core modules shared by all hosts (desktop + server)
+  sharedModules = [
     {
       home-manager = {
         useGlobalPkgs = true;
@@ -38,27 +37,11 @@
     self.nixosModules.k3s
     self.nixosModules.shell
 
-    # Wrapped packages (always available, no feature flag)
-    self.nixosModules.ghostty
-    self.nixosModules.foot
-    self.nixosModules.starship
-    self.nixosModules.mako
-    self.nixosModules.wofi
-    self.nixosModules.waybar
-    self.nixosModules.noctalia
+    # Wrapped packages
     self.nixosModules.myZsh
     self.nixosModules.neovim
 
-    # Bundled packages (always available, no feature flag)
-    self.nixosModules.social
-    self.nixosModules.editors
-    self.nixosModules.office
-    self.nixosModules.llms
-    self.nixosModules.security
-    self.nixosModules.media
-    self.nixosModules.drawing
-    self.nixosModules.electronics
-    self.nixosModules.work
+    # Dev tool bundles (useful on all hosts)
     self.nixosModules.go-tools
     self.nixosModules.jvm-tools
     self.nixosModules.web-tools
@@ -70,6 +53,31 @@
     self.nixosModules.cloud-tools
     self.nixosModules.rust-tools
   ];
+
+  # Additional modules only needed on desktop hosts
+  desktopModules = [
+    # Wrapped desktop packages
+    self.nixosModules.ghostty
+    self.nixosModules.foot
+    self.nixosModules.starship
+    self.nixosModules.mako
+    self.nixosModules.wofi
+    self.nixosModules.waybar
+    self.nixosModules.noctalia
+
+    # Desktop app bundles
+    self.nixosModules.social
+    self.nixosModules.editors
+    self.nixosModules.office
+    self.nixosModules.llms
+    self.nixosModules.security
+    self.nixosModules.media
+    self.nixosModules.drawing
+    self.nixosModules.electronics
+    self.nixosModules.work
+  ];
+
+  allModules = sharedModules ++ desktopModules;
 in {
   imports = [
     # Auto-discover all flake-parts modules
@@ -79,10 +87,7 @@ in {
     (import ../lib/import-modules.nix lib ./bundles)
     {
       _module.args = {
-        inherit module_args allModules;
-        # Keep backwards compat for hosts/default.nix during migration
-        sharedModules = allModules;
-        desktopModules = allModules;
+        inherit module_args allModules sharedModules desktopModules;
       };
     }
   ];

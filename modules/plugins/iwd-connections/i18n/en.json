@@ -1,0 +1,66 @@
+{
+  "widget": {
+    "disconnected": "Disconnected",
+    "tooltip": {
+      "disconnected": "Wi-Fi disconnected",
+      "connected": "{ssid} ({dbm} dBm)"
+    }
+  },
+  "cc": {
+    "tooltip": {
+      "connected": "Wi-Fi: {ssid}",
+      "disconnected": "Wi-Fi: Disconnected"
+    }
+  },
+  "panel": {
+    "title": "Wi-Fi (iwd)",
+    "scan": "Scan for networks",
+    "close": "Close",
+    "tab": {
+      "available": "Available",
+      "saved": "Saved"
+    },
+    "status": {
+      "unavailable": "Interface unavailable",
+      "connecting": "Connecting...",
+      "not-connected": "Not connected",
+      "connected": "Connected",
+      "disconnect": "Disconnect"
+    },
+    "passphrase": {
+      "title": "Passphrase for {network}",
+      "placeholder": "Enter passphrase",
+      "connect": "Connect"
+    },
+    "networks": {
+      "scanning": "Scanning...",
+      "available": "Available Networks",
+      "empty": "No networks found. Try scanning."
+    },
+    "known": {
+      "title": "Saved Networks",
+      "forget": "Forget network",
+      "empty": "No saved networks."
+    }
+  },
+  "settings": {
+    "iface": {
+      "label": "Wireless Interface",
+      "desc": "The iwd station name (e.g. wlan0, wlan1)"
+    },
+    "poll": {
+      "label": "Poll Interval",
+      "desc": "How often to check connection status (seconds)"
+    },
+    "status": {
+      "title": "Current Status",
+      "interface": "Interface:",
+      "state": "State:",
+      "ssid": "SSID:",
+      "signal": "Signal:",
+      "ipv4": "IPv4:",
+      "security": "Security:",
+      "none": "\u2014"
+    }
+  }
+}
