@@ -73,7 +73,7 @@
       bind = $mainMod, RETURN, exec, ${lib.getExe self'.packages.myGhostty}
       bind = $mainMod, M, exit,
       bind = $mainMod, V, togglefloating,
-      bind = $mainMod, D, exec, ${lib.getExe self'.packages.myWofi} --show drun
+      # launcher bind set by hyprland-desktop feature (wofi or noctalia)
       bind = $mainMod, F, fullscreen,
       bind = $mainMod, E, exec, firefox
       bind = $shiftMod, E, exec, firefox -private-window

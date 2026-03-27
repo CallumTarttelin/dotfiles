@@ -1,4 +1,4 @@
-{self, ...}: {
+{self, inputs, ...}: {
   flake.nixosModules.hyprland-desktop = {
     config,
     lib,
@@ -16,21 +16,38 @@
       fi
     '';
 
-    desktopShells = {
-      standard = {
-        packages = [selfpkgs.myWaybar selfpkgs.myMako selfpkgs.myWofi];
-        # waybar and mako managed via systemd, not exec-once
-        execOnce = [];
-      };
-    };
-    activeShell = desktopShells.${cfg.desktopShell};
+    isStandard = cfg.desktopShell == "standard";
+    isNoctalia = cfg.desktopShell == "noctalia";
+
+    standardPackages = [selfpkgs.myWaybar selfpkgs.myMako selfpkgs.myWofi];
+
+    noctaliaExecOnce = lib.optionals isNoctalia [
+      "${lib.getExe selfpkgs.myNoctalia}"
+    ];
+
+    ipc = "${lib.getExe selfpkgs.myNoctalia} ipc call";
+
+    shellBinds =
+      if isNoctalia
+      then ''
+        bind = $mainMod, D, exec, ${ipc} launcher toggle
+        bind = $mainMod, C, exec, ${ipc} controlCenter toggle
+        bind = $mainMod, comma, exec, ${ipc} settings toggle
+        bindel = , XF86MonBrightnessUp, exec, ${ipc} brightness increase
+        bindel = , XF86MonBrightnessDown, exec, ${ipc} brightness decrease
+      ''
+      else ''
+        bind = $mainMod, D, exec, ${lib.getExe selfpkgs.myWofi} --show drun
+      '';
 
     hostConf = pkgs.writeText "hyprland-host.conf" ''
       source = ${hyprlandConf}
 
       ${lib.concatMapStringsSep "\n" (m: "monitor=${m}") cfg.monitors}
 
-      ${lib.concatMapStringsSep "\n" (e: "exec-once = ${e}") (activeShell.execOnce ++ cfg.extraExecOnce)}
+      ${shellBinds}
+
+      ${lib.concatMapStringsSep "\n" (e: "exec-once = ${e}") (noctaliaExecOnce ++ cfg.extraExecOnce)}
     '';
   in {
     options.features.hyprland-desktop = {
@@ -45,8 +62,9 @@
         size = lib.mkOption { type = lib.types.int; default = 16; };
       };
       desktopShell = lib.mkOption {
-        type = lib.types.enum ["standard"];
+        type = lib.types.enum ["standard" "noctalia"];
         default = "standard";
+        description = "Desktop shell: standard (waybar + mako + wofi) or noctalia (unified shell)";
       };
       extraExecOnce = lib.mkOption {
         type = lib.types.listOf lib.types.str;
@@ -135,8 +153,13 @@
           XDG_SESSION_TYPE = "wayland";
         };
 
-        # Waybar via systemd (restarts on config change)
-        systemd.user.services.waybar = {
+        # Wallpapers
+        home.file."Pictures/Wallpapers/aperture-science-bg.jpg".source = ./_wallpapers/aperture-science-bg.jpg;
+        home.file."Pictures/Wallpapers/s-p-a-c-e-2-1920x1080.jpg".source = ./_wallpapers/s-p-a-c-e-2-1920x1080.jpg;
+        home.file."Pictures/Wallpapers/s-p-a-c-e-2-2560x1440.jpg".source = ./_wallpapers/s-p-a-c-e-2-2560x1440.jpg;
+
+        # Standard shell: waybar + mako via systemd
+        systemd.user.services.waybar = lib.mkIf isStandard {
           Unit = {
             Description = "Waybar status bar";
             PartOf = ["graphical-session.target"];
@@ -150,8 +173,7 @@
           Install.WantedBy = ["graphical-session.target"];
         };
 
-        # Mako via systemd (restarts on config change)
-        systemd.user.services.mako = {
+        systemd.user.services.mako = lib.mkIf isStandard {
           Unit = {
             Description = "Mako notification daemon";
             PartOf = ["graphical-session.target"];
@@ -165,31 +187,33 @@
           Install.WantedBy = ["graphical-session.target"];
         };
 
-        # Hyprpaper (HM service - needs systemd lifecycle for wallpaper changes)
-        services.hyprpaper = {
+        # Noctalia: started via exec-once (systemd deprecated by noctalia upstream)
+
+        # Hyprpaper - not needed with noctalia (has built-in wallpaper management)
+        services.hyprpaper = lib.mkIf isStandard {
           enable = true;
           settings.wallpaper = {
             monitor = "";
-            path = "~/.config/sway/backgrounds/s-p-a-c-e-2-2560×1440.jpg";
+            path = "~/Pictures/Wallpapers/s-p-a-c-e-2-2560x1440.jpg";
           };
         };
 
-        # Hypridle + Hyprlock (HM services - need systemd lifecycle)
+        # Hypridle + Hyprlock (shared across both shells)
         services.hypridle = {
           enable = true;
           settings = {
             general = {
-              lock_cmd = "pidof hyprlock || hyprlock";
+              lock_cmd = lib.mkDefault "pidof hyprlock || hyprlock";
               before_sleep_cmd = "loginctl lock-session";
               after_sleep_cmd = "hyprctl dispatch dpms on";
             };
             listener = [
-              { timeout = 600; on-timeout = suspendScript.outPath; }
+              {timeout = 600; on-timeout = suspendScript.outPath;}
             ];
           };
         };
 
-        programs.hyprlock = {
+        programs.hyprlock = lib.mkIf isStandard {
           enable = true;
           settings = {
             background.color = "#000000";
@@ -198,7 +222,8 @@
         };
 
         home.packages =
-          activeShell.packages
+          (lib.optionals isStandard standardPackages)
+          ++ (lib.optionals isNoctalia [selfpkgs.myNoctalia])
           ++ (with pkgs; [
             grimblast wezterm wmname hyprsunset hyprshot hyprpolkitagent
             grim slurp wl-clipboard gammastep
