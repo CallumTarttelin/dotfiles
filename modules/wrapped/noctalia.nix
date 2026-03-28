@@ -36,7 +36,8 @@
       pkgs.writeShellScriptBin "noctalia-save" ''
         dest="${flakeDir}/modules/wrapped/_noctalia-state-${hostname}.json"
         ${lib.getExe noctaliaPkg} ipc call state all > "$dest"
-        echo "Saved noctalia state to $dest"
+        cp ~/.config/noctalia/plugins.json "${flakeDir}/modules/wrapped/_noctalia-plugins-${hostname}.json"
+        echo "Saved noctalia state and plugins to $dest"
         echo "Run 'nh os switch' to bake it in"
       '';
 
@@ -56,24 +57,42 @@
 
   flake.nixosModules.noctalia = {
     config,
+    lib,
     pkgs,
     ...
   }: let
+    cfg = config.noctalia;
     hostname = config.networking.hostName;
     system = pkgs.stdenv.hostPlatform.system;
   in {
-    home-manager.users.tarttelin = {
-      home.packages = [
-        self.packages.${system}."myNoctalia-${hostname}"
-        self.packages.${system}."noctalia-save-${hostname}"
-        self.packages.${system}.noctalia-restart
-        pkgs.fastfetch
-        pkgs.openhue-cli
-        pkgs.gpu-screen-recorder
-      ];
+    options.noctalia.enable = lib.mkEnableOption "Noctalia desktop shell plugins and tooling";
 
-      # Install iwd-connections plugin to noctalia config dir
-      home.file.".config/noctalia/plugins/iwd-connections".source = ../plugins/iwd-connections;
+    config = lib.mkIf cfg.enable {
+      home-manager.users.tarttelin = {
+        home.packages = [
+          self.packages.${system}."noctalia-save-${hostname}"
+          self.packages.${system}.noctalia-restart
+          pkgs.fastfetch
+          pkgs.openhue-cli
+          pkgs.gpu-screen-recorder
+        ];
+
+        # Install iwd-connections plugin to noctalia config dir
+        home.file.".config/noctalia/plugins/iwd-connections".source = ../plugins/iwd-connections;
+
+        # Seed plugin registry on fresh installs (mutable — noctalia needs to write to it)
+        home.activation.noctalia-plugins = {
+          after = ["writeBoundary"];
+          before = [];
+          data = ''
+            pluginsFile="$HOME/.config/noctalia/plugins.json"
+            if [ ! -f "$pluginsFile" ]; then
+              mkdir -p "$(dirname "$pluginsFile")"
+              cp ${./_noctalia-plugins-${hostname}.json} "$pluginsFile"
+            fi
+          '';
+        };
+      };
     };
   };
 }

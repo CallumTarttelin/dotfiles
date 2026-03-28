@@ -1,0 +1,19 @@
+{
+  "sources": [
+    {
+      "enabled": true,
+      "name": "Noctalia Plugins",
+      "url": "https://github.com/noctalia-dev/noctalia-plugins"
+    }
+  ],
+  "states": {
+    "iwd-connections": {
+      "enabled": true
+    },
+    "privacy-indicator": {
+      "enabled": false,
+      "sourceUrl": "https://github.com/noctalia-dev/noctalia-plugins"
+    }
+  },
+  "version": 2
+}
