@@ -6,10 +6,9 @@
     ...
   }: let
     cfg = config.features.hyprland-desktop;
-    hostname = config.networking.hostName;
     selfpkgs = self.packages.${pkgs.stdenv.hostPlatform.system};
     hyprlandConf = selfpkgs.myHyprlandConf;
-    myNoctalia = selfpkgs."myNoctalia-${hostname}";
+    myNoctalia = cfg.noctaliaPackage;
 
     suspendScript = pkgs.writeShellScript "suspend-script" ''
       ${pkgs.pipewire}/bin/pw-cli i all | ${pkgs.ripgrep}/bin/rg running
@@ -66,6 +65,11 @@
         default = "standard";
         description = "Desktop shell: standard (waybar + mako + wofi) or noctalia (unified shell)";
       };
+      noctaliaPackage = lib.mkOption {
+        type = lib.types.package;
+        default = inputs.noctalia.packages.${pkgs.stdenv.hostPlatform.system}.default;
+        description = "Noctalia package to use; defaults to upstream, override with per-host wrapped variant";
+      };
       extraExecOnce = lib.mkOption {
         type = lib.types.listOf lib.types.str;
         default = [];
@@ -73,6 +77,8 @@
     };
 
     config = lib.mkIf cfg.enable {
+      noctalia.enable = isNoctalia;
+
       # System-level
       programs.hyprland = { enable = true; withUWSM = true; };
       programs.uwsm = {
