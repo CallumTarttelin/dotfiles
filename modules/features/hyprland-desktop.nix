@@ -6,8 +6,10 @@
     ...
   }: let
     cfg = config.features.hyprland-desktop;
+    hostname = config.networking.hostName;
     selfpkgs = self.packages.${pkgs.stdenv.hostPlatform.system};
     hyprlandConf = selfpkgs.myHyprlandConf;
+    myNoctalia = selfpkgs."myNoctalia-${hostname}";
 
     suspendScript = pkgs.writeShellScript "suspend-script" ''
       ${pkgs.pipewire}/bin/pw-cli i all | ${pkgs.ripgrep}/bin/rg running
@@ -21,9 +23,9 @@
 
     standardPackages = [selfpkgs.myWaybar selfpkgs.myMako selfpkgs.myWofi];
 
-    noctaliaExecOnce = []; # noctalia managed via systemd user service for restart-on-rebuild
+    noctaliaExecOnce = []; # noctalia managed via systemd user service
 
-    ipc = "${lib.getExe selfpkgs.myNoctalia} ipc call";
+    ipc = "${lib.getExe myNoctalia} ipc call";
 
     shellBinds =
       if isNoctalia
@@ -149,6 +151,7 @@
           QT_QPA_PLATFORM = "wayland";
           SDL_VIDEODRIVER = "wayland";
           XDG_SESSION_TYPE = "wayland";
+          SSH_AUTH_SOCK = "$XDG_RUNTIME_DIR/ssh-agent";
         };
 
         # Wallpapers
@@ -193,7 +196,7 @@
             After = ["graphical-session.target"];
           };
           Service = {
-            ExecStart = "${lib.getExe selfpkgs.myNoctalia}";
+            ExecStart = "${lib.getExe myNoctalia}";
             Restart = "on-failure";
             RestartSec = 1;
           };
@@ -209,8 +212,8 @@
           };
         };
 
-        # Hypridle + Hyprlock (shared across both shells)
-        services.hypridle = {
+        # Hypridle + Hyprlock (standard shell only — noctalia has built-in idle management)
+        services.hypridle = lib.mkIf isStandard {
           enable = true;
           settings = {
             general = {
@@ -233,10 +236,13 @@
         };
 
         home.packages =
-          (lib.optionals isStandard standardPackages)
-          ++ (lib.optionals isNoctalia [selfpkgs.myNoctalia])
+          (lib.optionals isStandard (standardPackages ++ [pkgs.hyprsunset]))
+          ++ (lib.optionals isNoctalia ([myNoctalia] ++ (with pkgs; [
+            brightnessctl imagemagick python3 git cliphist wlsunset
+            evolution-data-server
+          ])))
           ++ (with pkgs; [
-            grimblast wezterm wmname hyprsunset hyprshot hyprpolkitagent
+            grimblast wezterm wmname hyprshot hyprpolkitagent
             grim slurp wl-clipboard gammastep
           ]);
       };

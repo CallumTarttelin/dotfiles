@@ -15,7 +15,6 @@
 
   networking.hostName = "nixshark";
 
-  # Packages not yet in bundles
   environment.systemPackages = with pkgs; [
     inputs.agenix.packages.x86_64-linux.default
     xdg-utils
@@ -24,8 +23,8 @@
     vial
     socat
     bubblewrap
+    ddcutil
   ];
-  # Moved to bundles: rust-tools, build-tools, k8s-tools, cloud-tools
 
   boot.kernelPackages = pkgs.linuxPackages_latest;
 
@@ -36,6 +35,13 @@
   powerManagement = {
     enable = true;
     powertop.enable = false;
+  };
+
+  services.syncthing = {
+    enable = true;
+    user = "tarttelin";
+    dataDir = "/home/tarttelin/sync";
+    configDir = "/home/tarttelin/.config/syncthing";
   };
 
   services.udev.extraRules = ''

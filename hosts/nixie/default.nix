@@ -15,13 +15,19 @@
 
   networking.hostName = "nixie";
 
-  # Packages not yet in bundles
   environment.systemPackages = with pkgs; [
     inputs.agenix.packages.x86_64-linux.default
     xdg-utils
     nss
   ];
-  # Moved to bundles: rust-tools, build-tools
+
+  services.syncthing = {
+    enable = true;
+    user = "tarttelin";
+    dataDir = "/home/tarttelin/sync";
+    configDir = "/home/tarttelin/.config/syncthing";
+    guiAddress = "0.0.0.0:8384";
+  };
 
   networking.firewall.allowedTCPPorts = [80 443];
 
@@ -35,6 +41,7 @@
       dnsResolver = "1.1.1.1:53";
       dnsPropagationCheck = true;
       extraDomainNames = [
+        "callumtarttelin.com"
         "*.callumtarttelin.com"
       ];
       reloadServices = ["caddy"];

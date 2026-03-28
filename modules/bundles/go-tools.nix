@@ -2,11 +2,11 @@
   perSystem = {pkgs, ...}: {
     packages.go-tools = pkgs.buildEnv {
       name = "go-tools";
-      paths = with pkgs; [go air lazygit];
+      paths = with pkgs; [go air gotools golangci-lint delve];
     };
 
     devShells.go = pkgs.mkShell {
-      packages = with pkgs; [go air lazygit];
+      packages = with pkgs; [go air gotools golangci-lint delve];
     };
   };
 

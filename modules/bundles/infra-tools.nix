@@ -1,7 +1,7 @@
 {self, ...}: {
   perSystem = {pkgs, ...}: {
-    packages.k8s-tools = pkgs.buildEnv {
-      name = "k8s-tools";
+    packages.infra-tools = pkgs.buildEnv {
+      name = "infra-tools";
       paths = with pkgs; [
         kubectl
         kubernetes-helm
@@ -10,13 +10,14 @@
         kubectx
         fluxcd
         yq-go
+        awscli2
       ];
     };
   };
 
-  flake.nixosModules.k8s-tools = {pkgs, ...}: {
+  flake.nixosModules.infra-tools = {pkgs, ...}: {
     home-manager.users.tarttelin.home.packages = [
-      self.packages.${pkgs.stdenv.hostPlatform.system}.k8s-tools
+      self.packages.${pkgs.stdenv.hostPlatform.system}.infra-tools
     ];
   };
 }

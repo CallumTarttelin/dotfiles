@@ -9,7 +9,8 @@
           --add-flags "--background=000000" \
           --add-flags "--background-opacity=0.6" \
           --add-flags "--theme='Monokai Remastered'" \
-          --add-flags "--window-decoration=false"
+          --add-flags "--window-decoration=false" \
+          --add-flags "--confirm-close-surface=false"
       '';
       meta.mainProgram = "ghostty";
     };

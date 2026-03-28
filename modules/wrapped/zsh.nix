@@ -79,6 +79,11 @@
         rm -f -- "$tmp"
       }
 
+      # ssh-agent (systemd user service provides the socket)
+      if [ -z "$SSH_AUTH_SOCK" -o -z "$SSH_CONNECTION" ]; then
+        export SSH_AUTH_SOCK="''${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/ssh-agent"
+      fi
+
       # shell integrations
       eval "$(zoxide init zsh)"
       eval "$(${lib.getExe self'.packages.myStarship} init zsh)"
@@ -137,14 +142,9 @@
       pkgs.jujutsu
       pkgs.lazyjj
       pkgs.jjui
+      pkgs.lazygit
       pkgs.git-agecrypt
       pkgs.git-credential-keepassxc
-      # nix tools
-      pkgs.alejandra
-      pkgs.deadnix
-      pkgs.statix
-      self'.packages.pre-update
-      self'.packages.update-t3code
     ];
   in {
     packages.myZsh = let
