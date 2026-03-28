@@ -17,34 +17,26 @@
 
   environment.systemPackages = with pkgs; [
     inputs.agenix.packages.x86_64-linux.default
-
     xdg-utils
-    deploy-rs
-
-    # connmanFull
-
     socat
     bubblewrap
     mitmproxy
     mitmproxy2swagger
     waydroid-helper
-    cmst
-    connman-gtk
     android-tools
   ];
 
   virtualisation.waydroid.enable = true;
 
-  services.power-profiles-daemon.enable = true;
-  powerManagement.cpuFreqGovernor = "powersave";
-
-  services.connman = {
+  services.syncthing = {
     enable = true;
-    wifi.backend = "iwd";
+    user = "tarttelin";
+    dataDir = "/home/tarttelin/sync";
+    configDir = "/home/tarttelin/.config/syncthing";
   };
 
-  systemd.network.enable = lib.mkDefault false;
-  networking.networkmanager.enable = lib.mkDefault false;
+  services.power-profiles-daemon.enable = true;
+  powerManagement.cpuFreqGovernor = "powersave";
 
   services.fwupd.enable = true;
 

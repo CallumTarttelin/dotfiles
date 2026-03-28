@@ -8,11 +8,7 @@
   dconfDark = ''${dconf} write /org/gnome/desktop/interface/color-scheme "'prefer-dark'"'';
 in {
   imports = [
-    # neovim is now in modules/wrapped/neovim/
-    # foot is now a wrapped package in modules/wrapped/foot.nix
     ./wezterm.nix
-    # ghostty is now a wrapped package in modules/wrapped/ghostty.nix
-    ./syncthing.nix
   ];
 
   programs = {
@@ -27,7 +23,7 @@ in {
 
   home.packages = [
     pkgs.obsidian
-    # pkgs.bruno
+    pkgs.bruno
     pkgs.websocat
     pkgs.google-chrome
   ];

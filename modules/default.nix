@@ -47,11 +47,10 @@
     self.nixosModules.web-tools
     self.nixosModules.python-tools
     self.nixosModules.beam-tools
-    self.nixosModules.misc-langs
-    self.nixosModules.k8s-tools
+    self.nixosModules.infra-tools
     self.nixosModules.build-tools
-    self.nixosModules.cloud-tools
     self.nixosModules.rust-tools
+    self.nixosModules.nix-tools
   ];
 
   # Additional modules only needed on desktop hosts
@@ -70,7 +69,6 @@
     self.nixosModules.editors
     self.nixosModules.office
     self.nixosModules.llms
-    self.nixosModules.security
     self.nixosModules.media
     self.nixosModules.drawing
     self.nixosModules.electronics

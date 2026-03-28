@@ -52,6 +52,7 @@
             features = {
               hyprland-desktop = {
                 enable = true;
+                desktopShell = "noctalia";
                 monitors = ["eDP-1,preferred,auto,1"];
               };
               logiops.enable = true;
