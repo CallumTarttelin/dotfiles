@@ -103,6 +103,7 @@
           inputs.hardware.nixosModules.common-cpu-intel
           {
             features = {
+              binary-cache.enable = true;
               bluetooth.enable = true;
               virtualization.enable = true;
               atuin-server.enable = true;

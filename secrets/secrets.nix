@@ -21,4 +21,5 @@ in {
   "cloudflare.age".publicKeys = allKeys;
   "k8s-minio.age".publicKeys = allKeys;
   "k8s-grafana.age".publicKeys = allKeys;
+  "cache-key.age".publicKeys = allKeys;
 }
