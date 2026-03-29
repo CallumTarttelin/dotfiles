@@ -17,7 +17,12 @@
     };
   };
 
-  flake.nixosModules.mako = {config, lib, pkgs, ...}: {
+  flake.nixosModules.mako = {
+    config,
+    lib,
+    pkgs,
+    ...
+  }: {
     options.wrapped.mako.enable = lib.mkEnableOption "mako notifications";
     config = lib.mkIf config.wrapped.mako.enable {
       home-manager.users.tarttelin.home.packages = [

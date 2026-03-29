@@ -1,4 +1,8 @@
-{self, inputs, ...}: {
+{
+  self,
+  inputs,
+  ...
+}: {
   flake.nixosModules.hyprland-desktop = {
     config,
     lib,
@@ -56,9 +60,18 @@
         default = [",preferred,auto,1"];
       };
       cursor = {
-        package = lib.mkOption { type = lib.types.package; default = pkgs.bibata-cursors; };
-        name = lib.mkOption { type = lib.types.str; default = "Bibata-Modern-Classic"; };
-        size = lib.mkOption { type = lib.types.int; default = 16; };
+        package = lib.mkOption {
+          type = lib.types.package;
+          default = pkgs.bibata-cursors;
+        };
+        name = lib.mkOption {
+          type = lib.types.str;
+          default = "Bibata-Modern-Classic";
+        };
+        size = lib.mkOption {
+          type = lib.types.int;
+          default = 16;
+        };
       };
       desktopShell = lib.mkOption {
         type = lib.types.enum ["standard" "noctalia"];
@@ -67,7 +80,7 @@
       };
       noctaliaPackage = lib.mkOption {
         type = lib.types.package;
-        default = inputs.noctalia.packages.${pkgs.stdenv.hostPlatform.system}.default;
+        inherit (inputs.noctalia.packages.${pkgs.stdenv.hostPlatform.system}) default;
         description = "Noctalia package to use; defaults to upstream, override with per-host wrapped variant";
       };
       extraExecOnce = lib.mkOption {
@@ -80,7 +93,10 @@
       noctalia.enable = isNoctalia;
 
       # System-level
-      programs.hyprland = { enable = true; withUWSM = true; };
+      programs.hyprland = {
+        enable = true;
+        withUWSM = true;
+      };
       programs.uwsm = {
         enable = true;
         waylandCompositors.hyprland = {
@@ -102,9 +118,14 @@
 
       fonts = {
         packages = with pkgs; [
-          material-symbols noto-fonts noto-fonts-cjk-sans noto-fonts-color-emoji
-          roboto (google-fonts.override {fonts = ["Inter"];})
-          nerd-fonts.fira-code nerd-fonts.jetbrains-mono
+          material-symbols
+          noto-fonts
+          noto-fonts-cjk-sans
+          noto-fonts-color-emoji
+          roboto
+          (google-fonts.override {fonts = ["Inter"];})
+          nerd-fonts.fira-code
+          nerd-fonts.jetbrains-mono
         ];
         enableDefaultPackages = false;
         fontconfig.defaultFonts = {
@@ -115,10 +136,16 @@
         };
       };
 
-      services.pipewire = { enable = true; alsa.enable = true; alsa.support32Bit = true; pulse.enable = true; };
+      services.pipewire = {
+        enable = true;
+        alsa.enable = true;
+        alsa.support32Bit = true;
+        pulse.enable = true;
+      };
       services.pulseaudio.enable = lib.mkForce false;
       hardware.graphics = {
-        enable = true; enable32Bit = true;
+        enable = true;
+        enable32Bit = true;
         extraPackages = with pkgs; [libva libva-vdpau-driver libvdpau-va-gl];
         extraPackages32 = with pkgs.pkgsi686Linux; [libva-vdpau-driver libvdpau-va-gl];
       };
@@ -142,14 +169,17 @@
       home-manager.users.tarttelin = {
         home.pointerCursor = {
           gtk.enable = true;
-          package = cfg.cursor.package;
-          name = cfg.cursor.name;
-          size = cfg.cursor.size;
+          inherit (cfg.cursor) package;
+          inherit (cfg.cursor) name;
+          inherit (cfg.cursor) size;
         };
 
         wayland.windowManager.hyprland = {
           enable = true;
-          systemd = { variables = ["--all"]; enable = true; };
+          systemd = {
+            variables = ["--all"];
+            enable = true;
+          };
           extraConfig = builtins.readFile hostConf;
         };
 
@@ -228,7 +258,10 @@
               after_sleep_cmd = "hyprctl dispatch dpms on";
             };
             listener = [
-              {timeout = 600; on-timeout = suspendScript.outPath;}
+              {
+                timeout = 600;
+                on-timeout = suspendScript.outPath;
+              }
             ];
           };
         };
@@ -243,13 +276,26 @@
 
         home.packages =
           (lib.optionals isStandard (standardPackages ++ [pkgs.hyprsunset]))
-          ++ (lib.optionals isNoctalia ([myNoctalia] ++ (with pkgs; [
-            brightnessctl imagemagick python3 git cliphist wlsunset
-            evolution-data-server
-          ])))
+          ++ (lib.optionals isNoctalia ([myNoctalia]
+            ++ (with pkgs; [
+              brightnessctl
+              imagemagick
+              python3
+              git
+              cliphist
+              wlsunset
+              evolution-data-server
+            ])))
           ++ (with pkgs; [
-            grimblast wezterm wmname hyprshot hyprpolkitagent
-            grim slurp wl-clipboard gammastep
+            grimblast
+            wezterm
+            wmname
+            hyprshot
+            hyprpolkitagent
+            grim
+            slurp
+            wl-clipboard
+            gammastep
           ]);
       };
     };

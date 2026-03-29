@@ -2,7 +2,11 @@
 #
 # Per-host state: each host has its own _noctalia-state-<hostname>.json
 # To update config: run `noctalia-save` then `nh os switch`
-{inputs, self, ...}: {
+{
+  inputs,
+  self,
+  ...
+}: {
   perSystem = {
     pkgs,
     lib,
@@ -63,7 +67,7 @@
   }: let
     cfg = config.noctalia;
     hostname = config.networking.hostName;
-    system = pkgs.stdenv.hostPlatform.system;
+    inherit (pkgs.stdenv.hostPlatform) system;
   in {
     options.noctalia.enable = lib.mkEnableOption "Noctalia desktop shell plugins and tooling";
 

@@ -6,7 +6,12 @@
     };
   };
 
-  flake.nixosModules.social = {config, lib, pkgs, ...}: {
+  flake.nixosModules.social = {
+    config,
+    lib,
+    pkgs,
+    ...
+  }: {
     options.bundles.social.enable = lib.mkEnableOption "social apps (discord, slack)";
     config = lib.mkIf config.bundles.social.enable {
       home-manager.users.tarttelin.home.packages = [

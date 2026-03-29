@@ -10,7 +10,12 @@
     };
   };
 
-  flake.nixosModules.go-tools = {config, lib, pkgs, ...}: {
+  flake.nixosModules.go-tools = {
+    config,
+    lib,
+    pkgs,
+    ...
+  }: {
     options.bundles.go-tools.enable = lib.mkEnableOption "Go development tools";
     config = lib.mkIf config.bundles.go-tools.enable {
       home-manager.users.tarttelin = {

@@ -31,9 +31,9 @@
       postBuild = ''
         wrapProgram $out/bin/zathura \
           --add-flags "--config-dir=${pkgs.runCommand "zathura-config" {} ''
-            mkdir -p $out
-            echo "set database sqlite" > $out/zathurarc
-          ''}"
+          mkdir -p $out
+          echo "set database sqlite" > $out/zathurarc
+        ''}"
       '';
       meta.mainProgram = "zathura";
     };
@@ -51,7 +51,12 @@
     };
   };
 
-  flake.nixosModules.media = {config, lib, pkgs, ...}: {
+  flake.nixosModules.media = {
+    config,
+    lib,
+    pkgs,
+    ...
+  }: {
     options.bundles.media.enable = lib.mkEnableOption "media apps (mpv, spotify, zathura)";
     config = lib.mkIf config.bundles.media.enable {
       home-manager.users.tarttelin.home.packages = [

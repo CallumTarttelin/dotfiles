@@ -30,7 +30,12 @@
     };
   };
 
-  flake.nixosModules.foot = {config, lib, pkgs, ...}: {
+  flake.nixosModules.foot = {
+    config,
+    lib,
+    pkgs,
+    ...
+  }: {
     options.wrapped.foot.enable = lib.mkEnableOption "foot terminal";
     config = lib.mkIf config.wrapped.foot.enable {
       home-manager.users.tarttelin.home.packages = [

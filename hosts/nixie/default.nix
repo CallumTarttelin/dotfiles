@@ -117,6 +117,15 @@
         "gradle:docker://gradle:jdk25"
       ];
     };
+    # Native runner scoped to tarttelin/dotfiles in Forgejo UI
+    # Register token at: git.callumtarttelin.com/tarttelin/dotfiles/settings/actions/runners
+    instances.nix-native = {
+      enable = true;
+      name = "nix-native";
+      url = "https://git.callumtarttelin.com";
+      tokenFile = config.age.secrets.forgejo-runner-native.path;
+      labels = ["nix-native:host"];
+    };
   };
 
   services.vaultwarden = {
@@ -127,6 +136,23 @@
       SIGNUPS_ALLOWED = true;
       SIGNUPS_VERIFY = false;
       ROCKET_PORT = 8812;
+    };
+  };
+
+  # Auto-apply latest main — CI pre-builds the closure so this is near-instant
+  systemd.services.nixie-auto-update = {
+    description = "Apply latest dotfiles from main";
+    serviceConfig = {
+      Type = "oneshot";
+      ExecStart = "${pkgs.nixos-rebuild}/bin/nixos-rebuild switch --flake git+https://git.callumtarttelin.com/tarttelin/dotfiles#nixie";
+    };
+    path = [pkgs.git pkgs.nix];
+  };
+  systemd.timers.nixie-auto-update = {
+    wantedBy = ["timers.target"];
+    timerConfig = {
+      OnCalendar = "*-*-* 06:00:00"; # 6am daily, after CI builds at 3am
+      Persistent = true;
     };
   };
 

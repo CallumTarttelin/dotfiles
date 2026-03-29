@@ -1,4 +1,4 @@
-{...}: {
+_: {
   flake.nixosModules.yubikey = {
     config,
     lib,

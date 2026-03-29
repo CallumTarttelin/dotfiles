@@ -25,7 +25,12 @@
     };
   };
 
-  flake.nixosModules.starship = {config, lib, pkgs, ...}: {
+  flake.nixosModules.starship = {
+    config,
+    lib,
+    pkgs,
+    ...
+  }: {
     options.wrapped.starship.enable = lib.mkEnableOption "starship prompt";
     config = lib.mkIf config.wrapped.starship.enable {
       home-manager.users.tarttelin.home.packages = [

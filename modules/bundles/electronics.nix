@@ -9,7 +9,12 @@
     };
   };
 
-  flake.nixosModules.electronics = {config, lib, pkgs, ...}: {
+  flake.nixosModules.electronics = {
+    config,
+    lib,
+    pkgs,
+    ...
+  }: {
     options.bundles.electronics.enable = lib.mkEnableOption "electronics tools (kicad, ngspice)";
     config = lib.mkIf config.bundles.electronics.enable {
       home-manager.users.tarttelin.home.packages = [

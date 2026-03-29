@@ -16,7 +16,12 @@
     };
   };
 
-  flake.nixosModules.ghostty = {config, lib, pkgs, ...}: {
+  flake.nixosModules.ghostty = {
+    config,
+    lib,
+    pkgs,
+    ...
+  }: {
     options.wrapped.ghostty.enable = lib.mkEnableOption "ghostty terminal";
     config = lib.mkIf config.wrapped.ghostty.enable {
       home-manager.users.tarttelin.home.packages = [

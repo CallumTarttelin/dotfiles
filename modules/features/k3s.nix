@@ -1,4 +1,4 @@
-{...}: {
+_: {
   flake.nixosModules.k3s = {
     config,
     pkgs,
@@ -61,7 +61,13 @@
                 relay.enabled = true;
                 ui.enabled = true;
                 metrics.enabled = [
-                  "dns" "drop" "tcp" "flow" "port-distribution" "icmp" "http"
+                  "dns"
+                  "drop"
+                  "tcp"
+                  "flow"
+                  "port-distribution"
+                  "icmp"
+                  "http"
                 ];
               };
               gatewayAPI.enabled = true;
@@ -69,17 +75,35 @@
                 enabled = true;
                 type = "LoadBalancer";
                 ports = [
-                  { name = "http"; port = 8080; }
-                  { name = "https"; port = 8443; }
+                  {
+                    name = "http";
+                    port = 8080;
+                  }
+                  {
+                    name = "https";
+                    port = 8443;
+                  }
                 ];
               };
               agent.resources = {
-                requests = { cpu = "500m"; memory = "512Mi"; };
-                limits = { cpu = "4"; memory = "4Gi"; };
+                requests = {
+                  cpu = "500m";
+                  memory = "512Mi";
+                };
+                limits = {
+                  cpu = "4";
+                  memory = "4Gi";
+                };
               };
               operator.resources = {
-                requests = { cpu = "250m"; memory = "256Mi"; };
-                limits = { cpu = "2"; memory = "2Gi"; };
+                requests = {
+                  cpu = "250m";
+                  memory = "256Mi";
+                };
+                limits = {
+                  cpu = "2";
+                  memory = "2Gi";
+                };
               };
             };
           };
@@ -152,8 +176,8 @@
       ];
 
       networking.firewall.allowedTCPPorts = [
-        8080  # HTTP
-        8443  # HTTPS
+        8080 # HTTP
+        8443 # HTTPS
       ];
     };
   };

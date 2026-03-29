@@ -1,4 +1,4 @@
-{config, ...}: let
+_: let
   browser = ["firefox"];
   # XDG MIME types
   associations = builtins.mapAttrs (_: v: (map (e: "${e}.desktop") v)) {

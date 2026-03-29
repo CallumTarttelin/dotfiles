@@ -1,5 +1,9 @@
 {self, ...}: {
-  perSystem = {pkgs, lib, ...}: let
+  perSystem = {
+    pkgs,
+    lib,
+    ...
+  }: let
     spotifyScript = pkgs.writeShellScript "spotify-script" ''
       class=$(${pkgs.playerctl}/bin/playerctl metadata --player=spotify --format '{{lc(status)}}')
       icon=""
@@ -173,7 +177,12 @@
     };
   };
 
-  flake.nixosModules.waybar = {config, lib, pkgs, ...}: {
+  flake.nixosModules.waybar = {
+    config,
+    lib,
+    pkgs,
+    ...
+  }: {
     options.wrapped.waybar.enable = lib.mkEnableOption "waybar status bar";
     config = lib.mkIf config.wrapped.waybar.enable {
       home-manager.users.tarttelin.home.packages = [

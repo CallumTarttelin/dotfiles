@@ -11,7 +11,12 @@
     };
   };
 
-  flake.nixosModules.editors = {config, lib, pkgs, ...}: {
+  flake.nixosModules.editors = {
+    config,
+    lib,
+    pkgs,
+    ...
+  }: {
     options.bundles.editors.enable = lib.mkEnableOption "GUI editors (IntelliJ, Rust-Rover, CLion, Zed)";
     config = lib.mkIf config.bundles.editors.enable {
       home-manager.users.tarttelin.home.packages = [

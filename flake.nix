@@ -62,13 +62,7 @@
         # 3. Add here: foo.flakeModule
       ];
       systems = ["x86_64-linux"];
-      perSystem = {
-        config,
-        self',
-        inputs',
-        system,
-        ...
-      }: let
+      perSystem = {system, ...}: let
         pkgs = import inputs.nixpkgs {
           inherit system;
           config.allowUnfree = true;

@@ -12,7 +12,12 @@
     };
   };
 
-  flake.nixosModules.jvm-tools = {config, lib, pkgs, ...}: {
+  flake.nixosModules.jvm-tools = {
+    config,
+    lib,
+    pkgs,
+    ...
+  }: {
     options.bundles.jvm-tools.enable = lib.mkEnableOption "JVM development tools";
     config = lib.mkIf config.bundles.jvm-tools.enable {
       home-manager.users.tarttelin = {

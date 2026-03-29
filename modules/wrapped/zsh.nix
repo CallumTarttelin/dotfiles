@@ -162,7 +162,7 @@
         cp ${atuinConf} $out/config.toml
       '';
     in
-      (pkgs.symlinkJoin {
+      pkgs.symlinkJoin {
         name = "myZsh";
         paths = [pkgs.zsh];
         nativeBuildInputs = [pkgs.makeWrapper];
@@ -177,7 +177,7 @@
             --prefix PATH : ${lib.makeBinPath runtimeInputs}
         '';
         passthru = {shellPath = "/bin/zsh";};
-      });
+      };
   };
 
   flake.nixosModules.myZsh = {pkgs, ...}: {

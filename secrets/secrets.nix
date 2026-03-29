@@ -9,6 +9,7 @@ in {
   "borgrepo.age".publicKeys = allKeys;
   "borgpass.age".publicKeys = allKeys;
   "forgejo-runner.age".publicKeys = allKeys;
+  "forgejo-runner-native.age".publicKeys = allKeys;
   "yubi.age".publicKeys = allKeys;
   "cloudflare.age".publicKeys = allKeys;
   "k8s-minio.age".publicKeys = allKeys;

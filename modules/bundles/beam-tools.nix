@@ -6,7 +6,12 @@
     };
   };
 
-  flake.nixosModules.beam-tools = {config, lib, pkgs, ...}: {
+  flake.nixosModules.beam-tools = {
+    config,
+    lib,
+    pkgs,
+    ...
+  }: {
     options.bundles.beam-tools.enable = lib.mkEnableOption "BEAM tools (gleam, erlang, elixir)";
     config = lib.mkIf config.bundles.beam-tools.enable {
       home-manager.users.tarttelin.home.packages = [
