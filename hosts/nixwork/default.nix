@@ -37,6 +37,8 @@
   services.power-profiles-daemon.enable = true;
   powerManagement.cpuFreqGovernor = "powersave";
 
+  services.upower.enable = true;
+
   services.fwupd.enable = true;
 
   system.stateVersion = "24.05";
