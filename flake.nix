@@ -86,6 +86,7 @@
         # those are more easily expressed in perSystem.
         deploy.nodes.nixie = {
           hostname = "nixie";
+          magicRollback = false;
           profiles.system = {
             user = "root";
             path = inputs.deploy-rs.lib.x86_64-linux.activate.nixos self.nixosConfigurations.nixie;
