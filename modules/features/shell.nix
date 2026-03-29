@@ -25,8 +25,6 @@
       home-manager.users.tarttelin = {
         # ssh-agent as a systemd user service — socket available to all user sessions
         services.ssh-agent.enable = true;
-        # Core packages needed on every host
-        home.packages = [pkgs.keepassxc];
       };
     };
   };
