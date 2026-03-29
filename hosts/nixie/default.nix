@@ -137,12 +137,13 @@
 
   services.vaultwarden = {
     enable = true;
-    environmentFile = config.age.secrets.yubi.path;
+    environmentFile = config.age.secrets.vaultwarden.path;
     config = {
-      DOMAIN = "https://nixie/vault";
+      DOMAIN = "https://vault.callumtarttelin.com";
       SIGNUPS_ALLOWED = true;
-      SIGNUPS_VERIFY = false;
+      SIGNUPS_VERIFY = true;
       ROCKET_PORT = 8812;
+      WEBSOCKET_ENABLED = true;
     };
   };
 

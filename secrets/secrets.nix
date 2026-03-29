@@ -17,7 +17,7 @@ in {
   "borgpass.age".publicKeys = allKeys;
   "forgejo-runner.age".publicKeys = allKeys;
   "forgejo-runner-native.age".publicKeys = allKeys;
-  "yubi.age".publicKeys = allKeys;
+  "vaultwarden.age".publicKeys = allKeys;
   "cloudflare.age".publicKeys = allKeys;
   "k8s-minio.age".publicKeys = allKeys;
   "k8s-grafana.age".publicKeys = allKeys;
