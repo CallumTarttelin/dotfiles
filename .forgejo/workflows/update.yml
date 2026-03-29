@@ -14,6 +14,8 @@ jobs:
         run: nix run .#pre-update
       - name: Update flake.lock
         run: nix flake update
+      - name: Format (alejandra)
+        run: nix run nixpkgs#alejandra -- .
       - name: Check for changes
         id: changes
         run: |
