@@ -19,6 +19,18 @@
     inputs.agenix.packages.x86_64-linux.default
     xdg-utils
     nss
+    (writeShellScriptBin "backup-mount-s3" ''
+      set -ea
+      source ${config.age.secrets.restic-s3.path}
+      mkdir -p /mnt/backup-s3
+      exec ${restic}/bin/restic mount --allow-other /mnt/backup-s3
+    '')
+    (writeShellScriptBin "backup-mount-borgbase" ''
+      set -ea
+      source ${config.age.secrets.restic-borgbase.path}
+      mkdir -p /mnt/backup-borgbase
+      exec ${restic}/bin/restic mount --allow-other /mnt/backup-borgbase
+    '')
   ];
 
   services.syncthing = {
@@ -163,6 +175,50 @@
       OnCalendar = "*-*-* 06:00:00"; # 6am daily, after CI builds at 3am
       Persistent = true;
     };
+  };
+
+  services.restic.backups = let
+    nixiePaths = [
+      "/var/backup/nixie"
+      "/var/backup/restic"
+    ];
+  in {
+    nixie-s3 = {
+      environmentFile = config.age.secrets.restic-s3.path;
+      paths = nixiePaths;
+      backupPrepareCommand = ''
+        ${pkgs.coreutils}/bin/mkdir -p /var/backup/nixie/vaultwarden
+        ${pkgs.sqlite}/bin/sqlite3 /var/lib/bitwarden_rs/db.sqlite3 ".backup '/var/backup/nixie/vaultwarden/db.sqlite3'"
+        ${pkgs.coreutils}/bin/cp -a /var/lib/bitwarden_rs/attachments /var/backup/nixie/vaultwarden/ 2>/dev/null || true
+        ${pkgs.coreutils}/bin/cp -a /var/lib/bitwarden_rs/sends /var/backup/nixie/vaultwarden/ 2>/dev/null || true
+        ${pkgs.coreutils}/bin/cp -a /var/lib/bitwarden_rs/rsa_key* /var/backup/nixie/vaultwarden/ 2>/dev/null || true
+        ${pkgs.sudo}/bin/sudo -u postgres ${config.services.postgresql.package}/bin/pg_dump forgejo > /var/backup/nixie/forgejo.sql
+        ${pkgs.coreutils}/bin/cp -a /var/lib/forgejo/repositories /var/backup/nixie/forgejo-repos 2>/dev/null || true
+        ${pkgs.coreutils}/bin/cp -a /var/lib/forgejo/lfs /var/backup/nixie/forgejo-lfs 2>/dev/null || true
+      '';
+      extraBackupArgs = ["--compression max"];
+      timerConfig = {
+        OnCalendar = "*-*-* 01:00:00"; # daily, 1 hour after midnight client backup
+        Persistent = true;
+      };
+      initialize = true;
+    };
+    nixie-borgbase = {
+      environmentFile = config.age.secrets.restic-borgbase.path;
+      paths = nixiePaths;
+      extraBackupArgs = ["--compression max"];
+      timerConfig = {
+        OnCalendar = "*-*-* 01:00:00"; # daily, 1 hour after midnight client backup
+        Persistent = true;
+      };
+      initialize = true;
+    };
+  };
+
+  # BorgBase backup runs after S3 backup completes (shares the same staged data)
+  systemd.services.restic-backups-nixie-borgbase = {
+    after = ["restic-backups-nixie-s3.service"];
+    requires = ["restic-backups-nixie-s3.service"];
   };
 
   services.fwupd.enable = true;

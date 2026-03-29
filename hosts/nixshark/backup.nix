@@ -1,5 +1,20 @@
-_: {
-  services.borgbackup.jobs."tarttelin-nixshark" = {
+{
+  config,
+  pkgs,
+  ...
+}: {
+  environment.systemPackages = [
+    (pkgs.writeShellScriptBin "backup-mount" ''
+      set -ea
+      source ${config.age.secrets.restic-nixshark.path}
+      mkdir -p /mnt/backup
+      exec ${pkgs.restic}/bin/restic -r sftp:nixie:/var/backup/restic/nixshark mount --allow-other /mnt/backup
+    '')
+  ];
+
+  services.restic.backups.documents = {
+    environmentFile = config.age.secrets.restic-nixshark.path;
+    repository = "sftp:nixie:/var/backup/restic/nixshark";
     paths = [
       "/home/tarttelin/Documents"
     ];
@@ -12,13 +27,13 @@ _: {
       "**/dist"
       "**/__pycache__"
     ];
-    repo = "ssh://va49i77c@va49i77c.repo.borgbase.com/./repo";
-    encryption = {
-      mode = "repokey-blake2";
-      passCommand = "cat /root/borgbackup/passphrase";
+    extraBackupArgs = [
+      "--compression max"
+    ];
+    timerConfig = {
+      OnCalendar = "*-*-* 00/6:00:00"; # every 6 hours
+      Persistent = true; # run on boot if missed while off
     };
-    environment.BORG_RSH = "ssh -i /home/tarttelin/.ssh/borg_key";
-    compression = "zstd";
-    startAt = "daily";
+    initialize = true;
   };
 }
