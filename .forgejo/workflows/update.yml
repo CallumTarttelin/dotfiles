@@ -1,0 +1,55 @@
+name: Flake Update
+on:
+  schedule:
+    - cron: '0 3 * * *' # Daily at 3am
+
+jobs:
+  update:
+    runs-on: nix-native
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Pre-update (pull custom package updates)
+        run: nix run .#pre-update
+      - name: Update flake.lock
+        run: nix flake update
+      - name: Check for changes
+        id: changes
+        run: |
+          if git diff --quiet; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Create PR with auto-merge
+        if: steps.changes.outputs.changed == 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          API: https://git.callumtarttelin.com/api/v1/repos/tarttelin/dotfiles
+        run: |
+          api() { curl -sf -H "Authorization: token $GITHUB_TOKEN" -H "Content-Type: application/json" "$@"; }
+
+          # Close any existing update PR
+          existing=$(api "$API/pulls?state=open&labels=&head=tarttelin:auto/flake-update" | nix run nixpkgs#jq -- -r '.[0].number // empty')
+          if [ -n "$existing" ]; then
+            api -X PATCH "$API/pulls/$existing" -d '{"state":"closed"}'
+            git push origin --delete auto/flake-update || true
+          fi
+
+          branch="auto/flake-update"
+          git checkout -b "$branch"
+          git add -A
+          git commit -m "chore: update flake.lock $(date +%Y-%m-%d)"
+          git push -u origin "$branch" --force
+
+          pr_number=$(api -X POST "$API/pulls" -d "{
+            \"title\": \"chore: update flake.lock $(date +%Y-%m-%d)\",
+            \"head\": \"$branch\",
+            \"base\": \"main\",
+            \"body\": \"Automated daily flake.lock update.\"
+          }" | nix run nixpkgs#jq -- -r '.number')
+
+          # Enable auto-merge — merges once CI passes
+          api -X POST "$API/pulls/$pr_number/merge" -d '{"Do":"merge","delete_branch_after_merge":true,"merge_when_checks_succeed":true}'
+          echo "Created PR #$pr_number with auto-merge"

@@ -1,4 +1,8 @@
-{inputs, self, ...}: {
+{
+  inputs,
+  self,
+  ...
+}: {
   perSystem = {
     pkgs,
     system,
@@ -18,7 +22,12 @@
     };
   };
 
-  flake.nixosModules.llms = {config, lib, pkgs, ...}: {
+  flake.nixosModules.llms = {
+    config,
+    lib,
+    pkgs,
+    ...
+  }: {
     options.bundles.llms.enable = lib.mkEnableOption "LLM tools (claude-code, codex, opencode)";
     config = lib.mkIf config.bundles.llms.enable {
       home-manager.users.tarttelin.home.packages = [

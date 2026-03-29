@@ -15,7 +15,12 @@
     };
   };
 
-  flake.nixosModules.infra-tools = {config, lib, pkgs, ...}: {
+  flake.nixosModules.infra-tools = {
+    config,
+    lib,
+    pkgs,
+    ...
+  }: {
     options.bundles.infra-tools.enable = lib.mkEnableOption "infrastructure tools (kubectl, helm, k9s, aws)";
     config = lib.mkIf config.bundles.infra-tools.enable {
       home-manager.users.tarttelin.home.packages = [

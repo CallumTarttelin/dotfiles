@@ -1,0 +1,12 @@
+name: Deploy nixie
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: nix-native
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build nixie closure
+        run: nix build .#nixosConfigurations.nixie.config.system.build.toplevel

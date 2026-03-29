@@ -9,7 +9,12 @@
     };
   };
 
-  flake.nixosModules.office = {config, lib, pkgs, ...}: {
+  flake.nixosModules.office = {
+    config,
+    lib,
+    pkgs,
+    ...
+  }: {
     options.bundles.office.enable = lib.mkEnableOption "office apps (LibreOffice, Obsidian)";
     config = lib.mkIf config.bundles.office.enable {
       home-manager.users.tarttelin.home.packages = [

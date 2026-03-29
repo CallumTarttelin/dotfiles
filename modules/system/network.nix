@@ -1,8 +1,5 @@
-{...}: {
-  flake.nixosModules.network = {
-    lib,
-    ...
-  }: {
+_: {
+  flake.nixosModules.network = {lib, ...}: {
     services.tailscale = {
       enable = true;
       openFirewall = true;

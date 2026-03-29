@@ -6,7 +6,12 @@
     };
   };
 
-  flake.nixosModules.python-tools = {config, lib, pkgs, ...}: {
+  flake.nixosModules.python-tools = {
+    config,
+    lib,
+    pkgs,
+    ...
+  }: {
     options.bundles.python-tools.enable = lib.mkEnableOption "Python development tools";
     config = lib.mkIf config.bundles.python-tools.enable {
       home-manager.users.tarttelin.home.packages = [

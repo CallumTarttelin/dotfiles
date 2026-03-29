@@ -1,4 +1,4 @@
-{...}: {
+_: {
   flake.nixosModules.core = {
     config,
     inputs,
@@ -11,6 +11,8 @@
     # Pin nixpkgs for `nix shell`, `nix run`, `nix-shell` to match flake.lock
     nix.registry.nixpkgs.flake = inputs.nixpkgs;
     nix.nixPath = ["nixpkgs=${inputs.nixpkgs}"];
+
+    services.openssh.generateHostKeys = true;
 
     home-manager.backupFileExtension = "BACKUP";
 
@@ -76,12 +78,18 @@
         };
         borgrepo.file = ../../secrets/borgrepo.age;
         forgejo-runner.file = ../../secrets/forgejo-runner.age;
+        forgejo-runner-native.file = ../../secrets/forgejo-runner-native.age;
         yubi.file = ../../secrets/yubi.age;
         cloudflare.file = ../../secrets/cloudflare.age;
         k8s-minio.file = ../../secrets/k8s-minio.age;
         k8s-grafana.file = ../../secrets/k8s-grafana.age;
       };
-      identityPaths = ["/root/.ssh/id_rsa" "/home/tarttelin/.ssh/id_nixshark" "/home/tarttelin/.ssh/id_nixie" "/home/tarttelin/.ssh/id_nixwork"];
+      identityPaths = [
+        "/etc/ssh/ssh_host_ed25519_key"
+        "/home/tarttelin/.ssh/id_nixshark"
+        "/home/tarttelin/.ssh/id_nixie"
+        "/home/tarttelin/.ssh/id_nixwork"
+      ];
     };
 
     nixpkgs.config.allowUnfree = true;

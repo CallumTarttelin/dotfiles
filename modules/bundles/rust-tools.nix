@@ -1,4 +1,8 @@
-{inputs, self, ...}: {
+{
+  inputs,
+  self,
+  ...
+}: {
   perSystem = {
     pkgs,
     system,
@@ -19,7 +23,12 @@
     };
   };
 
-  flake.nixosModules.rust-tools = {config, lib, pkgs, ...}: {
+  flake.nixosModules.rust-tools = {
+    config,
+    lib,
+    pkgs,
+    ...
+  }: {
     options.bundles.rust-tools.enable = lib.mkEnableOption "Rust development tools";
     config = lib.mkIf config.bundles.rust-tools.enable {
       home-manager.users.tarttelin.home.packages = [

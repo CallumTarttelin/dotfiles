@@ -1,4 +1,4 @@
-{...}: {
+_: {
   flake.nixosModules.atuin-server = {
     config,
     lib,

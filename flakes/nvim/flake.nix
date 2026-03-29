@@ -29,7 +29,7 @@
         };
       in {
         packages = {
-          nvim = nvim;
+          inherit nvim;
           default = nvim;
         };
 

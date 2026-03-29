@@ -6,7 +6,7 @@
     ...
   }: let
     cfg = config.features.shell;
-    myZsh = self.packages.${pkgs.stdenv.hostPlatform.system}.myZsh;
+    inherit (self.packages.${pkgs.stdenv.hostPlatform.system}) myZsh;
   in {
     options.features.shell = {
       enable = lib.mkEnableOption "Custom wrapped shell as default";
