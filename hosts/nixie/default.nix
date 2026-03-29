@@ -108,6 +108,7 @@
       name = "default";
       url = "https://git.callumtarttelin.com";
       tokenFile = config.age.secrets.forgejo-runner.path;
+      settings.runner.capacity = 8;
       labels = [
         "nixos:docker://nixos/nix:latest"
         "ubuntu-latest:docker://ubuntu:latest"
