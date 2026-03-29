@@ -87,7 +87,10 @@
     database.type = "postgres";
     lfs.enable = true;
     settings.server = {
+      START_SSH_SERVER = true;
+      SSH_DOMAIN = "git.callumtarttelin.com";
       SSH_PORT = 2222;
+      SSH_LISTEN_PORT = 2222;
       PROTOCOL = "http"; # https terminates at reverse proxy
       ROOT_URL = "https://git.callumtarttelin.com";
     };
@@ -105,14 +108,13 @@
         "debian-stable:docker://debian:stable"
         "alpine-latest:docker://alpine:latest"
 
-        "python313:docker://python:3.13-bullseye"
+        "python:docker://python:3"
         "node24:docker://node:24"
         "node24-alpine:docker://node:24-alpine"
-        "go124://golang:1.24.4-bookworm"
-        "rust://rust:1-bookworm"
-        "java21://eclipse-temurin:21"
-        "java24://eclipse-temurin:21"
-        "gradle://gradle:8-noble"
+        "go:docker://golang:1"
+        "rust:docker://rust:1"
+        "java25:docker://eclipse-temurin:25"
+        "gradle:docker://gradle:jdk25"
       ];
     };
   };
