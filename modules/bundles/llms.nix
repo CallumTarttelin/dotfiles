@@ -18,9 +18,12 @@
     };
   };
 
-  flake.nixosModules.llms = {pkgs, ...}: {
-    home-manager.users.tarttelin.home.packages = [
-      self.packages.${pkgs.stdenv.hostPlatform.system}.llms
-    ];
+  flake.nixosModules.llms = {config, lib, pkgs, ...}: {
+    options.bundles.llms.enable = lib.mkEnableOption "LLM tools (claude-code, codex, opencode)";
+    config = lib.mkIf config.bundles.llms.enable {
+      home-manager.users.tarttelin.home.packages = [
+        self.packages.${pkgs.stdenv.hostPlatform.system}.llms
+      ];
+    };
   };
 }

@@ -8,9 +8,12 @@
     };
   };
 
-  flake.nixosModules.drawing = {pkgs, ...}: {
-    home-manager.users.tarttelin.home.packages = [
-      self.packages.${pkgs.stdenv.hostPlatform.system}.drawing
-    ];
+  flake.nixosModules.drawing = {config, lib, pkgs, ...}: {
+    options.bundles.drawing.enable = lib.mkEnableOption "drawing/audio tools (easyeffects)";
+    config = lib.mkIf config.bundles.drawing.enable {
+      home-manager.users.tarttelin.home.packages = [
+        self.packages.${pkgs.stdenv.hostPlatform.system}.drawing
+      ];
+    };
   };
 }

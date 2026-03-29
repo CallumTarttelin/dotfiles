@@ -719,7 +719,7 @@
         "refresh_rate": 143.99899,
         "x": 1920,
         "y": 0,
-        "active_workspace": 1,
+        "active_workspace": 10,
         "vrr": false,
         "focused": true
       },
@@ -743,13 +743,13 @@
         "refresh_rate": 60,
         "x": 4480,
         "y": 0,
-        "active_workspace": 3,
+        "active_workspace": 9,
         "vrr": false,
         "focused": false
       }
     },
     "notificationsState": {
-      "lastSeenTs": 1774616119000
+      "lastSeenTs": 1774646738000
     },
     "changelogState": {
       "lastSeenVersion": "v4.7.2-git"

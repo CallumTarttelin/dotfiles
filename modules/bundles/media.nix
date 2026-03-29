@@ -51,9 +51,12 @@
     };
   };
 
-  flake.nixosModules.media = {pkgs, ...}: {
-    home-manager.users.tarttelin.home.packages = [
-      self.packages.${pkgs.stdenv.hostPlatform.system}.media
-    ];
+  flake.nixosModules.media = {config, lib, pkgs, ...}: {
+    options.bundles.media.enable = lib.mkEnableOption "media apps (mpv, spotify, zathura)";
+    config = lib.mkIf config.bundles.media.enable {
+      home-manager.users.tarttelin.home.packages = [
+        self.packages.${pkgs.stdenv.hostPlatform.system}.media
+      ];
+    };
   };
 }

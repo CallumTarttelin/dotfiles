@@ -5,87 +5,34 @@
   lib,
   ...
 }: let
-  # system-agnostic args
   module_args._module.args = {
     inherit default inputs self;
   };
 
-  # Core modules shared by all hosts (desktop + server)
-  sharedModules = [
-    {
-      home-manager = {
-        useGlobalPkgs = true;
-        useUserPackages = true;
-      };
-    }
-
-    inputs.agenix.nixosModules.default
-    inputs.hm.nixosModules.default
-    module_args
-
-    self.nixosModules.core
-    self.nixosModules.network
-
-    # Feature modules (all imported, activate via features.*.enable)
-    self.nixosModules.bluetooth
-    self.nixosModules.yubikey
-    self.nixosModules.gaming
-    self.nixosModules.virtualization
-    self.nixosModules.hyprland-desktop
-    self.nixosModules.logiops
-    self.nixosModules.atuin-server
-    self.nixosModules.k3s
-    self.nixosModules.shell
-
-    # Wrapped packages
-    self.nixosModules.myZsh
-    self.nixosModules.neovim
-
-    # Dev tool bundles (useful on all hosts)
-    self.nixosModules.go-tools
-    self.nixosModules.jvm-tools
-    self.nixosModules.web-tools
-    self.nixosModules.python-tools
-    self.nixosModules.beam-tools
-    self.nixosModules.infra-tools
-    self.nixosModules.build-tools
-    self.nixosModules.rust-tools
-    self.nixosModules.nix-tools
-  ];
-
-  # Additional modules only needed on desktop hosts
-  desktopModules = [
-    # Wrapped desktop packages
-    self.nixosModules.ghostty
-    self.nixosModules.foot
-    self.nixosModules.starship
-    self.nixosModules.mako
-    self.nixosModules.wofi
-    self.nixosModules.waybar
-    self.nixosModules.noctalia
-
-    # Desktop app bundles
-    self.nixosModules.social
-    self.nixosModules.editors
-    self.nixosModules.office
-    self.nixosModules.llms
-    self.nixosModules.media
-    self.nixosModules.drawing
-    self.nixosModules.electronics
-    self.nixosModules.work
-  ];
-
-  allModules = sharedModules ++ desktopModules;
+  # All modules loaded on every host — activate via enable options.
+  # self.nixosModules is auto-populated by import-modules.nix discovery.
+  allModules =
+    [
+      {
+        home-manager = {
+          useGlobalPkgs = true;
+          useUserPackages = true;
+        };
+      }
+      inputs.agenix.nixosModules.default
+      inputs.hm.nixosModules.default
+      module_args
+    ]
+    ++ builtins.attrValues self.nixosModules;
 in {
   imports = [
-    # Auto-discover all flake-parts modules
     (import ../lib/import-modules.nix lib ./features)
     (import ../lib/import-modules.nix lib ./system)
     (import ../lib/import-modules.nix lib ./wrapped)
     (import ../lib/import-modules.nix lib ./bundles)
     {
       _module.args = {
-        inherit module_args allModules sharedModules desktopModules;
+        inherit module_args allModules;
       };
     }
   ];
