@@ -79,6 +79,12 @@
         }
         reverse_proxy http://localhost:8812
       '';
+      "nix-cache.callumtarttelin.com".extraConfig = ''
+        tls /var/lib/acme/callumtarttelin.com/fullchain.pem /var/lib/acme/callumtarttelin.com/key.pem {
+          protocols tls1.3
+        }
+        reverse_proxy http://localhost:5000
+      '';
     };
   };
 

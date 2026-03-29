@@ -27,7 +27,7 @@ _: {
       enable = true;
       clean = {
         enable = true;
-        extraArgs = "--keep 5 --keep-since 3d";
+        extraArgs = "--keep 5 --keep-since 7d";
       };
       flake = "/home/tarttelin/Documents/dotfiles";
     };
@@ -48,11 +48,13 @@ _: {
       keep-derivations = true;
       keep-outputs = true;
       substituters = [
+        "https://nix-cache.callumtarttelin.com"
         "https://nix-community.cachix.org"
         "https://cache.numtide.com"
         "https://noctalia.cachix.org"
       ];
       trusted-public-keys = [
+        "nix-cache.callumtarttelin.com-1:X6SDDEhhlhzWBWoTxK5z/8ggz68nG7sKsWi1si9F4P4="
         "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
         "niks3.numtide.com-1:DTx8wZduET09hRmMtKdQDxNNthLQETkc/yaX7M4qK0g="
         "noctalia.cachix.org-1:pCOR47nnMEo5thcxNDtzWpOxNFQsBRglJzxWPp3dkU4="
@@ -83,6 +85,7 @@ _: {
         cloudflare.file = ../../secrets/cloudflare.age;
         k8s-minio.file = ../../secrets/k8s-minio.age;
         k8s-grafana.file = ../../secrets/k8s-grafana.age;
+        cache-key.file = ../../secrets/cache-key.age;
       };
       identityPaths = [
         "/etc/ssh/ssh_host_ed25519_key"
