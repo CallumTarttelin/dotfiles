@@ -35,7 +35,7 @@
     acceptTerms = true;
     defaults.email = "acme@callumtarttelin.com";
     certs."callumtarttelin.com" = {
-      group = config.services.caddy.group;
+      inherit (config.services.caddy) group;
       domain = "callumtarttelin.com";
       dnsProvider = "cloudflare";
       dnsResolver = "1.1.1.1:53";

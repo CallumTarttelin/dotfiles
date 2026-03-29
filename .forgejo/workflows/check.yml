@@ -2,6 +2,13 @@ name: Check
 on: [push, pull_request]
 
 jobs:
+  lint:
+    runs-on: nix-native
+    steps:
+      - uses: actions/checkout@v4
+      - name: Format (alejandra)
+        run: nix run nixpkgs#alejandra -- --check .
+
   check:
     runs-on: nix-native
     steps:
