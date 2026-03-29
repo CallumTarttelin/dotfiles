@@ -125,6 +125,7 @@
       url = "https://git.callumtarttelin.com";
       tokenFile = config.age.secrets.forgejo-runner-native.path;
       labels = ["nix-native:host"];
+      hostPackages = with pkgs; [bash coreutils curl gawk git gnused gnutar gzip jq nix nodejs wget];
     };
   };
 
