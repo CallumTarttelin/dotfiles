@@ -3,6 +3,8 @@
 
 .direnv
 
+result
+
 plans/
 
 .githooks/

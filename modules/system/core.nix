@@ -12,7 +12,22 @@ _: {
     nix.registry.nixpkgs.flake = inputs.nixpkgs;
     nix.nixPath = ["nixpkgs=${inputs.nixpkgs}"];
 
+    environment.etc."fuse.conf".text = "user_allow_other";
     services.openssh.generateHostKeys = true;
+    programs.ssh.knownHosts = {
+      nixie = {
+        hostNames = ["nixie" "nixie.oryx-harmonic.ts.net"];
+        publicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIE+IF0D7WJNCdXYrwFchwu+KxzgHhXZJcNVDqdglZ47";
+      };
+      nixshark = {
+        hostNames = ["nixshark" "nixshark.oryx-harmonic.ts.net"];
+        publicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKntjin/g45e5lK8LAUh+ArjnaT8uw+qw+XMPKElh9c6";
+      };
+      nixwork = {
+        hostNames = ["nixwork" "nixwork.oryx-harmonic.ts.net"];
+        publicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGPKLf6KmW7jCGvzd2NL1dWUW77CIkBaShERbC5QITZ5";
+      };
+    };
 
     home-manager.backupFileExtension = "BACKUP";
 
@@ -86,6 +101,10 @@ _: {
         k8s-minio.file = ../../secrets/k8s-minio.age;
         k8s-grafana.file = ../../secrets/k8s-grafana.age;
         cache-key.file = ../../secrets/cache-key.age;
+        restic-s3.file = ../../secrets/restic-s3.age;
+        restic-borgbase.file = ../../secrets/restic-borgbase.age;
+        restic-nixshark.file = ../../secrets/restic-nixshark.age;
+        restic-nixwork.file = ../../secrets/restic-nixwork.age;
       };
       identityPaths = [
         "/etc/ssh/ssh_host_ed25519_key"

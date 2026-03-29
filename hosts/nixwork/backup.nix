@@ -6,15 +6,15 @@
   environment.systemPackages = [
     (pkgs.writeShellScriptBin "backup-mount" ''
       set -ea
-      source ${config.age.secrets.restic-nixshark.path}
+      source ${config.age.secrets.restic-nixwork.path}
       mkdir -p /mnt/backup
-      exec ${pkgs.restic}/bin/restic -r sftp:nixie:/var/backup/restic/nixshark mount --allow-other /mnt/backup
+      exec ${pkgs.restic}/bin/restic -r sftp:nixie:/var/backup/restic/nixwork mount --allow-other /mnt/backup
     '')
   ];
 
   services.restic.backups.documents = {
-    environmentFile = config.age.secrets.restic-nixshark.path;
-    repository = "sftp:nixie:/var/backup/restic/nixshark";
+    environmentFile = config.age.secrets.restic-nixwork.path;
+    repository = "sftp:nixie:/var/backup/restic/nixwork";
     paths = [
       "/home/tarttelin/Documents"
     ];

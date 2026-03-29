@@ -22,4 +22,8 @@ in {
   "k8s-minio.age".publicKeys = allKeys;
   "k8s-grafana.age".publicKeys = allKeys;
   "cache-key.age".publicKeys = allKeys;
+  "restic-s3.age".publicKeys = allKeys;
+  "restic-borgbase.age".publicKeys = allKeys;
+  "restic-nixshark.age".publicKeys = allKeys;
+  "restic-nixwork.age".publicKeys = allKeys;
 }
