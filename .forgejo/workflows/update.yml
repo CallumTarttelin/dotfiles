@@ -33,7 +33,7 @@ jobs:
           api() { curl -sf -H "Authorization: token $GITHUB_TOKEN" -H "Content-Type: application/json" "$@"; }
 
           # Close any existing update PR
-          existing=$(api "$API/pulls?state=open&labels=&head=tarttelin:auto/flake-update" | nix run nixpkgs#jq -- -r '.[0].number // empty')
+          existing=$(api "$API/pulls?state=open&labels=&head=tarttelin:auto/flake-update" | jq -r '.[0].number // empty')
           if [ -n "$existing" ]; then
             api -X PATCH "$API/pulls/$existing" -d '{"state":"closed"}'
             git push origin --delete auto/flake-update || true
@@ -50,7 +50,7 @@ jobs:
             \"head\": \"$branch\",
             \"base\": \"main\",
             \"body\": \"Automated daily flake.lock update.\"
-          }" | nix run nixpkgs#jq -- -r '.number')
+          }" | jq -r '.number')
 
           # Enable auto-merge — merges once CI passes
           api -X POST "$API/pulls/$pr_number/merge" -d '{"Do":"merge","delete_branch_after_merge":true,"merge_when_checks_succeed":true}'
