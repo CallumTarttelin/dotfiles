@@ -35,7 +35,7 @@
               };
               logiops.enable = true;
               bluetooth.enable = true;
-              yubikey.enable = true;
+              security.yubikey = true;
               gaming.enable = true;
               virtualization.enable = true;
               shell.enable = true;
@@ -74,7 +74,7 @@
               };
               logiops.enable = true;
               bluetooth.enable = true;
-              yubikey.enable = true;
+              security.yubikey = true;
               virtualization.enable = true;
               shell.enable = true;
             };
