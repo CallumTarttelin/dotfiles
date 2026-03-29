@@ -270,7 +270,7 @@
       "settingsPanelSideBarCardStyle": false
     },
     "location": {
-      "name": "London, UK",
+      "name": "Reading",
       "weatherEnabled": true,
       "weatherShowEffects": true,
       "useFahrenheit": false,
@@ -308,6 +308,7 @@
       "showHiddenFiles": false,
       "viewMode": "single",
       "setWallpaperOnAllMonitors": true,
+      "linkLightAndDarkWallpapers": true,
       "fillMode": "crop",
       "fillColor": "#000000",
       "useSolidColor": false,
