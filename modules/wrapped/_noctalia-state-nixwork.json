@@ -69,6 +69,18 @@
             "usePadding": false
           },
           {
+            "defaultSettings": {
+              "activeColor": "primary",
+              "enableToast": true,
+              "hideInactive": false,
+              "iconSpacing": 4,
+              "inactiveColor": "none",
+              "micFilterRegex": "",
+              "removeMargins": false
+            },
+            "id": "plugin:privacy-indicator"
+          },
+          {
             "colorizeIcons": false,
             "hideMode": "hidden",
             "id": "ActiveWindow",
@@ -149,6 +161,13 @@
             "textColor": "none"
           },
           {
+            "defaultSettings": {
+              "iface": "wlan0",
+              "pollInterval": 5000
+            },
+            "id": "plugin:iwd-connections"
+          },
+          {
             "colorizeDistroLogo": false,
             "colorizeSystemIcon": "none",
             "customIconPath": "",
@@ -156,21 +175,6 @@
             "icon": "noctalia",
             "id": "ControlCenter",
             "useDistroLogo": false
-          },
-          {
-            "id": "plugin:iwd-connections"
-          },
-          {
-            "id": "plugin:privacy-indicator"
-          },
-          {
-            "id": "plugin:openhue"
-          },
-          {
-            "id": "plugin:screen-recorder"
-          },
-          {
-            "id": "plugin:timer"
           }
         ]
       },
@@ -266,7 +270,7 @@
       "settingsPanelSideBarCardStyle": false
     },
     "location": {
-      "name": "London, UK",
+      "name": "Reading",
       "weatherEnabled": true,
       "weatherShowEffects": true,
       "useFahrenheit": false,
@@ -304,6 +308,7 @@
       "showHiddenFiles": false,
       "viewMode": "single",
       "setWallpaperOnAllMonitors": true,
+      "linkLightAndDarkWallpapers": true,
       "fillMode": "crop",
       "fillColor": "#000000",
       "useSolidColor": false,
@@ -374,10 +379,20 @@
       "shortcuts": {
         "left": [
           {
+            "defaultSettings": {
+              "iface": "wlan0",
+              "pollInterval": 5000
+            },
+            "id": "plugin:iwd-connections"
+          },
+          {
             "id": "Bluetooth"
           },
           {
             "id": "WallpaperSelector"
+          },
+          {
+            "id": "PowerProfile"
           }
         ],
         "right": [
@@ -385,13 +400,43 @@
             "id": "Notifications"
           },
           {
-            "id": "PowerProfile"
-          },
-          {
             "id": "KeepAwake"
           },
           {
             "id": "NightLight"
+          },
+          {
+            "defaultSettings": {
+              "compactMode": false,
+              "defaultDuration": 0,
+              "iconColor": "none",
+              "textColor": "none"
+            },
+            "id": "plugin:timer"
+          },
+          {
+            "defaultSettings": {
+              "audioCodec": "opus",
+              "audioSource": "default_output",
+              "colorRange": "limited",
+              "copyToClipboard": false,
+              "customReplayDuration": "30",
+              "directory": "",
+              "filenamePattern": "recording_yyyyMMdd_HHmmss",
+              "frameRate": "60",
+              "hideInactive": false,
+              "iconColor": "none",
+              "quality": "very_high",
+              "replayDuration": "30",
+              "replayEnabled": false,
+              "replayStorage": "ram",
+              "resolution": "original",
+              "restorePortalSession": false,
+              "showCursor": true,
+              "videoCodec": "h264",
+              "videoSource": "portal"
+            },
+            "id": "plugin:screen-recorder"
           }
         ]
       },
@@ -712,7 +757,7 @@
       }
     },
     "notificationsState": {
-      "lastSeenTs": 0
+      "lastSeenTs": 1774793421000
     },
     "changelogState": {
       "lastSeenVersion": "v4.7.2"
