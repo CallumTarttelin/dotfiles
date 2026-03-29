@@ -17,9 +17,12 @@
     };
   };
 
-  flake.nixosModules.mako = {pkgs, ...}: {
-    home-manager.users.tarttelin.home.packages = [
-      self.packages.${pkgs.stdenv.hostPlatform.system}.myMako
-    ];
+  flake.nixosModules.mako = {config, lib, pkgs, ...}: {
+    options.wrapped.mako.enable = lib.mkEnableOption "mako notifications";
+    config = lib.mkIf config.wrapped.mako.enable {
+      home-manager.users.tarttelin.home.packages = [
+        self.packages.${pkgs.stdenv.hostPlatform.system}.myMako
+      ];
+    };
   };
 }

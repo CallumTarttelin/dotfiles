@@ -10,12 +10,15 @@
     };
   };
 
-  flake.nixosModules.go-tools = {pkgs, ...}: {
-    home-manager.users.tarttelin = {
-      home.packages = [
-        self.packages.${pkgs.stdenv.hostPlatform.system}.go-tools
-      ];
-      programs.go.enable = true;
+  flake.nixosModules.go-tools = {config, lib, pkgs, ...}: {
+    options.bundles.go-tools.enable = lib.mkEnableOption "Go development tools";
+    config = lib.mkIf config.bundles.go-tools.enable {
+      home-manager.users.tarttelin = {
+        home.packages = [
+          self.packages.${pkgs.stdenv.hostPlatform.system}.go-tools
+        ];
+        programs.go.enable = true;
+      };
     };
   };
 }

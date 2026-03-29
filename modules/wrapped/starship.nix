@@ -25,9 +25,12 @@
     };
   };
 
-  flake.nixosModules.starship = {pkgs, ...}: {
-    home-manager.users.tarttelin.home.packages = [
-      self.packages.${pkgs.stdenv.hostPlatform.system}.myStarship
-    ];
+  flake.nixosModules.starship = {config, lib, pkgs, ...}: {
+    options.wrapped.starship.enable = lib.mkEnableOption "starship prompt";
+    config = lib.mkIf config.wrapped.starship.enable {
+      home-manager.users.tarttelin.home.packages = [
+        self.packages.${pkgs.stdenv.hostPlatform.system}.myStarship
+      ];
+    };
   };
 }

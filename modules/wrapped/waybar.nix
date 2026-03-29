@@ -173,12 +173,15 @@
     };
   };
 
-  flake.nixosModules.waybar = {pkgs, ...}: {
-    home-manager.users.tarttelin.home.packages = [
-      self.packages.${pkgs.stdenv.hostPlatform.system}.myWaybar
-      pkgs.playerctl
-      pkgs.procps
-      pkgs.pavucontrol
-    ];
+  flake.nixosModules.waybar = {config, lib, pkgs, ...}: {
+    options.wrapped.waybar.enable = lib.mkEnableOption "waybar status bar";
+    config = lib.mkIf config.wrapped.waybar.enable {
+      home-manager.users.tarttelin.home.packages = [
+        self.packages.${pkgs.stdenv.hostPlatform.system}.myWaybar
+        pkgs.playerctl
+        pkgs.procps
+        pkgs.pavucontrol
+      ];
+    };
   };
 }

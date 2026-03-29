@@ -1,8 +1,6 @@
 {
   inputs,
   allModules,
-  sharedModules,
-  desktopModules,
   homeImports,
   ...
 }: {
@@ -23,6 +21,7 @@
             selfpkgs = inputs.self.packages.${pkgs.stdenv.hostPlatform.system};
           in {
             features = {
+              desktop.enable = true;
               hyprland-desktop = {
                 enable = true;
                 desktopShell = "noctalia";
@@ -41,6 +40,17 @@
               virtualization.enable = true;
               shell.enable = true;
             };
+            bundles = {
+              go-tools.enable = true;
+              jvm-tools.enable = true;
+              web-tools.enable = true;
+              python-tools.enable = true;
+              beam-tools.enable = true;
+              infra-tools.enable = true;
+              build-tools.enable = true;
+              rust-tools.enable = true;
+              nix-tools.enable = true;
+            };
           })
         ]
         ++ allModules;
@@ -55,6 +65,7 @@
             selfpkgs = inputs.self.packages.${pkgs.stdenv.hostPlatform.system};
           in {
             features = {
+              desktop.enable = true;
               hyprland-desktop = {
                 enable = true;
                 desktopShell = "noctalia";
@@ -66,6 +77,17 @@
               yubikey.enable = true;
               virtualization.enable = true;
               shell.enable = true;
+            };
+            bundles = {
+              go-tools.enable = true;
+              jvm-tools.enable = true;
+              web-tools.enable = true;
+              python-tools.enable = true;
+              beam-tools.enable = true;
+              infra-tools.enable = true;
+              build-tools.enable = true;
+              rust-tools.enable = true;
+              nix-tools.enable = true;
             };
           })
         ]
@@ -86,9 +108,10 @@
               atuin-server.enable = true;
               shell.enable = true;
             };
+            bundles.nix-tools.enable = true;
           }
         ]
-        ++ sharedModules;
+        ++ allModules;
     };
   };
 }

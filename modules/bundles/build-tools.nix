@@ -6,9 +6,12 @@
     };
   };
 
-  flake.nixosModules.build-tools = {pkgs, ...}: {
-    home-manager.users.tarttelin.home.packages = [
-      self.packages.${pkgs.stdenv.hostPlatform.system}.build-tools
-    ];
+  flake.nixosModules.build-tools = {config, lib, pkgs, ...}: {
+    options.bundles.build-tools.enable = lib.mkEnableOption "build tools (gcc, make, protobuf, zig)";
+    config = lib.mkIf config.bundles.build-tools.enable {
+      home-manager.users.tarttelin.home.packages = [
+        self.packages.${pkgs.stdenv.hostPlatform.system}.build-tools
+      ];
+    };
   };
 }

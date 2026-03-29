@@ -105,9 +105,12 @@
     };
   };
 
-  flake.nixosModules.wofi = {pkgs, ...}: {
-    home-manager.users.tarttelin.home.packages = [
-      self.packages.${pkgs.stdenv.hostPlatform.system}.myWofi
-    ];
+  flake.nixosModules.wofi = {config, lib, pkgs, ...}: {
+    options.wrapped.wofi.enable = lib.mkEnableOption "wofi launcher";
+    config = lib.mkIf config.wrapped.wofi.enable {
+      home-manager.users.tarttelin.home.packages = [
+        self.packages.${pkgs.stdenv.hostPlatform.system}.myWofi
+      ];
+    };
   };
 }

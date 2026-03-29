@@ -9,9 +9,12 @@
     };
   };
 
-  flake.nixosModules.electronics = {pkgs, ...}: {
-    home-manager.users.tarttelin.home.packages = [
-      self.packages.${pkgs.stdenv.hostPlatform.system}.electronics
-    ];
+  flake.nixosModules.electronics = {config, lib, pkgs, ...}: {
+    options.bundles.electronics.enable = lib.mkEnableOption "electronics tools (kicad, ngspice)";
+    config = lib.mkIf config.bundles.electronics.enable {
+      home-manager.users.tarttelin.home.packages = [
+        self.packages.${pkgs.stdenv.hostPlatform.system}.electronics
+      ];
+    };
   };
 }

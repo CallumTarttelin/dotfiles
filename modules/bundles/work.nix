@@ -13,9 +13,12 @@
     };
   };
 
-  flake.nixosModules.work = {pkgs, ...}: {
-    home-manager.users.tarttelin.home.packages = [
-      self.packages.${pkgs.stdenv.hostPlatform.system}.work
-    ];
+  flake.nixosModules.work = {config, lib, pkgs, ...}: {
+    options.bundles.work.enable = lib.mkEnableOption "work tools (citrix)";
+    config = lib.mkIf config.bundles.work.enable {
+      home-manager.users.tarttelin.home.packages = [
+        self.packages.${pkgs.stdenv.hostPlatform.system}.work
+      ];
+    };
   };
 }

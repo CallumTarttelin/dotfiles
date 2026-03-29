@@ -30,9 +30,12 @@
     };
   };
 
-  flake.nixosModules.foot = {pkgs, ...}: {
-    home-manager.users.tarttelin.home.packages = [
-      self.packages.${pkgs.stdenv.hostPlatform.system}.myFoot
-    ];
+  flake.nixosModules.foot = {config, lib, pkgs, ...}: {
+    options.wrapped.foot.enable = lib.mkEnableOption "foot terminal";
+    config = lib.mkIf config.wrapped.foot.enable {
+      home-manager.users.tarttelin.home.packages = [
+        self.packages.${pkgs.stdenv.hostPlatform.system}.myFoot
+      ];
+    };
   };
 }
