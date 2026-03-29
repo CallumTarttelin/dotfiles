@@ -19,6 +19,9 @@
       programs.zsh.enable = true;
       environment.shells = ["${myZsh}/bin/zsh"];
 
+      # Ghostty terminfo so SSH sessions from Ghostty terminals work correctly
+      environment.systemPackages = [pkgs.ghostty.terminfo];
+
       home-manager.users.tarttelin = {
         # ssh-agent as a systemd user service — socket available to all user sessions
         services.ssh-agent.enable = true;

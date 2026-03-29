@@ -18,6 +18,9 @@
     skimChangeDirCommand = "fd --type d";
 
     zshConf = pkgs.writeText "zshrc" ''
+      # Restore wrapped PATH (NixOS set-environment resets it for login shells)
+      export PATH="${lib.makeBinPath runtimeInputs}:$PATH"
+
       # history
       HISTFILE="''${XDG_CACHE_HOME:-$HOME/.cache}/zsh_history"
       HISTSIZE=10000
