@@ -81,7 +81,7 @@ _: {
         borgrepo.file = ../../secrets/borgrepo.age;
         forgejo-runner.file = ../../secrets/forgejo-runner.age;
         forgejo-runner-native.file = ../../secrets/forgejo-runner-native.age;
-        yubi.file = ../../secrets/yubi.age;
+        vaultwarden.file = ../../secrets/vaultwarden.age;
         cloudflare.file = ../../secrets/cloudflare.age;
         k8s-minio.file = ../../secrets/k8s-minio.age;
         k8s-grafana.file = ../../secrets/k8s-grafana.age;
