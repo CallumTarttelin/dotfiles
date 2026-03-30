@@ -65,6 +65,9 @@
     enable = true;
     globalConfig = ''
       auto_https off
+      servers {
+        metrics
+      }
     '';
     virtualHosts = {
       "hello.callumtarttelin.com".extraConfig = ''
