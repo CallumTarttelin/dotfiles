@@ -112,6 +112,17 @@
       PROTOCOL = "http"; # https terminates at reverse proxy
       ROOT_URL = "https://git.callumtarttelin.com";
     };
+    settings.mailer = {
+      ENABLED = true;
+      PROTOCOL = "smtps";
+      FROM = "git@callumtarttelin.com";
+    };
+    secrets.mailer = {
+      SMTP_ADDR = config.age.secrets.ses-smtp-addr.path;
+      SMTP_PORT = config.age.secrets.ses-smtp-port.path;
+      USER = config.age.secrets.ses-smtp-user.path;
+      PASSWD = config.age.secrets.ses-smtp-password.path;
+    };
   };
 
   services.gitea-actions-runner = {
