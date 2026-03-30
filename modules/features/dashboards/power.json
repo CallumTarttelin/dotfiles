@@ -1,0 +1,155 @@
+{
+  "uid": "power-consumption",
+  "title": "Power Consumption",
+  "tags": ["power", "rapl"],
+  "timezone": "browser",
+  "refresh": "30s",
+  "time": { "from": "now-1h", "to": "now" },
+  "templating": {
+    "list": [
+      {
+        "name": "instance",
+        "type": "query",
+        "datasource": { "type": "prometheus", "uid": "victoriametrics" },
+        "query": "label_values(node_rapl_package_joules_total, instance)",
+        "refresh": 2,
+        "includeAll": true,
+        "current": { "text": "All", "value": "$__all" }
+      }
+    ]
+  },
+  "panels": [
+    {
+      "title": "Package Power Draw",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "victoriametrics" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "watt",
+          "custom": { "fillOpacity": 30 }
+        }
+      },
+      "targets": [
+        {
+          "expr": "rate(node_rapl_package_joules_total{instance=~\"$instance\"}[1m])",
+          "legendFormat": "{{instance}} package"
+        }
+      ]
+    },
+    {
+      "title": "Current Package Power",
+      "type": "gauge",
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "victoriametrics" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "watt",
+          "min": 0,
+          "max": 200,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "orange", "value": 80 },
+              { "color": "red", "value": 150 }
+            ]
+          }
+        }
+      },
+      "targets": [
+        {
+          "expr": "sum by (instance) (rate(node_rapl_package_joules_total{instance=~\"$instance\"}[1m]))",
+          "legendFormat": "{{instance}}"
+        }
+      ]
+    },
+    {
+      "title": "DRAM Power Draw",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "victoriametrics" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "watt",
+          "custom": { "fillOpacity": 20 }
+        }
+      },
+      "targets": [
+        {
+          "expr": "rate(node_rapl_dram_joules_total{instance=~\"$instance\"}[1m])",
+          "legendFormat": "{{instance}} dram"
+        }
+      ]
+    },
+    {
+      "title": "Estimated Daily Cost",
+      "description": "Blended estimate: 18h day at 32.65p/kWh + 6h night (23:30-05:30) at 13.58p/kWh",
+      "type": "stat",
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "victoriametrics" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyGBP",
+          "decimals": 2
+        }
+      },
+      "targets": [
+        {
+          "expr": "sum by (instance) (avg_over_time(rate(node_rapl_package_joules_total{instance=~\"$instance\"}[5m])[1h:])) / 1000 * (18 * 0.3265 + 6 * 0.1358)",
+          "legendFormat": "{{instance}}"
+        }
+      ]
+    },
+    {
+      "title": "Current Rate",
+      "description": "Night 23:30-05:30 at 13.58p/kWh, Day at 32.65p/kWh (Octopus fixed)",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 8, "x": 16, "y": 16 },
+      "datasource": { "type": "prometheus", "uid": "victoriametrics" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "string",
+          "mappings": [
+            { "type": "range", "options": { "from": 0, "to": 0.5, "result": { "text": "Night 13.58p/kWh", "color": "blue" } } },
+            { "type": "range", "options": { "from": 0.5, "to": 1.1, "result": { "text": "Day 32.65p/kWh", "color": "orange" } } }
+          ]
+        }
+      },
+      "options": { "colorMode": "background" },
+      "targets": [
+        {
+          "expr": "(hour() >= 6 and hour() < 24) * 1",
+          "legendFormat": ""
+        }
+      ]
+    },
+    {
+      "title": "Power Draw (24h)",
+      "type": "timeseries",
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 16 },
+      "datasource": { "type": "prometheus", "uid": "victoriametrics" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "watt",
+          "custom": { "fillOpacity": 20 }
+        }
+      },
+      "options": {
+        "tooltip": { "mode": "multi" }
+      },
+      "timeFrom": "24h",
+      "targets": [
+        {
+          "expr": "sum by (instance) (rate(node_rapl_package_joules_total{instance=~\"$instance\"}[5m]))",
+          "legendFormat": "{{instance}} package"
+        },
+        {
+          "expr": "sum by (instance) (rate(node_rapl_dram_joules_total{instance=~\"$instance\"}[5m]))",
+          "legendFormat": "{{instance}} dram"
+        }
+      ]
+    }
+  ],
+  "schemaVersion": 39
+}

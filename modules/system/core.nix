@@ -110,6 +110,8 @@ _: {
         restic-borgbase.file = ../../secrets/restic-borgbase.age;
         restic-nixshark.file = ../../secrets/restic-nixshark.age;
         restic-nixwork.file = ../../secrets/restic-nixwork.age;
+        grafana-admin.file = ../../secrets/grafana-admin.age;
+        grafana-secret-key.file = ../../secrets/grafana-secret-key.age;
       };
       identityPaths = [
         "/etc/ssh/ssh_host_ed25519_key"
