@@ -15,13 +15,6 @@ _: {
 
       # Auto-sign all store paths built on this host
       nix.settings.secret-key-files = [config.age.secrets.cache-key.path];
-
-      # Don't use ourselves as a substituter
-      nix.settings.substituters = lib.mkForce [
-        "https://nix-community.cachix.org"
-        "https://cache.numtide.com"
-        "https://noctalia.cachix.org"
-      ];
     };
   };
 }
