@@ -30,4 +30,6 @@ in {
   "restic-borgbase.age".publicKeys = allKeys;
   "restic-nixshark.age".publicKeys = allKeys;
   "restic-nixwork.age".publicKeys = allKeys;
+  "grafana-admin.age".publicKeys = allKeys;
+  "grafana-secret-key.age".publicKeys = allKeys;
 }

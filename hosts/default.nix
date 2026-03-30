@@ -38,6 +38,10 @@
               security.yubikey = true;
               gaming.enable = true;
               virtualization.enable = true;
+              monitoring = {
+                node-exporter = true;
+                alloy = true;
+              };
               shell.enable = true;
             };
             bundles = {
@@ -76,6 +80,10 @@
               bluetooth.enable = true;
               security.yubikey = true;
               virtualization.enable = true;
+              monitoring = {
+                node-exporter = true;
+                alloy = true;
+              };
               shell.enable = true;
             };
             bundles = {
@@ -107,6 +115,7 @@
               bluetooth.enable = true;
               virtualization.enable = true;
               atuin-server.enable = true;
+              monitoring.enable = true;
               shell.enable = true;
             };
             bundles.nix-tools.enable = true;
