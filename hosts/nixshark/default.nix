@@ -23,7 +23,6 @@
     vial
     socat
     bubblewrap
-    ddcutil
   ];
 
   boot.kernelPackages = pkgs.linuxPackages_latest;
