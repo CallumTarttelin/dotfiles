@@ -54,6 +54,12 @@
     };
 
     settings = {
+      pickers.live_grep = {
+        additional_args = [
+          "--hidden"
+          "--glob=!.git/"
+        ];
+      };
       extensions = {
         ui-select = {
           __raw = "require('telescope.themes').get_dropdown()";
@@ -86,5 +92,13 @@
     vim.keymap.set('n', '<leader>sn', function()
       require('telescope.builtin').find_files({ cwd = vim.fn.stdpath('config') })
     end, { desc = '[S]earch [N]eovim files' })
+
+    -- Grep ALL files (no gitignore, includes hidden, excludes .git)
+    vim.keymap.set('n', '<leader>sG', function()
+      require('telescope.builtin').live_grep({
+        additional_args = { '--hidden', '--no-ignore', '--glob=!.git/' },
+        prompt_title = 'Live Grep (All Files)',
+      })
+    end, { desc = '[S]earch by [G]rep (all files)' })
   '';
 }
