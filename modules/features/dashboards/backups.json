@@ -1,0 +1,137 @@
+{
+  "uid": "backups",
+  "title": "Backups",
+  "tags": ["backups", "restic"],
+  "timezone": "browser",
+  "refresh": "5m",
+  "time": { "from": "now-7d", "to": "now" },
+  "panels": [
+    {
+      "title": "Backup Status",
+      "type": "stat",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "victoriametrics" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "dtdurations",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "#EAB839", "value": 172800 },
+              { "color": "red", "value": 604800 }
+            ]
+          }
+        }
+      },
+      "options": {
+        "colorMode": "background",
+        "textMode": "value_and_name",
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "graphMode": "none"
+      },
+      "targets": [
+        {
+          "expr": "time() - restic_last_snapshot_timestamp_seconds",
+          "legendFormat": "{{repo}}"
+        }
+      ]
+    },
+    {
+      "title": "Last Snapshot Time",
+      "type": "stat",
+      "gridPos": { "h": 6, "w": 24, "x": 0, "y": 6 },
+      "datasource": { "type": "prometheus", "uid": "victoriametrics" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "dateTimeFromNow"
+        }
+      },
+      "options": {
+        "textMode": "value_and_name"
+      },
+      "targets": [
+        {
+          "expr": "restic_last_snapshot_timestamp_seconds * 1000",
+          "legendFormat": "{{repo}}"
+        }
+      ]
+    },
+    {
+      "title": "Backup Service Status",
+      "type": "stat",
+      "gridPos": { "h": 6, "w": 24, "x": 0, "y": 12 },
+      "datasource": { "type": "prometheus", "uid": "victoriametrics" },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            { "type": "value", "options": { "0": { "text": "OK", "color": "green" }, "1": { "text": "FAILED", "color": "red" } } }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "red", "value": 1 }
+            ]
+          }
+        }
+      },
+      "options": {
+        "colorMode": "background",
+        "textMode": "value_and_name"
+      },
+      "targets": [
+        {
+          "expr": "node_systemd_unit_state{name=~\"restic-backups-.*|backup-vaultwarden.*|forgejo-dump.*\", state=\"failed\"}",
+          "legendFormat": "{{name}}"
+        }
+      ]
+    },
+    {
+      "title": "Snapshot Age Over Time",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 18 },
+      "datasource": { "type": "prometheus", "uid": "victoriametrics" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "h",
+          "custom": { "fillOpacity": 15 },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "red", "value": 48 }
+            ]
+          },
+          "custom": { "fillOpacity": 15, "thresholdsStyle": { "mode": "line" } }
+        }
+      },
+      "targets": [
+        {
+          "expr": "(time() - restic_last_snapshot_timestamp_seconds) / 3600",
+          "legendFormat": "{{repo}}"
+        }
+      ]
+    },
+    {
+      "title": "Backup Logs",
+      "type": "logs",
+      "gridPos": { "h": 12, "w": 24, "x": 0, "y": 26 },
+      "datasource": { "type": "loki", "uid": "loki" },
+      "options": {
+        "showTime": true,
+        "showLabels": true,
+        "wrapLogMessage": true,
+        "enableLogDetails": true,
+        "sortOrder": "Descending"
+      },
+      "targets": [
+        {
+          "expr": "{unit=~\"restic-backups-.*\\.service|backup-vaultwarden\\.service|forgejo-dump\\.service|restic-snapshot-check\\.service\"}",
+          "legendFormat": ""
+        }
+      ]
+    }
+  ],
+  "schemaVersion": 39
+}

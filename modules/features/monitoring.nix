@@ -2,6 +2,7 @@ _: {
   flake.nixosModules.monitoring = {
     config,
     lib,
+    pkgs,
     ...
   }: let
     cfg = config.features.monitoring;
@@ -70,6 +71,20 @@ _: {
               ];
             }
             {
+              job_name = "caddy";
+              scrape_interval = "15s";
+              static_configs = [
+                {targets = ["localhost:2019"];}
+              ];
+            }
+            {
+              job_name = "postgres";
+              scrape_interval = "30s";
+              static_configs = [
+                {targets = ["localhost:9187"];}
+              ];
+            }
+            {
               job_name = "blackbox";
               scrape_interval = "60s";
               metrics_path = "/probe";
@@ -105,13 +120,6 @@ _: {
           ];
         };
 
-        # Allow node-exporter to read RAPL energy counters (root-only since kernel 5.4).
-        # See https://github.com/prometheus/node_exporter/issues/1892
-        systemd.tmpfiles.rules = [
-          "z /sys/class/powercap/intel-rapl:*/energy_uj 0444 - - - -"
-          "z /sys/class/powercap/intel-rapl:*/*/energy_uj 0444 - - - -"
-        ];
-
         # Blackbox exporter — HTTP probes for Caddy services
         services.prometheus.exporters.blackbox = {
           enable = true;
@@ -129,6 +137,58 @@ _: {
               };
             };
           });
+        };
+
+        # Postgres exporter — forgejo DB metrics
+        services.prometheus.exporters.postgres = {
+          enable = true;
+          port = 9187;
+          runAsLocalSuperUser = true;
+          dataSourceName = "user=postgres host=/run/postgresql sslmode=disable";
+        };
+
+        # Restic backup monitoring — queries actual snapshot timestamps from each repo
+        services.prometheus.exporters.node.extraFlags = [
+          "--collector.textfile.directory=/var/lib/prometheus-node-exporter/textfile"
+        ];
+        systemd.tmpfiles.rules = [
+          "z /sys/class/powercap/intel-rapl:*/energy_uj 0444 - - - -"
+          "z /sys/class/powercap/intel-rapl:*/*/energy_uj 0444 - - - -"
+          "d /var/lib/prometheus-node-exporter/textfile 0755 node-exporter node-exporter - -"
+        ];
+        systemd.services.restic-snapshot-check = {
+          description = "Check restic snapshot ages and write metrics";
+          path = with pkgs; [restic jq coreutils];
+          script = ''
+            set -euo pipefail
+            TEXTFILE_DIR="/var/lib/prometheus-node-exporter/textfile"
+
+            check_repo() {
+              local name="$1" env_file="$2"
+              set -a; source "$env_file"; set +a
+              local ts
+              ts=$(restic snapshots --latest 1 --json 2>/dev/null \
+                | jq -r '.[0].time // empty' \
+                | xargs -I{} date -d {} +%s 2>/dev/null || echo "")
+              if [ -n "$ts" ]; then
+                echo "restic_last_snapshot_timestamp_seconds{repo=\"$name\"} $ts" > "$TEXTFILE_DIR/restic_$name.prom.$$"
+                mv "$TEXTFILE_DIR/restic_$name.prom.$$" "$TEXTFILE_DIR/restic_$name.prom"
+              fi
+            }
+
+            check_repo "nixie-s3" "${config.age.secrets.restic-s3.path}"
+            check_repo "nixie-borgbase" "${config.age.secrets.restic-borgbase.path}"
+            check_repo "nixshark" "${config.age.secrets.restic-nixshark.path}"
+            check_repo "nixwork" "${config.age.secrets.restic-nixwork.path}"
+          '';
+          serviceConfig.Type = "oneshot";
+        };
+        systemd.timers.restic-snapshot-check = {
+          wantedBy = ["timers.target"];
+          timerConfig = {
+            OnCalendar = "*-*-* 02:00:00"; # 1 hour after backups run
+            Persistent = true;
+          };
         };
 
         # Grafana — dashboards and visualization
@@ -228,6 +288,218 @@ _: {
               delete_request_store = "filesystem";
               retention_enabled = true;
             };
+          };
+        };
+
+        # Grafana alerting rules
+        services.grafana.provision.alerting = {
+          rules.settings = {
+            apiVersion = 1;
+            groups = [
+              {
+                orgId = 1;
+                name = "Infrastructure";
+                folder = "Alerts";
+                interval = "1m";
+                rules = [
+                  {
+                    uid = "disk-usage-high";
+                    title = "Disk usage > 80%";
+                    condition = "C";
+                    for = "5m";
+                    data = [
+                      {
+                        refId = "A";
+                        datasourceUid = "victoriametrics";
+                        model = {
+                          expr = "1 - (node_filesystem_avail_bytes{mountpoint=\"/\",fstype!=\"tmpfs\"} / node_filesystem_size_bytes{mountpoint=\"/\",fstype!=\"tmpfs\"})";
+                          refId = "A";
+                        };
+                        relativeTimeRange = {
+                          from = 300;
+                          to = 0;
+                        };
+                      }
+                      {
+                        refId = "C";
+                        datasourceUid = "__expr__";
+                        model = {
+                          type = "threshold";
+                          expression = "A";
+                          conditions = [
+                            {
+                              evaluator = {
+                                type = "gt";
+                                params = [0.8];
+                              };
+                            }
+                          ];
+                          refId = "C";
+                        };
+                      }
+                    ];
+                    noDataState = "OK";
+                    execErrState = "Alerting";
+                  }
+                  {
+                    uid = "service-down";
+                    title = "Service down > 5 minutes";
+                    condition = "C";
+                    for = "5m";
+                    data = [
+                      {
+                        refId = "A";
+                        datasourceUid = "victoriametrics";
+                        model = {
+                          expr = "probe_success == 0";
+                          refId = "A";
+                        };
+                        relativeTimeRange = {
+                          from = 300;
+                          to = 0;
+                        };
+                      }
+                      {
+                        refId = "C";
+                        datasourceUid = "__expr__";
+                        model = {
+                          type = "threshold";
+                          expression = "A";
+                          conditions = [
+                            {
+                              evaluator = {
+                                type = "gt";
+                                params = [0];
+                              };
+                            }
+                          ];
+                          refId = "C";
+                        };
+                      }
+                    ];
+                    noDataState = "OK";
+                    execErrState = "Alerting";
+                  }
+                  {
+                    uid = "backup-stale";
+                    title = "Backup older than 2 days";
+                    condition = "C";
+                    for = "1h";
+                    data = [
+                      {
+                        refId = "A";
+                        datasourceUid = "victoriametrics";
+                        model = {
+                          expr = "time() - restic_last_snapshot_timestamp_seconds > 172800";
+                          refId = "A";
+                        };
+                        relativeTimeRange = {
+                          from = 300;
+                          to = 0;
+                        };
+                      }
+                      {
+                        refId = "C";
+                        datasourceUid = "__expr__";
+                        model = {
+                          type = "threshold";
+                          expression = "A";
+                          conditions = [
+                            {
+                              evaluator = {
+                                type = "gt";
+                                params = [0];
+                              };
+                            }
+                          ];
+                          refId = "C";
+                        };
+                      }
+                    ];
+                    noDataState = "Alerting";
+                    execErrState = "Alerting";
+                  }
+                  {
+                    uid = "high-cpu";
+                    title = "High CPU usage sustained > 15 minutes";
+                    condition = "C";
+                    for = "15m";
+                    data = [
+                      {
+                        refId = "A";
+                        datasourceUid = "victoriametrics";
+                        model = {
+                          expr = "1 - avg by (instance) (rate(node_cpu_seconds_total{mode=\"idle\"}[5m]))";
+                          refId = "A";
+                        };
+                        relativeTimeRange = {
+                          from = 300;
+                          to = 0;
+                        };
+                      }
+                      {
+                        refId = "C";
+                        datasourceUid = "__expr__";
+                        model = {
+                          type = "threshold";
+                          expression = "A";
+                          conditions = [
+                            {
+                              evaluator = {
+                                type = "gt";
+                                params = [0.9];
+                              };
+                            }
+                          ];
+                          refId = "C";
+                        };
+                      }
+                    ];
+                    noDataState = "OK";
+                    execErrState = "Alerting";
+                  }
+                  {
+                    uid = "high-memory";
+                    title = "High memory usage sustained > 15 minutes";
+                    condition = "C";
+                    for = "15m";
+                    data = [
+                      {
+                        refId = "A";
+                        datasourceUid = "victoriametrics";
+                        model = {
+                          expr = "1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)";
+                          refId = "A";
+                        };
+                        relativeTimeRange = {
+                          from = 300;
+                          to = 0;
+                        };
+                      }
+                      {
+                        refId = "C";
+                        datasourceUid = "__expr__";
+                        model = {
+                          type = "threshold";
+                          expression = "A";
+                          conditions = [
+                            {
+                              evaluator = {
+                                type = "gt";
+                                params = [0.9];
+                              };
+                            }
+                          ];
+                          refId = "C";
+                        };
+                      }
+                    ];
+                    noDataState = "OK";
+                    execErrState = "Alerting";
+                  }
+                ];
+              }
+            ];
           };
         };
 
