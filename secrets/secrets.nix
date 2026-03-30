@@ -23,6 +23,10 @@ in {
   "k8s-grafana.age".publicKeys = allKeys;
   "cache-key.age".publicKeys = allKeys;
   "restic-s3.age".publicKeys = allKeys;
+  "ses-smtp-addr.age".publicKeys = allKeys;
+  "ses-smtp-port.age".publicKeys = allKeys;
+  "ses-smtp-user.age".publicKeys = allKeys;
+  "ses-smtp-password.age".publicKeys = allKeys;
   "restic-borgbase.age".publicKeys = allKeys;
   "restic-nixshark.age".publicKeys = allKeys;
   "restic-nixwork.age".publicKeys = allKeys;

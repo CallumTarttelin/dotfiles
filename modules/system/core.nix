@@ -102,6 +102,10 @@ _: {
         k8s-grafana.file = ../../secrets/k8s-grafana.age;
         cache-key.file = ../../secrets/cache-key.age;
         restic-s3.file = ../../secrets/restic-s3.age;
+        ses-smtp-addr.file = ../../secrets/ses-smtp-addr.age;
+        ses-smtp-port.file = ../../secrets/ses-smtp-port.age;
+        ses-smtp-user.file = ../../secrets/ses-smtp-user.age;
+        ses-smtp-password.file = ../../secrets/ses-smtp-password.age;
         restic-borgbase.file = ../../secrets/restic-borgbase.age;
         restic-nixshark.file = ../../secrets/restic-nixshark.age;
         restic-nixwork.file = ../../secrets/restic-nixwork.age;
