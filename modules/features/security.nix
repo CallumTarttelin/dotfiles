@@ -21,7 +21,7 @@ _: {
         home-manager.users.tarttelin = {
           home.packages = with pkgs; [
             keepassxc
-            # bitwarden-desktop # TODO: re-enable after nixpkgs update (tinycc hash mismatch)
+            bitwarden-desktop
             bitwarden-cli
           ];
         };
