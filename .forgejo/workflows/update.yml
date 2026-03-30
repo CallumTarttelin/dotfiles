@@ -1,7 +1,7 @@
 name: Flake Update
 on:
   schedule:
-    - cron: '0 3 * * *' # Daily at 3am
+    - cron: "0 3 * * *" # Daily at 3am
 
 jobs:
   update:
@@ -20,17 +20,17 @@ jobs:
         id: changes
         run: |
           if git diff --quiet; then
-            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "changed=false" >> "$FORGEJO_OUTPUT"
           else
-            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "changed=true" >> "$FORGEJO_OUTPUT"
           fi
       - name: Create PR with auto-merge
         if: steps.changes.outputs.changed == 'true'
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          FORGEJO_TOKEN: ${{ secrets.FORGEJO_TOKEN }}
           API: https://git.callumtarttelin.com/api/v1/repos/tarttelin/dotfiles
         run: |
-          api() { curl -sf -H "Authorization: token $GITHUB_TOKEN" -H "Content-Type: application/json" "$@"; }
+          api() { curl -sf -H "Authorization: token $FORGEJO_TOKEN" -H "Content-Type: application/json" "$@"; }
 
           # Close any existing update PR
           existing=$(api "$API/pulls?state=open&labels=&head=tarttelin:auto/flake-update" | jq -r '.[0].number // empty')
