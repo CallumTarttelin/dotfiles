@@ -123,9 +123,16 @@
       USER = config.age.secrets.ses-smtp-user.path;
       PASSWD = config.age.secrets.ses-smtp-password.path;
     };
+    dump = {
+      enable = true;
+      backupDir = "/var/backup/nixie/forgejo-dump";
+      type = "tar"; # no compression — restic handles it
+      interval = "00:00:00"; # midnight, before 1am restic run
+    };
   };
 
   services.gitea-actions-runner = {
+    package = pkgs.forgejo-runner;
     instances.default = {
       enable = true;
       name = "default";
@@ -146,6 +153,11 @@
         "java25:docker://eclipse-temurin:25"
         "gradle:docker://gradle:jdk25"
       ];
+
+      settings.cache = {
+        enabled = true;
+        dir = "/var/cache/forgejo-runner";
+      };
     };
     # Native runner scoped to tarttelin/dotfiles in Forgejo UI
     # Register token at: git.callumtarttelin.com/tarttelin/dotfiles/settings/actions/runners
@@ -162,6 +174,7 @@
   services.vaultwarden = {
     enable = true;
     environmentFile = config.age.secrets.vaultwarden.path;
+    backupDir = "/var/backup/nixie/vaultwarden";
     config = {
       DOMAIN = "https://vault.callumtarttelin.com";
       SIGNUPS_ALLOWED = true;
@@ -197,16 +210,9 @@
     nixie-s3 = {
       environmentFile = config.age.secrets.restic-s3.path;
       paths = nixiePaths;
-      backupPrepareCommand = ''
-        ${pkgs.coreutils}/bin/mkdir -p /var/backup/nixie/vaultwarden
-        ${pkgs.sqlite}/bin/sqlite3 /var/lib/bitwarden_rs/db.sqlite3 ".backup '/var/backup/nixie/vaultwarden/db.sqlite3'"
-        ${pkgs.coreutils}/bin/cp -a /var/lib/bitwarden_rs/attachments /var/backup/nixie/vaultwarden/ 2>/dev/null || true
-        ${pkgs.coreutils}/bin/cp -a /var/lib/bitwarden_rs/sends /var/backup/nixie/vaultwarden/ 2>/dev/null || true
-        ${pkgs.coreutils}/bin/cp -a /var/lib/bitwarden_rs/rsa_key* /var/backup/nixie/vaultwarden/ 2>/dev/null || true
-        ${pkgs.sudo}/bin/sudo -u postgres ${config.services.postgresql.package}/bin/pg_dump forgejo > /var/backup/nixie/forgejo.sql
-        ${pkgs.coreutils}/bin/cp -a /var/lib/forgejo/repositories /var/backup/nixie/forgejo-repos 2>/dev/null || true
-        ${pkgs.coreutils}/bin/cp -a /var/lib/forgejo/lfs /var/backup/nixie/forgejo-lfs 2>/dev/null || true
-      '';
+      # Vaultwarden backup: services.vaultwarden.backupDir (runs at 23:00)
+      # Forgejo backup: services.forgejo.dump (runs at midnight)
+      # Both land under /var/backup/nixie before this 1am restic run
       extraBackupArgs = ["--compression max"];
       timerConfig = {
         OnCalendar = "*-*-* 01:00:00"; # daily, 1 hour after midnight client backup
@@ -231,6 +237,9 @@
     after = ["restic-backups-nixie-s3.service"];
     requires = ["restic-backups-nixie-s3.service"];
   };
+
+  # Override default 23:00 to midnight, consistent with forgejo dump
+  systemd.timers.backup-vaultwarden.timerConfig.OnCalendar = "00:00:00";
 
   services.fwupd.enable = true;
 
