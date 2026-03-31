@@ -1,7 +1,8 @@
 name: Flake Update
 on:
   schedule:
-    - cron: "0 3 * * *" # Daily at 3am
+    - cron: "0 2 * * *" # Daily at 2am
+  workflow_dispatch:
 
 jobs:
   update:
@@ -30,16 +31,19 @@ jobs:
           FORGEJO_TOKEN: ${{ secrets.FORGEJO_TOKEN }}
           API: https://git.callumtarttelin.com/api/v1/repos/tarttelin/dotfiles
         run: |
-          api() { curl -sf -H "Authorization: token $FORGEJO_TOKEN" -H "Content-Type: application/json" "$@"; }
+          set -euo pipefail
+          api() { curl -sSf -H "Authorization: token $FORGEJO_TOKEN" -H "Content-Type: application/json" "$@"; }
 
           # Close any existing update PR
-          existing=$(api "$API/pulls?state=open&labels=&head=tarttelin:auto/flake-update" | jq -r '.[0].number // empty')
+          existing=$(api "$API/pulls?state=open&head=tarttelin:auto/flake-update" | jq -r '.[0].number // empty')
           if [ -n "$existing" ]; then
             api -X PATCH "$API/pulls/$existing" -d '{"state":"closed"}'
             git push origin --delete auto/flake-update || true
           fi
 
           branch="auto/flake-update"
+          git config user.name "Flake Updater"
+          git config user.email "noreply@callumtarttelin.com"
           git checkout -b "$branch"
           git add -A
           git commit -m "chore: update flake.lock $(date +%Y-%m-%d)"
