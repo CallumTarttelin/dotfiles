@@ -25,3 +25,18 @@ jobs:
       - uses: actions/checkout@v4
       - name: Build ${{ matrix.host }}
         run: nix build .#nixosConfigurations.${{ matrix.host }}.config.system.build.toplevel
+
+  auto-merge:
+    runs-on: nix-native
+    needs: [lint, check, build]
+    if: github.event_name == 'pull_request' && github.event.pull_request.user.login == 'flake-updater'
+    steps:
+      - name: Merge PR
+        env:
+          FORGEJO_TOKEN: ${{ secrets.FORGEJO_TOKEN }}
+        run: |
+          curl -sSf -X POST \
+            -H "Authorization: token $FORGEJO_TOKEN" \
+            -H "Content-Type: application/json" \
+            "https://git.callumtarttelin.com/api/v1/repos/tarttelin/dotfiles/pulls/${{ github.event.pull_request.number }}/merge" \
+            -d '{"Do":"squash","delete_branch_after_merge":true}'
