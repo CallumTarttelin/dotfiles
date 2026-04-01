@@ -56,6 +56,4 @@ jobs:
             \"body\": \"Automated daily flake.lock update.\"
           }" | jq -r '.number')
 
-          # Enable auto-merge — merges once CI passes
-          api -X POST "$API/pulls/$pr_number/merge" -d '{"Do":"merge","delete_branch_after_merge":true,"merge_when_checks_succeed":true}'
-          echo "Created PR #$pr_number with auto-merge"
+          echo "Created PR #$pr_number"
