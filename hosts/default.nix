@@ -45,6 +45,7 @@
               shell.enable = true;
             };
             bundles = {
+              electronics.enable = true;
               go-tools.enable = true;
               jvm-tools.enable = true;
               web-tools.enable = true;

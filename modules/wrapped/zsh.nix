@@ -111,6 +111,14 @@
       alias vi="nvim"
       alias vim="nvim"
       alias ex="hyprctl dispatch exec"
+      function exd() {
+        if [[ "$1" == "-E" ]]; then
+          shift
+          systemd-run --user --scope --collect --unit="app-''${1##*/}-$$" -- "$@"
+        else
+          systemd-run --user --collect --unit="app-''${1##*/}-$$" -- "$@"
+        fi
+      }
       alias cat="bat"
       alias ls="eza --icons=auto --git"
       alias ll="eza --icons=auto --git -la"
