@@ -66,6 +66,8 @@
         pkgs = import inputs.nixpkgs {
           inherit system;
           config.allowUnfree = true;
+          config.segger-jlink.acceptLicense = true;
+          config.permittedInsecurePackages = ["segger-jlink-qt4-874"];
         };
       in {
         _module.args.pkgs = pkgs;
