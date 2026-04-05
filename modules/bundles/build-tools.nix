@@ -2,7 +2,7 @@
   perSystem = {pkgs, ...}: {
     packages.build-tools = pkgs.buildEnv {
       name = "build-tools";
-      paths = with pkgs; [gcc gnumake protobuf protobufc openssl zig];
+      paths = with pkgs; [gcc gnumake gdb valgrind strace ltrace protobuf protobufc openssl zig];
     };
   };
 

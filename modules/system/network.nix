@@ -17,7 +17,7 @@ _: {
       firewall = {
         enable = true;
         checkReversePath = "loose";
-        trustedInterfaces = ["tailscale0"];
+        trustedInterfaces = ["tailscale0" "wpan0"];
       };
 
       nameservers = [
