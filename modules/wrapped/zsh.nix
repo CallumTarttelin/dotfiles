@@ -112,16 +112,24 @@
       alias vim="nvim"
       alias ex="hyprctl dispatch exec"
       function exd() {
+        local env_args=()
         if [[ "$1" == "-E" ]]; then
           shift
-          systemd-run --user --scope --collect --unit="app-''${1##*/}-$$" -- "$@"
-        else
-          systemd-run --user --collect --unit="app-''${1##*/}-$$" -- "$@"
+          while IFS='=' read -r k v; do
+            [[ "$k" =~ ^[a-zA-Z_][a-zA-Z0-9_]*$ ]] || continue
+            env_args+=("--setenv=$k=$v")
+          done < <(env)
         fi
+        local suffix="$$-$RANDOM"
+        systemd-run --user --collect "''${env_args[@]}" --unit="app-''${1##*/}-$suffix" -- "$@"
       }
       alias cat="bat"
       alias ls="eza --icons=auto --git"
-      alias ll="eza --icons=auto --git -la"
+      alias ll="eza --icons=auto --git -lga"
+      alias la="eza --icons=auto --git -a"
+      alias lt="eza --icons=auto --git -T -L 1"
+      alias ltt="eza --icons=auto --git -T -L 2"
+      alias lttt="eza --icons=auto --git -T -L 3"
       alias tree="eza --icons=auto --git -T"
     '';
 
