@@ -55,6 +55,7 @@
               build-tools.enable = true;
               rust-tools.enable = true;
               nix-tools.enable = true;
+              io-tools.enable = true;
             };
           })
         ]
@@ -97,6 +98,7 @@
               build-tools.enable = true;
               rust-tools.enable = true;
               nix-tools.enable = true;
+              io-tools.enable = true;
             };
           })
         ]
@@ -120,6 +122,7 @@
               shell.enable = true;
             };
             bundles.nix-tools.enable = true;
+            bundles.io-tools.enable = true;
           }
         ]
         ++ allModules;

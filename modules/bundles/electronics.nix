@@ -18,7 +18,7 @@
         ngspice
         nrfconnect-wrapped
         # nrfconnect-bluetooth-low-energy
-        minicom
+        picocom
         openocd
         nrf-command-line-tools
         segger-jlink-headless
