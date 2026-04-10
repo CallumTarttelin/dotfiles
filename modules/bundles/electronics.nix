@@ -1,5 +1,17 @@
-{self, ...}: {
-  perSystem = {pkgs, ...}: let
+{
+  self,
+  inputs,
+  ...
+}: {
+  perSystem = {
+    pkgs,
+    system,
+    ...
+  }: let
+    pkgs2511 = import inputs.nixpkgs-2511 {
+      inherit system;
+      config.allowUnfree = true;
+    };
     nrfconnect-wrapped = pkgs.buildFHSEnv {
       name = "nrfconnect";
       targetPkgs = p: [pkgs.nrfconnect pkgs.nrfutil p.segger-jlink-headless p.libusb1 p.udev];
@@ -14,7 +26,7 @@
     packages.electronics = pkgs.buildEnv {
       name = "electronics";
       paths = with pkgs; [
-        kicad
+        pkgs2511.kicad
         ngspice
         nrfconnect-wrapped
         # nrfconnect-bluetooth-low-energy
