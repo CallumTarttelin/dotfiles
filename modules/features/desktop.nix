@@ -22,7 +22,6 @@ _: {
       bundles.llms.enable = lib.mkDefault true;
       bundles.media.enable = lib.mkDefault true;
       bundles.drawing.enable = lib.mkDefault true;
-      bundles.work.enable = lib.mkDefault true;
     };
   };
 }
