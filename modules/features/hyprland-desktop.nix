@@ -21,6 +21,16 @@
       fi
     '';
 
+    pipewireIdleInhibitConfig = pkgs.writeText "wayland-pipewire-idle-inhibit.toml" ''
+      verbosity = "WARN"
+      media_minimum_duration = 10
+      idle_inhibitor = "wayland"
+      sink_whitelist = []
+
+      [[node_blacklist]]
+      app_name = "[Ss]potify"
+    '';
+
     isStandard = cfg.desktopShell == "standard";
     isNoctalia = cfg.desktopShell == "noctalia";
 
@@ -235,6 +245,20 @@
             ExecStart = "${lib.getExe myNoctalia}";
             Restart = "on-failure";
             RestartSec = 1;
+          };
+          Install.WantedBy = ["graphical-session.target"];
+        };
+
+        systemd.user.services.wayland-pipewire-idle-inhibit = lib.mkIf isNoctalia {
+          Unit = {
+            Description = "Inhibit Wayland idle while media is playing";
+            PartOf = ["graphical-session.target"];
+            After = ["graphical-session.target" "pipewire.service"];
+          };
+          Service = {
+            ExecStart = "${lib.getExe pkgs.wayland-pipewire-idle-inhibit} --config ${pipewireIdleInhibitConfig}";
+            Restart = "on-failure";
+            RestartSec = 2;
           };
           Install.WantedBy = ["graphical-session.target"];
         };
