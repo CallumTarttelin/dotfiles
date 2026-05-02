@@ -29,14 +29,15 @@ jobs:
   auto-merge:
     runs-on: nix-native
     needs: [lint, check, build]
-    if: github.event_name == 'pull_request' && github.event.pull_request.user.login == 'flake-updater'
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.ref == 'auto/flake-update'
     steps:
       - name: Merge PR
         env:
-          FORGEJO_TOKEN: ${{ secrets.FORGEJO_TOKEN }}
+          FLAKE_UPDATER_TOKEN: ${{ secrets.FLAKE_UPDATER_TOKEN }}
         run: |
+          : "${FLAKE_UPDATER_TOKEN:?Set the FLAKE_UPDATER_TOKEN Actions secret to a personal access token. Do not use FORGEJO_TOKEN; Forgejo reserves that for the automatic workflow token.}"
           curl -sSf -X POST \
-            -H "Authorization: token $FORGEJO_TOKEN" \
+            -H "Authorization: token $FLAKE_UPDATER_TOKEN" \
             -H "Content-Type: application/json" \
             "https://git.callumtarttelin.com/api/v1/repos/tarttelin/dotfiles/pulls/${{ github.event.pull_request.number }}/merge" \
             -d '{"Do":"squash","delete_branch_after_merge":true}'

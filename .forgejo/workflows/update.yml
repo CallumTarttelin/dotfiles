@@ -8,9 +8,14 @@ jobs:
   update:
     runs-on: nix-native
     steps:
+      - name: Check PAT secret
+        env:
+          FLAKE_UPDATER_TOKEN: ${{ secrets.FLAKE_UPDATER_TOKEN }}
+        run: ': "${FLAKE_UPDATER_TOKEN:?Set the FLAKE_UPDATER_TOKEN Actions secret to a personal access token. Do not use FORGEJO_TOKEN; Forgejo reserves that for the automatic workflow token.}"'
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          token: ${{ secrets.FLAKE_UPDATER_TOKEN }}
       - name: Pre-update (pull custom package updates)
         run: nix run .#pre-update
       - name: Update flake.lock
@@ -28,11 +33,12 @@ jobs:
       - name: Create PR with auto-merge
         if: steps.changes.outputs.changed == 'true'
         env:
-          FORGEJO_TOKEN: ${{ secrets.FORGEJO_TOKEN }}
+          FLAKE_UPDATER_TOKEN: ${{ secrets.FLAKE_UPDATER_TOKEN }}
           API: https://git.callumtarttelin.com/api/v1/repos/tarttelin/dotfiles
         run: |
           set -euo pipefail
-          api() { curl -sSf -H "Authorization: token $FORGEJO_TOKEN" -H "Content-Type: application/json" "$@"; }
+          : "${FLAKE_UPDATER_TOKEN:?Set the FLAKE_UPDATER_TOKEN Actions secret to a personal access token. Do not use FORGEJO_TOKEN; Forgejo reserves that for the automatic workflow token.}"
+          api() { curl -sSf -H "Authorization: token $FLAKE_UPDATER_TOKEN" -H "Content-Type: application/json" "$@"; }
 
           # Close any existing update PR
           existing=$(api "$API/pulls?state=open&head=tarttelin:auto/flake-update" | jq -r '.[0].number // empty')
