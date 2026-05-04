@@ -112,6 +112,12 @@ _: {
         restic-nixwork.file = ../../secrets/restic-nixwork.age;
         grafana-admin.file = ../../secrets/grafana-admin.age;
         grafana-secret-key.file = ../../secrets/grafana-secret-key.age;
+        tail2 = {
+          file = ../../secrets/tail2.age;
+          mode = "0400";
+          owner = "root";
+          group = "root";
+        };
       };
       identityPaths = [
         "/etc/ssh/ssh_host_ed25519_key"

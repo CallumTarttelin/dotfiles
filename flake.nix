@@ -53,6 +53,9 @@
     mkPkgs = system:
       import inputs.nixpkgs {
         inherit system;
+        overlays = [
+          (import ./overlays)
+        ];
         config.allowUnfree = true;
         config.segger-jlink.acceptLicense = true;
         config.permittedInsecurePackages = ["segger-jlink-qt4-874"];
@@ -65,6 +68,19 @@
         inherit pkgs;
         nixvim = inputs.nixvim;
       };
+
+    mkRemoteZsh = system: let
+      pkgs = mkPkgs system;
+    in
+      pkgs.callPackage ./pkgs/remote-zsh {
+        inherit pkgs;
+        neovim = mkNeovim system;
+      };
+
+    remoteZshApp = system: {
+      type = "app";
+      program = "${self.packages.${system}.remoteZsh}/bin/zsh";
+    };
   in
     flake-parts.lib.mkFlake {inherit inputs;} {
       imports = [
@@ -93,16 +109,26 @@
         # those are more easily expressed in perSystem.
         packages.aarch64-linux = let
           nvim = mkNeovim "aarch64-linux";
+          remoteZsh = mkRemoteZsh "aarch64-linux";
         in {
           inherit nvim;
           myNeovim = nvim;
+          inherit remoteZsh;
         };
 
         packages.aarch64-darwin = let
           nvim = mkNeovim "aarch64-darwin";
+          remoteZsh = mkRemoteZsh "aarch64-darwin";
         in {
           inherit nvim;
           myNeovim = nvim;
+          inherit remoteZsh;
+        };
+
+        apps = {
+          x86_64-linux.remote-zsh = remoteZshApp "x86_64-linux";
+          aarch64-linux.remote-zsh = remoteZshApp "aarch64-linux";
+          aarch64-darwin.remote-zsh = remoteZshApp "aarch64-darwin";
         };
 
         deploy.nodes.nixie = {

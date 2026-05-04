@@ -17,7 +17,11 @@
           inputs.hardware.nixosModules.common-cpu-amd
           inputs.hardware.nixosModules.common-cpu-amd-pstate
           inputs.hardware.nixosModules.common-gpu-amd
-          ({pkgs, ...}: let
+          ({
+            config,
+            pkgs,
+            ...
+          }: let
             selfpkgs = inputs.self.packages.${pkgs.stdenv.hostPlatform.system};
           in {
             features = {
@@ -41,6 +45,11 @@
               monitoring = {
                 node-exporter = true;
                 alloy = true;
+              };
+              multi-tailnet = {
+                enable = true;
+                runtimeConfigFile = config.age.secrets.tail2.path;
+                vnc.enable = true;
               };
               shell.enable = true;
             };
@@ -67,7 +76,11 @@
           ./nixwork
           {home-manager.users.tarttelin.imports = homeImports."tarttelin@nixwork";}
           inputs.hardware.nixosModules.framework-13-7040-amd
-          ({pkgs, ...}: let
+          ({
+            config,
+            pkgs,
+            ...
+          }: let
             selfpkgs = inputs.self.packages.${pkgs.stdenv.hostPlatform.system};
           in {
             features = {
@@ -85,6 +98,11 @@
               monitoring = {
                 node-exporter = true;
                 alloy = true;
+              };
+              multi-tailnet = {
+                enable = true;
+                runtimeConfigFile = config.age.secrets.tail2.path;
+                vnc.enable = true;
               };
               shell.enable = true;
             };

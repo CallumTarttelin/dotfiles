@@ -4,14 +4,22 @@
   nixvim,
 }: let
   updateT3code = pkgs.callPackage ./update-t3code {inherit flake;};
+  updateJetbrainsToolbox = pkgs.callPackage ./update-jetbrains-toolbox {inherit flake;};
   nvim = import ./neovim {inherit pkgs nixvim;};
+  remoteZsh = pkgs.callPackage ./remote-zsh {
+    inherit pkgs;
+    neovim = nvim;
+  };
 in {
   inherit nvim;
   myNeovim = nvim;
+  inherit remoteZsh;
 
+  jetbrains-toolbox = pkgs.jetbrains-toolbox;
   t3code = pkgs.callPackage ./t3code {};
   update-t3code = updateT3code;
+  update-jetbrains-toolbox = updateJetbrainsToolbox;
   pre-update = pkgs.callPackage ./pre-update {
-    inherit updateT3code;
+    inherit updateJetbrainsToolbox updateT3code;
   };
 }

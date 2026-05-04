@@ -32,4 +32,5 @@ in {
   "restic-nixwork.age".publicKeys = allKeys;
   "grafana-admin.age".publicKeys = allKeys;
   "grafana-secret-key.age".publicKeys = allKeys;
+  "tail2.age".publicKeys = [nixshark-user nixwork-user nixshark-host nixwork-host];
 }

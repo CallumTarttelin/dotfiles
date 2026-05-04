@@ -1,0 +1,69 @@
+{
+  appimageTools,
+  buildFHSEnv,
+  coreutils,
+  fetchzip,
+  lib,
+  runtimeShell,
+  stdenvNoCC,
+}: let
+  pname = "jetbrains-toolbox";
+  version = "3.4.3.81140";
+
+  selectSystem = attrs:
+    attrs.${stdenvNoCC.hostPlatform.system}
+    or (throw "Unsupported system: ${stdenvNoCC.hostPlatform.system}");
+
+  archSuffix =
+    if stdenvNoCC.hostPlatform.isAarch64
+    then "-arm64"
+    else "";
+
+  src = fetchzip {
+    url = "https://download.jetbrains.com/toolbox/jetbrains-toolbox-${version}${archSuffix}.tar.gz";
+    hash = selectSystem {
+      x86_64-linux = "sha256-cDquMMb2gcRv6juEo2Ty4KgoKG5zBYtq+0mppnq4vyU=";
+      aarch64-linux = "sha256-jF9Evg6IZVEz6Nsl8XYb0nIyaO/yqdEEYOs+k2vZ8jo=";
+    };
+  };
+in
+  buildFHSEnv {
+    inherit pname version;
+
+    passthru = {
+      inherit src;
+    };
+
+    multiPkgs = pkgs:
+      with pkgs;
+        [
+          icu
+          libappindicator-gtk3
+        ]
+        ++ appimageTools.defaultFhsEnvArgs.multiPkgs pkgs;
+
+    runScript = "${src}/bin/jetbrains-toolbox --update-failed";
+
+    extraInstallCommands = ''
+      install -Dm0644 ${src}/bin/jetbrains-toolbox.desktop -t $out/share/applications
+      install -Dm0644 ${src}/bin/toolbox-tray-color.png $out/share/pixmaps/jetbrains-toolbox.png
+
+      install -Dm0755 /dev/stdin $out/bin/jetbrains-toolbox-desktop <<EOF
+      #!${runtimeShell}
+      export SSH_AUTH_SOCK="\''${XDG_RUNTIME_DIR:-/run/user/\$(${coreutils}/bin/id -u)}/ssh-agent"
+      exec "$out/bin/jetbrains-toolbox" "\$@"
+      EOF
+
+      substituteInPlace $out/share/applications/jetbrains-toolbox.desktop \
+        --replace-fail "Exec=jetbrains-toolbox" "Exec=$out/bin/jetbrains-toolbox-desktop"
+    '';
+
+    meta = {
+      description = "JetBrains Toolbox";
+      homepage = "https://www.jetbrains.com/toolbox-app";
+      license = lib.licenses.unfree;
+      sourceProvenance = with lib.sourceTypes; [binaryNativeCode];
+      platforms = ["x86_64-linux" "aarch64-linux"];
+      mainProgram = pname;
+    };
+  }
