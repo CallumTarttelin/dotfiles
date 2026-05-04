@@ -28,9 +28,10 @@
     hardware = {
       url = "github:NixOS/nixos-hardware/master";
     };
-    nvim = {
-      url = "./flakes/nvim";
+    nixvim = {
+      url = "github:nix-community/nixvim";
       inputs.nixpkgs.follows = "nixpkgs";
+      inputs.flake-parts.follows = "flake-parts";
     };
     llm-agents = {
       url = "github:numtide/llm-agents.nix";
@@ -48,7 +49,23 @@
     self,
     flake-parts,
     ...
-  }:
+  }: let
+    mkPkgs = system:
+      import inputs.nixpkgs {
+        inherit system;
+        config.allowUnfree = true;
+        config.segger-jlink.acceptLicense = true;
+        config.permittedInsecurePackages = ["segger-jlink-qt4-874"];
+      };
+
+    mkNeovim = system: let
+      pkgs = mkPkgs system;
+    in
+      import ./pkgs/neovim {
+        inherit pkgs;
+        nixvim = inputs.nixvim;
+      };
+  in
     flake-parts.lib.mkFlake {inherit inputs;} {
       imports = [
         ./hosts
@@ -61,16 +78,12 @@
       ];
       systems = ["x86_64-linux"];
       perSystem = {system, ...}: let
-        pkgs = import inputs.nixpkgs {
-          inherit system;
-          config.allowUnfree = true;
-          config.segger-jlink.acceptLicense = true;
-          config.permittedInsecurePackages = ["segger-jlink-qt4-874"];
-        };
+        pkgs = mkPkgs system;
       in {
         _module.args.pkgs = pkgs;
         packages = import ./pkgs {
           inherit pkgs;
+          nixvim = inputs.nixvim;
           flake = "/home/tarttelin/Documents/dotfiles";
         };
       };
@@ -78,6 +91,20 @@
         # The usual flake attributes can be defined here, including system-
         # agnostic ones like nixosModule and system-enumerating ones, although
         # those are more easily expressed in perSystem.
+        packages.aarch64-linux = let
+          nvim = mkNeovim "aarch64-linux";
+        in {
+          inherit nvim;
+          myNeovim = nvim;
+        };
+
+        packages.aarch64-darwin = let
+          nvim = mkNeovim "aarch64-darwin";
+        in {
+          inherit nvim;
+          myNeovim = nvim;
+        };
+
         deploy.nodes.nixie = {
           hostname = "nixie";
           magicRollback = false;
