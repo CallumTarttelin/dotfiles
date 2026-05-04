@@ -5,7 +5,9 @@
       paths = with pkgs; [
         jetbrains.idea
         jetbrains.rust-rover
+        jetbrains.goland
         jetbrains.clion
+        jetbrains-toolbox
         zed-editor
       ];
     };
