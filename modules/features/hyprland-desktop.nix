@@ -36,6 +36,15 @@
 
     standardPackages = [selfpkgs.myWaybar selfpkgs.myMako selfpkgs.myWofi];
 
+    startHyprland = pkgs.writeShellScript "start-hyprland-with-home-session" ''
+      hmSessionVars="/etc/profiles/per-user/tarttelin/etc/profile.d/hm-session-vars.sh"
+      if [ -r "$hmSessionVars" ]; then
+        . "$hmSessionVars"
+      fi
+
+      exec /run/current-system/sw/bin/start-hyprland
+    '';
+
     noctaliaExecOnce = []; # noctalia managed via systemd user service
 
     ipc = "${lib.getExe myNoctalia} ipc call";
@@ -170,7 +179,7 @@
       services.greetd = {
         enable = true;
         settings.default_session = {
-          command = "${pkgs.tuigreet}/bin/tuigreet --time --remember --cmd start-hyprland";
+          command = "${pkgs.tuigreet}/bin/tuigreet --time --remember --cmd ${startHyprland}";
           user = "greeter";
         };
       };
@@ -243,6 +252,9 @@
           };
           Service = {
             ExecStart = "${lib.getExe myNoctalia}";
+            Environment = [
+              "PATH=/etc/profiles/per-user/tarttelin/bin:/run/current-system/sw/bin:/run/wrappers/bin"
+            ];
             Restart = "on-failure";
             RestartSec = 1;
           };

@@ -56,6 +56,8 @@ _: {
     };
 
     nix.settings = {
+      max-jobs = 1;
+      cores = 10;
       trusted-users = ["root" "@wheel"];
       builders-use-substitutes = true;
       experimental-features = ["nix-command" "flakes"];

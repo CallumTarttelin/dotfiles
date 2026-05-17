@@ -26,7 +26,7 @@
     packages.electronics = pkgs.buildEnv {
       name = "electronics";
       paths = with pkgs; [
-        pkgs2511.kicad
+        kicad
         ngspice
         nrfconnect-wrapped
         # nrfconnect-bluetooth-low-energy

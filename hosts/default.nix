@@ -37,6 +37,7 @@
                   ",preferred,auto,1"
                 ];
               };
+              firefox-work-profile.enable = true;
               logiops.enable = true;
               bluetooth.enable = true;
               security.yubikey = true;
@@ -91,6 +92,7 @@
                 noctaliaPackage = selfpkgs.myNoctalia-nixwork;
                 monitors = ["eDP-1,preferred,auto,1"];
               };
+              firefox-work-profile.enable = true;
               logiops.enable = true;
               bluetooth.enable = true;
               security.yubikey = true;
