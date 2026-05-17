@@ -76,6 +76,7 @@ _: {
       # launcher bind set by hyprland-desktop feature (wofi or noctalia)
       bind = $mainMod, F, fullscreen,
       bind = $mainMod, E, exec, firefox
+      bind = CTRL $mainMod, E, exec, ${lib.getExe self'.packages.firefox-work}
       bind = $shiftMod, E, exec, firefox -private-window
       bind = , PRINT, exec, ${pkgs.grimblast}/bin/grimblast copysave area
 

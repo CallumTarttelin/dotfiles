@@ -22,6 +22,9 @@
         home.packages = [
           self.packages.${pkgs.stdenv.hostPlatform.system}.go-tools
         ];
+        home.sessionPath = [
+          "$HOME/go/bin"
+        ];
         programs.go.enable = true;
       };
     };

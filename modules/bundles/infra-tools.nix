@@ -11,6 +11,7 @@
         fluxcd
         yq-go
         awscli2
+        google-cloud-sdk
       ];
     };
   };

@@ -30,6 +30,7 @@
         "left": [
           {
             "colorizeSystemIcon": "none",
+            "colorizeSystemText": "none",
             "customIconPath": "",
             "enableColorization": false,
             "icon": "rocket",
@@ -87,6 +88,7 @@
             "maxWidth": 145,
             "scrollingMode": "hover",
             "showIcon": true,
+            "showText": true,
             "textColor": "none",
             "useFixedWidth": false
           }
@@ -170,6 +172,7 @@
           {
             "colorizeDistroLogo": false,
             "colorizeSystemIcon": "none",
+            "colorizeSystemText": "none",
             "customIconPath": "",
             "enableColorization": false,
             "icon": "noctalia",
@@ -273,6 +276,7 @@
       "name": "Reading",
       "weatherEnabled": true,
       "weatherShowEffects": true,
+      "weatherTaliaMascotAlways": false,
       "useFahrenheit": false,
       "use12hourFormat": false,
       "showWeekNumberInCalendar": false,
@@ -281,7 +285,8 @@
       "analogClockInCalendar": false,
       "firstDayOfWeek": -1,
       "hideWeatherTimezone": false,
-      "hideWeatherCityName": false
+      "hideWeatherCityName": false,
+      "autoLocate": false
     },
     "calendar": {
       "cards": [
@@ -359,8 +364,8 @@
       "pinnedApps": [],
       "sortByMostUsed": true,
       "terminalCommand": "ghostty -e",
-      "customLaunchPrefixEnabled": false,
-      "customLaunchPrefix": "",
+      "customLaunchPrefixEnabled": true,
+      "customLaunchPrefix": "exd",
       "viewMode": "list",
       "showCategories": false,
       "iconMode": "tabler",
@@ -493,7 +498,6 @@
       "indicatorOpacity": 0.6
     },
     "network": {
-      "airplaneModeEnabled": false,
       "bluetoothRssiPollingEnabled": false,
       "bluetoothRssiPollIntervalMs": 60000,
       "networkPanelView": "wifi",
@@ -703,7 +707,7 @@
     "doNotDisturb": false,
     "noctaliaPerformanceMode": false,
     "barVisible": true,
-    "openedPanel": "",
+    "openedPanel": "settingsPanel-DP-1",
     "lockScreenActive": false,
     "wallpapers": {
       "DP-1": "/home/tarttelin/Pictures/Wallpapers/s-p-a-c-e-2-2560x1440.jpg",
@@ -720,9 +724,9 @@
         "refresh_rate": 143.99899,
         "x": 1920,
         "y": 0,
-        "active_workspace": 10,
+        "active_workspace": 1,
         "vrr": false,
-        "focused": true
+        "focused": false
       },
       "DP-2": {
         "name": "DP-2",
@@ -734,7 +738,7 @@
         "y": 0,
         "active_workspace": 2,
         "vrr": false,
-        "focused": false
+        "focused": true
       },
       "HDMI-A-1": {
         "name": "HDMI-A-1",
@@ -744,16 +748,16 @@
         "refresh_rate": 60,
         "x": 4480,
         "y": 0,
-        "active_workspace": 9,
+        "active_workspace": 6,
         "vrr": false,
         "focused": false
       }
     },
     "notificationsState": {
-      "lastSeenTs": 1774646738000
+      "lastSeenTs": 1776329701000
     },
     "changelogState": {
-      "lastSeenVersion": "v4.7.2-git"
+      "lastSeenVersion": "v4.7.7"
     },
     "colorSchemesList": {
       "schemes": [],

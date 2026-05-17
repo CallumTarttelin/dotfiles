@@ -17,6 +17,49 @@
     skimDefaultCommand = "fd --type f";
     skimChangeDirCommand = "fd --type d";
 
+    exd = pkgs.writeShellApplication {
+      name = "exd";
+      runtimeInputs = [pkgs.coreutils pkgs.systemd];
+      text = ''
+        if [[ "''${1-}" == "-E" ]]; then
+          shift
+        fi
+
+        if [[ $# -eq 0 ]]; then
+          echo "usage: exd COMMAND [ARG...]" >&2
+          exit 64
+        fi
+
+        user_name="''${USER:-$(id -un)}"
+        hm_session_vars="/etc/profiles/per-user/$user_name/etc/profile.d/hm-session-vars.sh"
+        if [[ -r "$hm_session_vars" ]]; then
+          set +o nounset
+          # shellcheck source=/dev/null
+          . "$hm_session_vars"
+          set -o nounset
+        fi
+
+        env_args=()
+        while IFS='=' read -r -d "" key value; do
+          [[ "$key" =~ ^[A-Za-z_][A-Za-z0-9_]*$ ]] || continue
+          env_args+=("--setenv=$key=$value")
+        done < <(env -0)
+
+        app_name="$(basename -- "$1")"
+        app_name="''${app_name//[^A-Za-z0-9_.@-]/-}"
+        suffix="$$-$RANDOM"
+
+        exec systemd-run \
+          --user \
+          --collect \
+          --same-dir \
+          --property=ExitType=cgroup \
+          "''${env_args[@]}" \
+          --unit="app-$app_name-$suffix" \
+          -- "$@"
+      '';
+    };
+
     zshConf = pkgs.writeText "zshrc" ''
       # Restore wrapped PATH (NixOS set-environment resets it for login shells)
       export PATH="${lib.makeBinPath runtimeInputs}:$PATH"
@@ -111,18 +154,6 @@
       alias vi="nvim"
       alias vim="nvim"
       alias ex="hyprctl dispatch exec"
-      function exd() {
-        local env_args=()
-        if [[ "$1" == "-E" ]]; then
-          shift
-          while IFS='=' read -r k v; do
-            [[ "$k" =~ ^[a-zA-Z_][a-zA-Z0-9_]*$ ]] || continue
-            env_args+=("--setenv=$k=$v")
-          done < <(env)
-        fi
-        local suffix="$$-$RANDOM"
-        systemd-run --user --collect "''${env_args[@]}" --unit="app-''${1##*/}-$suffix" -- "$@"
-      }
       alias cat="bat"
       alias ls="eza --icons=auto --git"
       alias ll="eza --icons=auto --git -lga"
@@ -164,8 +195,11 @@
       pkgs.lazygit
       pkgs.git-agecrypt
       pkgs.git-credential-keepassxc
+      exd
     ];
   in {
+    packages.exd = exd;
+
     packages.myZsh = let
       # Create a ZDOTDIR with our zshrc at build time (immutable, in nix store)
       zdotdir = pkgs.runCommand "zsh-dotdir" {} ''
@@ -199,6 +233,7 @@
   flake.nixosModules.myZsh = {pkgs, ...}: {
     home-manager.users.tarttelin.home.packages = [
       self.packages.${pkgs.stdenv.hostPlatform.system}.myZsh
+      self.packages.${pkgs.stdenv.hostPlatform.system}.exd
     ];
   };
 }
