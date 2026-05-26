@@ -374,6 +374,7 @@
             wmname
             hyprshot
             hyprpolkitagent
+            satty
             grim
             slurp
             wl-clipboard

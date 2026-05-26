@@ -173,6 +173,7 @@ _: {
       ${bind "CTRL + SUPER + E" (execDsp (lib.getExe self'.packages.firefox-work))}
       ${bind "SUPER + SHIFT + E" (execDsp "firefox -private-window")}
       ${bind "PRINT" (execDsp "${pkgs.grimblast}/bin/grimblast copysave area")}
+      ${bind "SHIFT + PRINT" (execDsp "${pkgs.grimblast}/bin/grimblast save area - | ${lib.getExe pkgs.satty} --filename - --output-filename '~/Pictures/Screenshots/satty-%Y%m%d-%H%M%S.png' --copy-command '${pkgs.wl-clipboard}/bin/wl-copy' --actions-on-enter save-to-clipboard --actions-on-enter save-to-file --early-exit")}
 
       ${lib.concatStringsSep "\n" focusBinds}
 
