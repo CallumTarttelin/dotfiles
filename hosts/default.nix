@@ -39,6 +39,7 @@
               };
               firefox-work-profile.enable = true;
               logiops.enable = true;
+              ddc-brightness.enable = true;
               bluetooth.enable = true;
               security.yubikey = true;
               gaming.enable = true;
