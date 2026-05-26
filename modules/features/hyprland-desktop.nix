@@ -11,8 +11,15 @@
   }: let
     cfg = config.features.hyprland-desktop;
     selfpkgs = self.packages.${pkgs.stdenv.hostPlatform.system};
-    hyprlandConf = selfpkgs.myHyprlandConf;
+    hyprlandLua = selfpkgs.myHyprlandLua;
     myNoctalia = cfg.noctaliaPackage;
+    lua = lib.generators.toLua {};
+    q = builtins.toJSON;
+    call = name: value: "hl.${name}(${lua value})";
+    exec = cmd: "hl.exec_cmd(${q cmd})";
+    execDsp = cmd: "hl.dsp.exec_cmd(${q cmd})";
+    bind = key: dispatcher: "hl.bind(${q key}, ${dispatcher})";
+    bindWith = key: dispatcher: opts: "hl.bind(${q key}, ${dispatcher}, ${lua opts})";
 
     suspendScript = pkgs.writeShellScript "suspend-script" ''
       ${pkgs.pipewire}/bin/pw-cli i all | ${pkgs.ripgrep}/bin/rg running
@@ -51,25 +58,63 @@
 
     shellBinds =
       if isNoctalia
-      then ''
-        bind = $mainMod, D, exec, ${ipc} launcher toggle
-        bind = $mainMod, C, exec, ${ipc} controlCenter toggle
-        bind = $mainMod, comma, exec, ${ipc} settings toggle
-        bindel = , XF86MonBrightnessUp, exec, ${ipc} brightness increase
-        bindel = , XF86MonBrightnessDown, exec, ${ipc} brightness decrease
-      ''
-      else ''
-        bind = $mainMod, D, exec, ${lib.getExe selfpkgs.myWofi} --show drun
-      '';
+      then [
+        (bind "SUPER + D" (execDsp "${ipc} launcher toggle"))
+        (bind "SUPER + C" (execDsp "${ipc} controlCenter toggle"))
+        (bind "SUPER + comma" (execDsp "${ipc} settings toggle"))
+        (bindWith "XF86MonBrightnessUp" (execDsp "${ipc} brightness increase") {
+          locked = true;
+          repeating = true;
+        })
+        (bindWith "XF86MonBrightnessDown" (execDsp "${ipc} brightness decrease") {
+          locked = true;
+          repeating = true;
+        })
+      ]
+      else [
+        (bind "SUPER + D" (execDsp "${lib.getExe selfpkgs.myWofi} --show drun"))
+      ];
 
-    hostConf = pkgs.writeText "hyprland-host.conf" ''
-      source = ${hyprlandConf}
+    parseMonitorValue = value: let
+      trimmed = lib.trim value;
+    in
+      if builtins.match "-?[0-9]+([.][0-9]+)?" trimmed != null
+      then builtins.fromJSON trimmed
+      else trimmed;
 
-      ${lib.concatMapStringsSep "\n" (m: "monitor=${m}") cfg.monitors}
+    parseMonitorExtras = fields:
+      if fields == []
+      then {}
+      else let
+        key = lib.trim (builtins.elemAt fields 0);
+        value = parseMonitorValue (builtins.elemAt fields 1);
+        rest = lib.drop 2 fields;
+      in
+        {${key} = value;} // parseMonitorExtras rest;
 
-      ${shellBinds}
+    monitorLua = monitor: let
+      fields = map lib.trim (lib.splitString "," monitor);
+      output = builtins.elemAt fields 0;
+      mode = builtins.elemAt fields 1;
+      position = builtins.elemAt fields 2;
+      scale = parseMonitorValue (builtins.elemAt fields 3);
+      extras = parseMonitorExtras (lib.drop 4 fields);
+    in
+      call "monitor" ({
+          inherit output mode position scale;
+        }
+        // extras);
 
-      ${lib.concatMapStringsSep "\n" (e: "exec-once = ${e}") (noctaliaExecOnce ++ cfg.extraExecOnce)}
+    hostLua = pkgs.writeText "hyprland-host.lua" ''
+      ${builtins.readFile hyprlandLua}
+
+      ${lib.concatMapStringsSep "\n" monitorLua cfg.monitors}
+
+      ${lib.concatStringsSep "\n" shellBinds}
+
+      hl.on("hyprland.start", function()
+      ${lib.concatMapStringsSep "\n" (e: "  ${exec e}") (noctaliaExecOnce ++ cfg.extraExecOnce)}
+      end)
     '';
   in {
     options.features.hyprland-desktop = {
@@ -195,11 +240,12 @@
 
         wayland.windowManager.hyprland = {
           enable = true;
+          configType = "lua";
           systemd = {
             variables = ["--all"];
             enable = true;
           };
-          extraConfig = builtins.readFile hostConf;
+          extraConfig = builtins.readFile hostLua;
         };
 
         home.sessionVariables = {

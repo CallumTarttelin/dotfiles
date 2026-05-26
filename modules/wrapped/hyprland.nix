@@ -8,148 +8,209 @@ _: {
     lib,
     ...
   }: let
-    hyprlandConf = pkgs.writeText "hyprland-shared.conf" ''
-      misc {
-        disable_splash_rendering = true
-      }
+    lua = lib.generators.toLua {};
+    q = builtins.toJSON;
 
-      env = XCURSOR_SIZE,24
-      cursor {
-        no_hardware_cursors = true
-      }
+    call = name: value: "hl.${name}(${lua value})";
+    exec = cmd: "hl.exec_cmd(${q cmd})";
+    execDsp = cmd: "hl.dsp.exec_cmd(${q cmd})";
+    bind = key: dispatcher: "hl.bind(${q key}, ${dispatcher})";
+    bindWith = key: dispatcher: opts: "hl.bind(${q key}, ${dispatcher}, ${lua opts})";
 
-      input {
-        kb_layout = gb
-        follow_mouse = 1
-        touchpad {
-          natural_scroll = no
-        }
-        sensitivity = 0
-      }
+    sharedConfig = call "config" {
+      misc.disable_splash_rendering = true;
+      cursor.no_hardware_cursors = true;
+      input = {
+        kb_layout = "gb";
+        follow_mouse = 1;
+        touchpad.natural_scroll = false;
+        sensitivity = 0;
+      };
+      general = {
+        gaps_in = 0;
+        gaps_out = 0;
+        border_size = 0;
+        col = {
+          active_border = {
+            colors = ["rgba(00000000)"];
+            angle = 0;
+          };
+          inactive_border = "rgba(00000000)";
+        };
+        layout = "dwindle";
+      };
+      decoration = {
+        rounding = 0;
+        shadow = {
+          enabled = false;
+          range = 4;
+          render_power = 3;
+          color = "rgba(1a1a1aee)";
+        };
+        blur = {
+          enabled = true;
+          size = 3;
+          passes = 1;
+        };
+      };
+      dwindle.preserve_split = true;
+    };
 
-      general {
-        gaps_in = 0
-        gaps_out = 0
-        border_size = 0
-        col.active_border = rgba(33ccffee) rgba(00ff99ee) 45deg
-        col.inactive_border = rgba(595959aa)
-        layout = dwindle
-      }
+    curve = name: value: "hl.curve(${q name}, ${lua value})";
+    animation = value: call "animation" value;
 
-      decoration {
-        rounding = 1
-        shadow {
-          enabled = true
-          range = 4
-          render_power = 3
-          color = rgba(1a1a1aee)
-        }
-        blur {
-          enabled = yes
-          size = 3
-          passes = 1
-        }
-      }
+    focusBinds = let
+      directions = {
+        left = "l";
+        right = "r";
+        up = "u";
+        down = "d";
+        H = "l";
+        J = "d";
+        K = "u";
+        L = "r";
+      };
+    in
+      lib.mapAttrsToList (
+        key: direction:
+          bind "SUPER + ${key}" "hl.dsp.focus(${lua {inherit direction;}})"
+      )
+      directions;
 
-      animations {
-        bezier = myBezier, 0.05, 0.9, 0.1, 1.05
-        animation = windows, 1, 3, myBezier
-        animation = windowsOut, 1, 3, default, popin 80%
-        animation = border, 1, 5, default
-        animation = borderangle, 1, 3, default
-        animation = fade, 1, 3, default
-        animation = workspaces, 1, 2, default
-      }
+    moveBinds = let
+      directions = {
+        left = "l";
+        right = "r";
+        up = "u";
+        down = "d";
+        H = "l";
+        J = "d";
+        K = "u";
+        L = "r";
+      };
+    in
+      lib.mapAttrsToList (
+        key: direction:
+          bind "SUPER + SHIFT + ${key}" "hl.dsp.window.move(${lua {inherit direction;}})"
+      )
+      directions;
 
-      dwindle {
-        pseudotile = yes
-        preserve_split = yes
-      }
+    workspaceBinds = lib.flatten (map (workspace: let
+        key = toString (lib.mod workspace 10);
+      in [
+        (bind "SUPER + ${key}" "hl.dsp.focus(${lua {inherit workspace;}})")
+        (bind "SUPER + SHIFT + ${key}" "hl.dsp.window.move(${lua {inherit workspace;}})")
+      ])
+      (lib.range 1 10));
 
-      $mainMod = SUPER
-      $shiftMod = SUPER_SHIFT
+    startupCommands = [
+      "wmname LG3D"
+      "systemctl --user start hyprpolkitagent"
+      "systemctl --user restart xdg-desktop-portal-gtk.service"
+      "systemctl --user restart xdg-desktop-portal-hyprland.service"
+    ];
 
-      bind = $shiftMod, Q, killactive
-      bind = $mainMod, RETURN, exec, ${lib.getExe self'.packages.myGhostty}
-      bind = $mainMod, M, exit,
-      bind = $mainMod, V, togglefloating,
-      # launcher bind set by hyprland-desktop feature (wofi or noctalia)
-      bind = $mainMod, F, fullscreen,
-      bind = $mainMod, E, exec, firefox
-      bind = CTRL $mainMod, E, exec, ${lib.getExe self'.packages.firefox-work}
-      bind = $shiftMod, E, exec, firefox -private-window
-      bind = , PRINT, exec, ${pkgs.grimblast}/bin/grimblast copysave area
+    hyprlandLua = pkgs.writeText "hyprland-shared.lua" ''
+      ${sharedConfig}
 
-      # Focus
-      bind = $mainMod, left, movefocus, l
-      bind = $mainMod, right, movefocus, r
-      bind = $mainMod, up, movefocus, u
-      bind = $mainMod, down, movefocus, d
-      bind = $mainMod, h, movefocus, l
-      bind = $mainMod, j, movefocus, d
-      bind = $mainMod, k, movefocus, u
-      bind = $mainMod, l, movefocus, r
+      hl.env("XCURSOR_SIZE", "24")
 
-      # Move windows
-      bind = $shiftMod, left, movewindow, l
-      bind = $shiftMod, right, movewindow, r
-      bind = $shiftMod, up, movewindow, u
-      bind = $shiftMod, down, movewindow, d
-      bind = $shiftMod, h, movewindow, l
-      bind = $shiftMod, j, movewindow, d
-      bind = $shiftMod, k, movewindow, u
-      bind = $shiftMod, l, movewindow, r
+      ${curve "myBezier" {
+        type = "bezier";
+        points = [
+          [0.05 0.9]
+          [0.1 1.05]
+        ];
+      }}
 
-      # Workspaces
-      bind = $mainMod, 1, workspace, 1
-      bind = $mainMod, 2, workspace, 2
-      bind = $mainMod, 3, workspace, 3
-      bind = $mainMod, 4, workspace, 4
-      bind = $mainMod, 5, workspace, 5
-      bind = $mainMod, 6, workspace, 6
-      bind = $mainMod, 7, workspace, 7
-      bind = $mainMod, 8, workspace, 8
-      bind = $mainMod, 9, workspace, 9
-      bind = $mainMod, 0, workspace, 10
+      ${animation {
+        leaf = "windows";
+        enabled = true;
+        speed = 3;
+        bezier = "myBezier";
+      }}
+      ${animation {
+        leaf = "windowsOut";
+        enabled = true;
+        speed = 3;
+        bezier = "default";
+        style = "popin 80%";
+      }}
+      ${animation {
+        leaf = "border";
+        enabled = false;
+        speed = 5;
+        bezier = "default";
+      }}
+      ${animation {
+        leaf = "borderangle";
+        enabled = false;
+        speed = 3;
+        bezier = "default";
+      }}
+      ${animation {
+        leaf = "fade";
+        enabled = true;
+        speed = 3;
+        bezier = "default";
+      }}
+      ${animation {
+        leaf = "workspaces";
+        enabled = true;
+        speed = 2;
+        bezier = "default";
+      }}
 
-      bind = $mainMod SHIFT, 1, movetoworkspace, 1
-      bind = $mainMod SHIFT, 2, movetoworkspace, 2
-      bind = $mainMod SHIFT, 3, movetoworkspace, 3
-      bind = $mainMod SHIFT, 4, movetoworkspace, 4
-      bind = $mainMod SHIFT, 5, movetoworkspace, 5
-      bind = $mainMod SHIFT, 6, movetoworkspace, 6
-      bind = $mainMod SHIFT, 7, movetoworkspace, 7
-      bind = $mainMod SHIFT, 8, movetoworkspace, 8
-      bind = $mainMod SHIFT, 9, movetoworkspace, 9
-      bind = $mainMod SHIFT, 0, movetoworkspace, 10
+      ${bind "SUPER + SHIFT + Q" "hl.dsp.window.close()"}
+      ${bind "SUPER + RETURN" (execDsp (lib.getExe self'.packages.myGhostty))}
+      ${bind "SUPER + M" "hl.dsp.exit()"}
+      ${bind "SUPER + V" "hl.dsp.window.float(${lua {action = "toggle";}})"}
+      ${bind "SUPER + F" "hl.dsp.window.fullscreen(${lua {
+        mode = "fullscreen";
+        action = "toggle";
+      }})"}
+      ${bind "SUPER + E" (execDsp "firefox")}
+      ${bind "CTRL + SUPER + E" (execDsp (lib.getExe self'.packages.firefox-work))}
+      ${bind "SUPER + SHIFT + E" (execDsp "firefox -private-window")}
+      ${bind "PRINT" (execDsp "${pkgs.grimblast}/bin/grimblast copysave area")}
 
-      bind = $mainMod, O, movecurrentworkspacetomonitor, +1
-      bind = $mainMod, P, movecurrentworkspacetomonitor, -1
+      ${lib.concatStringsSep "\n" focusBinds}
 
-      bind = $mainMod, mouse_down, workspace, e+1
-      bind = $mainMod, mouse_up, workspace, e-1
+      ${lib.concatStringsSep "\n" moveBinds}
 
-      bind = $shiftMod, s, exec, scratchpad
-      bind = $mainMod, s, exec, scratchpad -g
+      ${lib.concatStringsSep "\n" workspaceBinds}
 
-      # Media keys
-      bindl = , XF86AudioPlay, exec, ${pkgs.playerctl}/bin/playerctl play-pause
-      bindl = , XF86AudioNext, exec, ${pkgs.playerctl}/bin/playerctl next
-      bindl = , XF86AudioPrev, exec, ${pkgs.playerctl}/bin/playerctl previous
-      bindel = , XF86AudioRaiseVolume, exec, ${pkgs.wireplumber}/bin/wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+
-      bindel = , XF86AudioLowerVolume, exec, ${pkgs.wireplumber}/bin/wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-
-      bindl = , XF86AudioMute, exec, ${pkgs.wireplumber}/bin/wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle
+      ${bind "SUPER + O" "hl.dsp.workspace.move(${lua {monitor = "+1";}})"}
+      ${bind "SUPER + P" "hl.dsp.workspace.move(${lua {monitor = "-1";}})"}
 
-      bindm = $mainMod, mouse:272, movewindow
-      bindm = $mainMod, mouse:273, resizewindow
+      ${bind "SUPER + mouse_down" "hl.dsp.focus(${lua {workspace = "e+1";}})"}
+      ${bind "SUPER + mouse_up" "hl.dsp.focus(${lua {workspace = "e-1";}})"}
 
-      # Core exec-once (portal/polkit restarts)
-      exec-once = wmname LG3D
-      exec-once = systemctl --user start hyprpolkitagent
-      exec-once = systemctl --user restart xdg-desktop-portal-gtk.service
-      exec-once = systemctl --user restart xdg-desktop-portal-hyprland.service
+      ${bind "SUPER + SHIFT + S" (execDsp "scratchpad")}
+      ${bind "SUPER + S" (execDsp "scratchpad -g")}
+
+      ${bindWith "XF86AudioPlay" (execDsp "${pkgs.playerctl}/bin/playerctl play-pause") {locked = true;}}
+      ${bindWith "XF86AudioNext" (execDsp "${pkgs.playerctl}/bin/playerctl next") {locked = true;}}
+      ${bindWith "XF86AudioPrev" (execDsp "${pkgs.playerctl}/bin/playerctl previous") {locked = true;}}
+      ${bindWith "XF86AudioRaiseVolume" (execDsp "${pkgs.wireplumber}/bin/wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+") {
+        locked = true;
+        repeating = true;
+      }}
+      ${bindWith "XF86AudioLowerVolume" (execDsp "${pkgs.wireplumber}/bin/wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-") {
+        locked = true;
+        repeating = true;
+      }}
+      ${bindWith "XF86AudioMute" (execDsp "${pkgs.wireplumber}/bin/wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle") {locked = true;}}
+
+      ${bindWith "SUPER + mouse:272" "hl.dsp.window.drag()" {mouse = true;}}
+      ${bindWith "SUPER + mouse:273" "hl.dsp.window.resize()" {mouse = true;}}
+
+      hl.on("hyprland.start", function()
+      ${lib.concatMapStringsSep "\n" (cmd: "  ${exec cmd}") startupCommands}
+      end)
     '';
   in {
-    packages.myHyprlandConf = hyprlandConf;
+    packages.myHyprlandLua = hyprlandLua;
+    packages.myHyprlandConf = hyprlandLua;
   };
 }
