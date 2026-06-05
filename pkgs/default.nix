@@ -16,6 +16,7 @@ in {
   inherit remoteZsh;
 
   jetbrains-toolbox = pkgs.jetbrains-toolbox;
+  localproxy = pkgs.callPackage ./localproxy {};
   t3code = pkgs.callPackage ./t3code {};
   update-t3code = updateT3code;
   update-jetbrains-toolbox = updateJetbrainsToolbox;

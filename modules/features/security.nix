@@ -21,8 +21,9 @@ _: {
         home-manager.users.tarttelin = {
           home.packages = with pkgs; [
             keepassxc
-            bitwarden-desktop
-            bitwarden-cli
+            # bitwarden-desktop pulls insecure electron_39.
+            # bitwarden-desktop
+            # bitwarden-cli
           ];
         };
       }
