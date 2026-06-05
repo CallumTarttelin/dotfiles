@@ -11,10 +11,11 @@
     namespaceAddr = "${cfg.namespaceAddress}/${toString cfg.prefixLength}";
     namespacePath = "/run/netns/${cfg.namespace}";
     runtimeDir = "/run/${cfg.namespace}";
-    sshConfigPath = "${runtimeDir}/ssh_config";
+    sshConfigDir = "/run/${cfg.namespace}-ssh";
+    sshConfigPath = "${sshConfigDir}/ssh_config";
+    routeStatePath = "${runtimeDir}/routes.state";
+    legacyRouteStatePath = "${runtimeDir}/direct-routes";
 
-    sudoCommand = "${config.security.wrapperDir}/sudo";
-    tailscaleCommand = "${tail2}/bin/${cfg.clientCommand}";
     runtimeConfig = lib.escapeShellArg cfg.runtimeConfigFile;
 
     validateRuntimeConfig = pkgs.writeShellScriptBin "tail2-validate-config" ''
@@ -22,18 +23,15 @@
 
       config_file="''${1:-${runtimeConfig}}"
 
-      ${pkgs.jq}/bin/jq -e --argjson vncLocalPortBase ${toString cfg.vnc.localPortBase} '
+      ${pkgs.jq}/bin/jq -e '
         def is_port:
           type == "number" and . == floor and . >= 1 and . <= 65535;
 
-        def safe_host:
-          type == "string" and test("^[A-Za-z0-9_.:-]+$");
-
         def safe_alias:
-          type == "string" and test("^[A-Za-z0-9_.:-]+$");
+          type == "string" and length > 0 and test("^[A-Za-z0-9_.-]+$");
 
-        def safe_direct_alias:
-          type == "string" and test("^[A-Za-z0-9_.-]+$");
+        def safe_target:
+          type == "string" and length > 0 and test("^[A-Za-z0-9_.-]+\\.?$");
 
         def safe_user:
           type == "string" and length > 0 and test("^[A-Za-z0-9_.@+-]+$");
@@ -41,145 +39,19 @@
         def scalar:
           type == "string" or type == "number" or type == "boolean";
 
-        def ipv4_literal:
-          type == "string"
-          and (
-            split(".") as $octets
-            | ($octets | length) == 4
-            and all($octets[]; test("^[0-9]+$") and (tonumber >= 0 and tonumber <= 255))
-          );
-
-        def direct_aliases($host_alias):
-          if ((.directAccess.aliases // []) | length) == 0 then
-            [$host_alias]
-          else
-            .directAccess.aliases
-          end;
-
-        def direct_access_valid($host_alias):
-          ((.directAccess // {}) | type == "object")
-          and (((.directAccess // {}) | .enable // false) | type == "boolean")
-          and (
-            if (((.directAccess // {}) | .enable // false) == true) then
-              (.directAccess.address | ipv4_literal)
-              and ((.directAccess.aliases // []) | type == "array")
-              and (direct_aliases($host_alias) | all(.[]; safe_direct_alias))
-            else
-              true
-            end
-          );
-
-        def host_valid($host_alias):
-          (.hostName | safe_host)
-          and (.user | safe_user)
+        def host_valid:
+          type == "object"
+          and ((keys_unsorted - ["target", "user", "port", "extraOptions"]) | length == 0)
+          and (.target | safe_target)
+          and ((.user // null) == null or (.user | safe_user))
           and ((.port // 22) | is_port)
-          and ((.publicKey // null) == null or (.publicKey | type == "string"))
-          and ((.extraOptions // {}) | type == "object" and all(.[]; scalar))
-          and (((.localForward // {}) | .enable // false) | type == "boolean")
-          and (((.localForward // {}) | .localHost // "127.0.0.1") | safe_host)
-          and (((.localForward // {}) | .localPort // 2222) | is_port)
-          and (((.vnc // {}) | .enable // false) | type == "boolean")
-          and (((.vnc // {}) | .remoteHost // "127.0.0.1") | safe_host)
-          and (((.vnc // {}) | .remotePort // 5900) | is_port)
-          and (((.vnc // {}) | .localPort // null) == null or (((.vnc // {}) | .localPort) | is_port))
-          and (((.vnc // {}) | .profileOptions // {}) | type == "object" and all(.[]; scalar))
-          and direct_access_valid($host_alias);
-
-        def local_forward_ports:
-          [
-            .hosts
-            | to_entries[]
-            | select((.value.localForward.enable // false) == true)
-            | (.value.localForward.localPort // 2222)
-          ];
-
-        def vnc_ports:
-          [
-            .hosts
-            | to_entries
-            | sort_by(.key)
-            | to_entries[]
-            | select((.value.value.vnc.enable // false) == true)
-            | (.value.value.vnc.localPort // ($vncLocalPortBase + .key))
-          ];
-
-        def direct_access_aliases:
-          [
-            .hosts
-            | to_entries[]
-            | .key as $host_alias
-            | .value as $host
-            | select((($host.directAccess // {}) | type == "object") and (($host.directAccess.enable // false) == true))
-            | ($host | direct_aliases($host_alias)[])
-          ];
+          and ((.extraOptions // {}) | type == "object" and all(.[]; scalar));
 
         type == "object"
         and (.hosts | type == "object")
         and (.hosts | to_entries | all(.key | safe_alias))
-        and (.hosts | to_entries | all(.[]; .key as $host_alias | .value | host_valid($host_alias)))
-        and ((local_forward_ports | length) == (local_forward_ports | unique | length))
-        and ((vnc_ports | length) == (vnc_ports | unique | length))
-        and ((direct_access_aliases | length) == (direct_access_aliases | unique | length))
+        and (.hosts | to_entries | all(.value | host_valid))
       ' "$config_file" >/dev/null
-    '';
-
-    renderSshConfig = pkgs.writeShellScriptBin "tail2-render-ssh-config" ''
-      set -eu
-
-      config_file="''${1:-${runtimeConfig}}"
-      output_file="''${2:-${sshConfigPath}}"
-      output_dir="$(${pkgs.coreutils}/bin/dirname "$output_file")"
-      tmp_file="$output_file.tmp.$$"
-
-      ${validateRuntimeConfig}/bin/tail2-validate-config "$config_file"
-      ${pkgs.coreutils}/bin/mkdir -p "$output_dir"
-      ${pkgs.coreutils}/bin/chmod 0755 "$output_dir"
-
-      ${pkgs.jq}/bin/jq -r --arg proxy "${sudoCommand} -n ${tail2Connect}/bin/tail2-connect %h %p" '
-        def ssh_value:
-          if type == "boolean" then
-            if . then "yes" else "no" end
-          else
-            tostring
-          end;
-
-        .hosts
-        | to_entries
-        | sort_by(.key)
-        | .[]
-        | [
-            "Host \(.key)",
-            "  HostName \(if ((.value.directAccess.enable // false) == true) then .value.directAccess.address else .value.hostName end)",
-            "  User \(.value.user)",
-            "  Port \(.value.port // 22)",
-            (
-              if ((.value.directAccess.enable // false) == true) then
-                empty
-              else
-                "  ProxyCommand \($proxy)"
-              end
-            ),
-            "  CheckHostIP no",
-            (
-              .value.extraOptions // {}
-              | to_entries
-              | sort_by(.key)
-              | .[]
-              | "  \(.key) \(.value | ssh_value)"
-            ),
-            ""
-          ]
-        | .[]
-      ' "$config_file" >"$tmp_file"
-
-      if [ "$(${pkgs.coreutils}/bin/id -u)" -eq 0 ]; then
-        ${pkgs.coreutils}/bin/chown root:root "$tmp_file"
-      fi
-      ${pkgs.coreutils}/bin/chmod 0644 "$tmp_file"
-      ${pkgs.coreutils}/bin/mv "$tmp_file" "$output_file"
-      if [ "$(${pkgs.coreutils}/bin/id -u)" -eq 0 ]; then
-        ${pkgs.coreutils}/bin/chown root:root "$output_file"
-      fi
     '';
 
     setupNamespace = pkgs.writeShellScript "setup-${cfg.namespace}-tailnet" ''
@@ -211,6 +83,12 @@
       ${pkgs.iproute2}/bin/ip -n ${cfg.namespace} link set ${cfg.namespaceVeth} up
       ${pkgs.iproute2}/bin/ip -n ${cfg.namespace} route replace default via ${cfg.hostAddress}
       ${pkgs.iproute2}/bin/ip netns exec ${cfg.namespace} ${pkgs.procps}/bin/sysctl -w net.ipv4.ip_forward=1 >/dev/null
+      ${pkgs.iproute2}/bin/ip netns exec ${cfg.namespace} ${pkgs.procps}/bin/sysctl -w net.ipv4.conf.all.forwarding=1 >/dev/null
+      ${pkgs.iproute2}/bin/ip netns exec ${cfg.namespace} ${pkgs.procps}/bin/sysctl -w net.ipv4.conf.default.forwarding=1 >/dev/null
+      ${pkgs.iproute2}/bin/ip netns exec ${cfg.namespace} ${pkgs.procps}/bin/sysctl -w net.ipv4.conf.all.rp_filter=0 >/dev/null
+      ${pkgs.iproute2}/bin/ip netns exec ${cfg.namespace} ${pkgs.procps}/bin/sysctl -w net.ipv4.conf.default.rp_filter=0 >/dev/null
+      ${pkgs.iproute2}/bin/ip netns exec ${cfg.namespace} ${pkgs.procps}/bin/sysctl -w net.ipv4.conf.${cfg.namespaceVeth}.forwarding=1 >/dev/null
+      ${pkgs.iproute2}/bin/ip netns exec ${cfg.namespace} ${pkgs.procps}/bin/sysctl -w net.ipv4.conf.${cfg.namespaceVeth}.rp_filter=0 >/dev/null
     '';
 
     cleanupNamespace = pkgs.writeShellScript "cleanup-${cfg.namespace}-tailnet" ''
@@ -224,456 +102,354 @@
       exec ${pkgs.tailscale}/bin/tailscale --socket ${cfg.socketPath} "$@"
     '';
 
-    tail2Connect = pkgs.writeShellScriptBin "tail2-connect" ''
-      set -eu
-
-      if [ "$#" -ne 2 ]; then
-        echo "usage: tail2-connect <host> <port>" >&2
-        exit 64
-      fi
-
-      host="$1"
-      port="$2"
-
-      if ! printf '%s\n' "$host" | ${pkgs.gnugrep}/bin/grep -Eq '^[A-Za-z0-9_.:-]+$'; then
-        echo "invalid host: $host" >&2
-        exit 64
-      fi
-
-      if ! printf '%s\n' "$port" | ${pkgs.gnugrep}/bin/grep -Eq '^[0-9]+$'; then
-        echo "invalid port: $port" >&2
-        exit 64
-      fi
-
-      if [ "$port" -lt 1 ] || [ "$port" -gt 65535 ]; then
-        echo "invalid port: $port" >&2
-        exit 64
-      fi
-
-      exec ${pkgs.iproute2}/bin/ip netns exec ${cfg.namespace} ${pkgs.netcat-openbsd}/bin/nc "$host" "$port"
-    '';
-
-    tail2Ssh = pkgs.writeShellScriptBin cfg.sshCommand ''
-      set -eu
-
-      if [ ! -s ${lib.escapeShellArg sshConfigPath} ]; then
-        ${renderSshConfig}/bin/tail2-render-ssh-config
-      fi
-
-      exec ${pkgs.openssh}/bin/ssh \
-        -F ${lib.escapeShellArg sshConfigPath} \
-        "$@"
-    '';
-
-    syncDirectAccess = pkgs.writeShellScriptBin "tail2-sync-direct-access" ''
+    tail2Publish = pkgs.writeShellScriptBin "${cfg.namespace}-publish" ''
             set -eu
 
             log() {
-              printf 'tail2-direct-access: %s\n' "$*" >&2
+              printf '${cfg.namespace}-publish: %s\n' "$*" >&2
             }
 
-            config_file=${runtimeConfig}
+            config_file="''${1:-${runtimeConfig}}"
             hosts_file="/etc/hosts"
-            state_file="${runtimeDir}/direct-routes"
-            begin_marker="# BEGIN ${cfg.namespace} direct access"
-            end_marker="# END ${cfg.namespace} direct access"
-
-            entries_file="$(${pkgs.coreutils}/bin/mktemp)"
-            desired_routes="$(${pkgs.coreutils}/bin/mktemp)"
-            nft_file="$(${pkgs.coreutils}/bin/mktemp)"
+            route_state=${lib.escapeShellArg routeStatePath}
+            legacy_route_state=${lib.escapeShellArg legacyRouteStatePath}
+            ssh_config=${lib.escapeShellArg sshConfigPath}
+            work_dir="$(${pkgs.coreutils}/bin/mktemp -d)"
             tmp_hosts=""
+            tmp_ssh=""
 
             cleanup() {
-              ${pkgs.coreutils}/bin/rm -f "$entries_file" "$desired_routes" "$nft_file"
+              ${pkgs.coreutils}/bin/rm -rf "$work_dir"
               if [ -n "$tmp_hosts" ]; then
                 ${pkgs.coreutils}/bin/rm -f "$tmp_hosts"
+              fi
+              if [ -n "$tmp_ssh" ]; then
+                ${pkgs.coreutils}/bin/rm -f "$tmp_ssh"
               fi
             }
 
             trap cleanup EXIT INT TERM
 
-            log "validating runtime config at $config_file"
-            if ! ${validateRuntimeConfig}/bin/tail2-validate-config "$config_file"; then
-              log "runtime config is invalid; check directAccess.enable, directAccess.address, and directAccess.aliases"
-              exit 1
-            fi
-            ${pkgs.coreutils}/bin/mkdir -p ${lib.escapeShellArg runtimeDir}
+            ${pkgs.coreutils}/bin/mkdir -p ${lib.escapeShellArg runtimeDir} ${lib.escapeShellArg sshConfigDir}
 
-            log "extracting direct access entries"
-            ${pkgs.jq}/bin/jq -r '
-              .hosts
-              | to_entries
-              | sort_by(.key)
-              | .[]
-              | select(((.value.directAccess // {}) | .enable // false) == true)
-              | .key as $host_alias
-              | .value.directAccess as $direct
-              | [
-                  $direct.address,
-                  (
-                    if (($direct.aliases // []) | length) == 0 then
-                      [$host_alias]
-                    else
-                      $direct.aliases
-                    end
-                    | join(" ")
-                  )
-                ]
-              | @tsv
-            ' "$config_file" >"$entries_file"
+            log "validating alias config at $config_file"
+            ${validateRuntimeConfig}/bin/tail2-validate-config "$config_file"
 
-            ${pkgs.jq}/bin/jq -r '
-              .hosts
-              | to_entries
-              | .[]
-              | select(((.value.directAccess // {}) | .enable // false) == true)
-              | .value.directAccess.address
-            ' "$config_file" | ${pkgs.coreutils}/bin/sort -u >"$desired_routes"
+            log "reading primary and secondary tailnet status"
+            ${pkgs.tailscale}/bin/tailscale status --json >"$work_dir/primary.json"
+            ${tail2}/bin/${cfg.clientCommand} status --json >"$work_dir/secondary.json"
 
-            route_count="$(${pkgs.coreutils}/bin/wc -l <"$desired_routes" | ${pkgs.coreutils}/bin/tr -d ' ')"
-            log "found $route_count direct access route(s)"
+            export TAIL2_NAMESPACE=${lib.escapeShellArg cfg.namespace}
+            export TAIL2_NAMESPACE_VETH=${lib.escapeShellArg cfg.namespaceVeth}
+            export TAIL2_TAILSCALE_INTERFACE=${lib.escapeShellArg cfg.tailscaleInterface}
+            export TAIL2_VETH_SUBNET=${lib.escapeShellArg cfg.vethSubnet}
 
-            hosts_target="$hosts_file"
-            if [ -L "$hosts_target" ]; then
-              hosts_target="$(${pkgs.coreutils}/bin/readlink -f "$hosts_target")"
-            fi
-            hosts_dir="$(${pkgs.coreutils}/bin/dirname "$hosts_target")"
-
-            log "updating hosts file at $hosts_target"
-            tmp_hosts="$(${pkgs.coreutils}/bin/mktemp "$hosts_dir/hosts.tail2.XXXXXX")"
-            if [ -e "$hosts_target" ]; then
-              ${pkgs.gawk}/bin/awk -v begin="$begin_marker" -v end="$end_marker" '
-                $0 == begin { skip = 1; next }
-                $0 == end { skip = 0; next }
-                !skip { print }
-              ' "$hosts_target" >"$tmp_hosts"
-            else
-              : >"$tmp_hosts"
-            fi
-
-            if [ -s "$entries_file" ]; then
-              {
-                printf '\n%s\n' "$begin_marker"
-                while IFS=$'\t' read -r address aliases; do
-                  [ -n "$address" ] || continue
-                  printf '%s %s\n' "$address" "$aliases"
-                done <"$entries_file"
-                printf '%s\n' "$end_marker"
-              } >>"$tmp_hosts"
-            fi
-
-            ${pkgs.coreutils}/bin/chown root:root "$tmp_hosts"
-            ${pkgs.coreutils}/bin/chmod 0644 "$tmp_hosts"
-            ${pkgs.coreutils}/bin/mv "$tmp_hosts" "$hosts_target"
-            tmp_hosts=""
-
-            log "enabling IPv4 forwarding inside ${cfg.namespace}"
+            log "enabling namespace forwarding"
             ${pkgs.iproute2}/bin/ip netns exec ${cfg.namespace} ${pkgs.procps}/bin/sysctl -w net.ipv4.ip_forward=1 >/dev/null
-
-            log "rendering nftables rules inside ${cfg.namespace}"
-            addresses="$(${pkgs.coreutils}/bin/tr '\n' ',' <"$desired_routes" | ${pkgs.gnused}/bin/sed 's/,$//')"
-            {
-              cat <<'NFT'
-      table inet tail2_direct_access {
-        chain input {
-          type filter hook input priority -100; policy accept;
-          iifname "${cfg.tailscaleInterface}" ct state established,related accept
-          iifname "${cfg.tailscaleInterface}" drop
-        }
-
-        chain forward {
-          type filter hook forward priority -100; policy drop;
-          ct state established,related accept
-      NFT
-              if [ -n "$addresses" ]; then
-                printf '    iifname "%s" oifname "%s" ip daddr { %s } accept\n' "${cfg.namespaceVeth}" "${cfg.tailscaleInterface}" "$addresses"
+            ${pkgs.iproute2}/bin/ip netns exec ${cfg.namespace} ${pkgs.procps}/bin/sysctl -w net.ipv4.conf.all.forwarding=1 >/dev/null
+            ${pkgs.iproute2}/bin/ip netns exec ${cfg.namespace} ${pkgs.procps}/bin/sysctl -w net.ipv4.conf.default.forwarding=1 >/dev/null
+            ${pkgs.iproute2}/bin/ip netns exec ${cfg.namespace} ${pkgs.procps}/bin/sysctl -w net.ipv4.conf.all.rp_filter=0 >/dev/null
+            ${pkgs.iproute2}/bin/ip netns exec ${cfg.namespace} ${pkgs.procps}/bin/sysctl -w net.ipv4.conf.default.rp_filter=0 >/dev/null
+            for iface in ${lib.escapeShellArg cfg.namespaceVeth} ${lib.escapeShellArg cfg.tailscaleInterface}; do
+              if ${pkgs.iproute2}/bin/ip -n ${cfg.namespace} link show "$iface" >/dev/null 2>&1; then
+                ${pkgs.iproute2}/bin/ip netns exec ${cfg.namespace} ${pkgs.procps}/bin/sysctl -w "net.ipv4.conf.$iface.forwarding=1" >/dev/null
+                ${pkgs.iproute2}/bin/ip netns exec ${cfg.namespace} ${pkgs.procps}/bin/sysctl -w "net.ipv4.conf.$iface.rp_filter=0" >/dev/null
               fi
-              cat <<'NFT'
-        }
-      }
+            done
 
-      table ip tail2_direct_access_nat {
-        chain postrouting {
-          type nat hook postrouting priority srcnat; policy accept;
-          ip saddr ${cfg.vethSubnet} oifname "${cfg.tailscaleInterface}" masquerade
-        }
-      }
-      NFT
-            } >"$nft_file"
+            ${pkgs.python3}/bin/python3 - "$config_file" "$work_dir/primary.json" "$work_dir/secondary.json" "$work_dir" <<'PY'
+      import collections
+      import ipaddress
+      import json
+      import os
+      import pathlib
+      import sys
 
+      config_path, primary_path, secondary_path, work_dir = sys.argv[1:5]
+      namespace = os.environ["TAIL2_NAMESPACE"]
+      namespace_veth = os.environ["TAIL2_NAMESPACE_VETH"]
+      tailscale_interface = os.environ["TAIL2_TAILSCALE_INTERFACE"]
+      veth_subnet = os.environ["TAIL2_VETH_SUBNET"]
+      work = pathlib.Path(work_dir)
+
+
+      def load_json(path):
+          with open(path, encoding="utf-8") as handle:
+              return json.load(handle)
+
+
+      def status_nodes(status, include_self):
+          nodes = []
+          if include_self and isinstance(status.get("Self"), dict):
+              nodes.append(status["Self"])
+          peer = status.get("Peer") or {}
+          if isinstance(peer, dict):
+              nodes.extend(value for value in peer.values() if isinstance(value, dict))
+          return nodes
+
+
+      def first_ipv4(node):
+          for value in node.get("TailscaleIPs") or []:
+              try:
+                  return str(ipaddress.IPv4Address(value))
+              except ipaddress.AddressValueError:
+                  continue
+          return None
+
+
+      def dns_name(node):
+          value = node.get("DNSName")
+          if not isinstance(value, str) or not value:
+              return None
+          return value.rstrip(".").lower()
+
+
+      def dns_label(node):
+          value = dns_name(node)
+          if not value:
+              return None
+          return value.split(".", 1)[0]
+
+
+      def add_unique(items, value):
+          if value not in items:
+              items.append(value)
+
+
+      def fail(message):
+          print(f"{namespace}-publish: {message}", file=sys.stderr)
+          sys.exit(1)
+
+
+      primary = load_json(primary_path)
+      secondary = load_json(secondary_path)
+      alias_config = load_json(config_path)
+
+      primary_nodes = status_nodes(primary, include_self=True)
+      primary_ips = {ip for node in primary_nodes if (ip := first_ipv4(node))}
+      primary_labels = {label for node in primary_nodes if (label := dns_label(node))}
+      secondary_self_ip = first_ipv4(secondary.get("Self") or {})
+      if not secondary_self_ip:
+          fail("secondary tailnet self IPv4 is not available")
+
+      secondary_entries = []
+      for node in status_nodes(secondary, include_self=False):
+          ip = first_ipv4(node)
+          fqdn = dns_name(node)
+          if not ip or not fqdn:
+              continue
+          if ip in primary_ips:
+              continue
+          label = fqdn.split(".", 1)[0]
+          secondary_entries.append({"ip": ip, "fqdn": fqdn, "label": label})
+
+      label_counts = collections.Counter(entry["label"] for entry in secondary_entries)
+      target_map = collections.defaultdict(list)
+      generated_by_ip = collections.defaultdict(list)
+      generated_owner = {}
+
+      for entry in sorted(secondary_entries, key=lambda item: (ipaddress.IPv4Address(item["ip"]), item["fqdn"])):
+          aliases = [entry["fqdn"], f"{entry['label']}.{namespace}"]
+          if label_counts[entry["label"]] == 1 and entry["label"] not in primary_labels:
+              aliases.append(entry["label"])
+
+          for target in (entry["fqdn"], entry["label"], f"{entry['label']}.{namespace}"):
+              target_map[target].append(entry)
+
+          for alias in aliases:
+              key = alias.lower()
+              owner = generated_owner.get(key)
+              if owner is not None and owner != entry["ip"]:
+                  fail(f"generated name {alias!r} maps to both {owner} and {entry['ip']}")
+              generated_owner[key] = entry["ip"]
+              add_unique(generated_by_ip[entry["ip"]], alias)
+
+      manual_by_ip = collections.defaultdict(list)
+      ssh_lines = []
+      hosts = alias_config.get("hosts") or {}
+
+      for alias, details in sorted(hosts.items()):
+          alias_key = alias.lower()
+          if alias_key in primary_labels:
+              fail(f"manual alias {alias!r} collides with primary tailnet name")
+
+          target = str(details["target"]).rstrip(".").lower()
+          matches = target_map.get(target, [])
+          if len(matches) == 0:
+              fail(f"manual alias {alias!r} targets unknown secondary host {details['target']!r}")
+          if len(matches) > 1:
+              choices = ", ".join(sorted(match["fqdn"] for match in matches))
+              fail(f"manual alias {alias!r} target {details['target']!r} is ambiguous: {choices}")
+
+          entry = matches[0]
+          generated_ip = generated_owner.get(alias_key)
+          if generated_ip is not None and generated_ip != entry["ip"]:
+              fail(f"manual alias {alias!r} collides with generated name for {generated_ip}")
+
+          add_unique(manual_by_ip[entry["ip"]], alias)
+
+          ssh_lines.append(f"Host {alias}")
+          ssh_lines.append(f"  HostName {entry['ip']}")
+          if details.get("user") is not None:
+              ssh_lines.append(f"  User {details['user']}")
+          ssh_lines.append(f"  Port {details.get('port', 22)}")
+          ssh_lines.append("  CheckHostIP no")
+          for key, value in sorted((details.get("extraOptions") or {}).items()):
+              if isinstance(value, bool):
+                  rendered = "yes" if value else "no"
+              else:
+                  rendered = str(value)
+              ssh_lines.append(f"  {key} {rendered}")
+          ssh_lines.append("")
+
+      routes = sorted({entry["ip"] for entry in secondary_entries}, key=ipaddress.IPv4Address)
+
+      with open(work / "routes.desired", "w", encoding="utf-8") as handle:
+          for ip in routes:
+              handle.write(f"{ip}\n")
+
+      with open(work / "hosts.block", "w", encoding="utf-8") as handle:
+          for ip in routes:
+              names = []
+              for name in generated_by_ip[ip] + manual_by_ip[ip]:
+                  add_unique(names, name)
+              if names:
+                  handle.write(f"{ip}\t{' '.join(names)}\n")
+
+      with open(work / "ssh_config", "w", encoding="utf-8") as handle:
+          if ssh_lines:
+              handle.write("\n".join(ssh_lines))
+              handle.write("\n")
+
+      ip_set = ", ".join(routes)
+      nft_lines = [
+          "table inet tail2_publish {",
+          "  chain input {",
+          "    type filter hook input priority -100; policy accept;",
+          f"    iifname \"{tailscale_interface}\" ct state established,related counter accept",
+          f"    iifname \"{tailscale_interface}\" counter drop",
+          "  }",
+          "",
+          "  chain forward {",
+          "    type filter hook forward priority -100; policy drop;",
+          "    ct state established,related counter accept",
+      ]
+      if ip_set:
+          nft_lines.append(
+              f"    iifname \"{namespace_veth}\" oifname \"{tailscale_interface}\" ip daddr {{ {ip_set} }} counter accept"
+          )
+      nft_lines.extend(
+          [
+              "  }",
+              "}",
+              "",
+              "table ip tail2_publish_nat {",
+              "  chain postrouting {",
+              "    type nat hook postrouting priority srcnat; policy accept;",
+              f"    ip saddr {veth_subnet} oifname \"{tailscale_interface}\" counter snat to {secondary_self_ip}",
+              "  }",
+              "}",
+          ]
+      )
+      with open(work / "tail2-publish.nft", "w", encoding="utf-8") as handle:
+          handle.write("\n".join(nft_lines))
+          handle.write("\n")
+      PY
+
+            log "applying namespace firewall"
+            ${pkgs.iproute2}/bin/ip netns exec ${cfg.namespace} ${pkgs.nftables}/bin/nft list table inet tail2_publish >/dev/null 2>&1 \
+              && ${pkgs.iproute2}/bin/ip netns exec ${cfg.namespace} ${pkgs.nftables}/bin/nft delete table inet tail2_publish \
+              || true
+            ${pkgs.iproute2}/bin/ip netns exec ${cfg.namespace} ${pkgs.nftables}/bin/nft list table ip tail2_publish_nat >/dev/null 2>&1 \
+              && ${pkgs.iproute2}/bin/ip netns exec ${cfg.namespace} ${pkgs.nftables}/bin/nft delete table ip tail2_publish_nat \
+              || true
             ${pkgs.iproute2}/bin/ip netns exec ${cfg.namespace} ${pkgs.nftables}/bin/nft list table inet tail2_direct_access >/dev/null 2>&1 \
               && ${pkgs.iproute2}/bin/ip netns exec ${cfg.namespace} ${pkgs.nftables}/bin/nft delete table inet tail2_direct_access \
               || true
             ${pkgs.iproute2}/bin/ip netns exec ${cfg.namespace} ${pkgs.nftables}/bin/nft list table ip tail2_direct_access_nat >/dev/null 2>&1 \
               && ${pkgs.iproute2}/bin/ip netns exec ${cfg.namespace} ${pkgs.nftables}/bin/nft delete table ip tail2_direct_access_nat \
               || true
-            log "applying nftables rules inside ${cfg.namespace}"
-            ${pkgs.iproute2}/bin/ip netns exec ${cfg.namespace} ${pkgs.nftables}/bin/nft -f "$nft_file"
+            ${pkgs.iproute2}/bin/ip netns exec ${cfg.namespace} ${pkgs.nftables}/bin/nft -f "$work_dir/tail2-publish.nft"
 
-            log "removing stale direct access routes"
-            if [ -e "$state_file" ]; then
-              while IFS= read -r old_address; do
-                [ -n "$old_address" ] || continue
-                if ! ${pkgs.gnugrep}/bin/grep -Fxq "$old_address" "$desired_routes"; then
-                  ${pkgs.iproute2}/bin/ip route del "$old_address/32" via ${cfg.namespaceAddress} dev ${cfg.hostVeth} >/dev/null 2>&1 || true
-                fi
-              done <"$state_file"
-            fi
-
-            log "installing direct access routes"
+            log "installing direct routes"
             while IFS= read -r address; do
               [ -n "$address" ] || continue
-              ${pkgs.iproute2}/bin/ip route replace "$address/32" via ${cfg.namespaceAddress} dev ${cfg.hostVeth}
-            done <"$desired_routes"
+              ${pkgs.iproute2}/bin/ip route replace "$address/32" via ${cfg.namespaceAddress} dev ${cfg.hostVeth} src ${cfg.hostAddress}
+            done <"$work_dir/routes.desired"
 
-            ${pkgs.coreutils}/bin/cp "$desired_routes" "$state_file"
-            ${pkgs.coreutils}/bin/chmod 0644 "$state_file"
+            log "removing stale direct routes"
+            for previous_state in "$route_state" "$legacy_route_state"; do
+              [ -e "$previous_state" ] || continue
+              while IFS= read -r old_address; do
+                old_address="''${old_address%/32}"
+                [ -n "$old_address" ] || continue
+                if ! ${pkgs.gnugrep}/bin/grep -Fxq "$old_address" "$work_dir/routes.desired"; then
+                  ${pkgs.iproute2}/bin/ip route del "$old_address/32" via ${cfg.namespaceAddress} dev ${cfg.hostVeth} >/dev/null 2>&1 \
+                    || ${pkgs.iproute2}/bin/ip route del "$old_address/32" dev ${cfg.hostVeth} >/dev/null 2>&1 \
+                    || true
+                fi
+              done <"$previous_state"
+            done
+
+            log "updating hosts file"
+            hosts_target="$hosts_file"
+            if [ -L "$hosts_target" ]; then
+              hosts_link_target="$(${pkgs.coreutils}/bin/readlink "$hosts_target")"
+              case "$hosts_link_target" in
+                /.host-etc/*)
+                  hosts_target="$hosts_link_target"
+                  ;;
+              esac
+            fi
+            hosts_dir="$(${pkgs.coreutils}/bin/dirname "$hosts_target")"
+            tmp_hosts="$(${pkgs.coreutils}/bin/mktemp "$hosts_dir/hosts.${cfg.namespace}.XXXXXX")"
+            if [ -e "$hosts_target" ]; then
+              ${pkgs.gawk}/bin/awk \
+                -v begin="# BEGIN ${cfg.namespace} published access" \
+                -v end="# END ${cfg.namespace} published access" \
+                -v legacy_begin="# BEGIN ${cfg.namespace} direct access" \
+                -v legacy_end="# END ${cfg.namespace} direct access" '
+                  $0 == begin || $0 == legacy_begin { skip = 1; next }
+                  $0 == end || $0 == legacy_end { skip = 0; next }
+                  !skip { print }
+                ' "$hosts_target" >"$tmp_hosts"
+            else
+              : >"$tmp_hosts"
+            fi
+            if [ -s "$work_dir/hosts.block" ]; then
+              {
+                printf '\n# BEGIN ${cfg.namespace} published access\n'
+                ${pkgs.coreutils}/bin/cat "$work_dir/hosts.block"
+                printf '# END ${cfg.namespace} published access\n'
+              } >>"$tmp_hosts"
+            fi
+            ${pkgs.coreutils}/bin/chown root:root "$tmp_hosts"
+            ${pkgs.coreutils}/bin/chmod 0644 "$tmp_hosts"
+            ${pkgs.coreutils}/bin/mv "$tmp_hosts" "$hosts_target"
+            tmp_hosts=""
+
+            log "updating ssh aliases"
+            tmp_ssh="$ssh_config.tmp.$$"
+            ${pkgs.coreutils}/bin/cp "$work_dir/ssh_config" "$tmp_ssh"
+            ${pkgs.coreutils}/bin/chown ${lib.escapeShellArg cfg.sshConfigUser}:${lib.escapeShellArg cfg.sshConfigGroup} "$tmp_ssh"
+            ${pkgs.coreutils}/bin/chmod 0644 "$tmp_ssh"
+            ${pkgs.coreutils}/bin/mv "$tmp_ssh" "$ssh_config"
+            tmp_ssh=""
+
+            ${pkgs.coreutils}/bin/cp "$work_dir/routes.desired" "$route_state"
+            ${pkgs.coreutils}/bin/chmod 0644 "$route_state"
+            ${pkgs.coreutils}/bin/rm -f "$legacy_route_state"
             log "done"
     '';
 
-    tail2LocalForwards = pkgs.writeShellScriptBin "tail2-local-forwards" ''
-      set -eu
-
-      config_file=${runtimeConfig}
-      pids=""
-
-      cleanup() {
-        for pid in $pids; do
-          kill "$pid" >/dev/null 2>&1 || true
-        done
-        wait >/dev/null 2>&1 || true
-      }
-
-      trap cleanup EXIT INT TERM
-
-      ${validateRuntimeConfig}/bin/tail2-validate-config "$config_file"
-      ${renderSshConfig}/bin/tail2-render-ssh-config "$config_file" ${lib.escapeShellArg sshConfigPath}
-
-      hosts_file="$(${pkgs.coreutils}/bin/mktemp)"
-      ${pkgs.jq}/bin/jq -r '
-        .hosts
-        | to_entries
-        | sort_by(.key)
-        | .[]
-        | select((.value.localForward.enable // false) == true)
-        | [
-            .key,
-            .value.hostName,
-            (.value.port // 22),
-            (.value.localForward.localHost // "127.0.0.1"),
-            (.value.localForward.localPort // 2222)
-          ]
-        | @tsv
-      ' "$config_file" >"$hosts_file"
-
-      while IFS=$'\t' read -r alias host port local_host local_port; do
-        [ -n "$alias" ] || continue
-        ${pkgs.socat}/bin/socat \
-          "TCP-LISTEN:$local_port,bind=$local_host,reuseaddr,fork" \
-          "EXEC:${tail2Connect}/bin/tail2-connect $host $port,nofork" &
-        pids="$pids $!"
-      done <"$hosts_file"
-      ${pkgs.coreutils}/bin/rm -f "$hosts_file"
-
-      if [ -z "$pids" ]; then
-        exec ${pkgs.coreutils}/bin/sleep infinity
-      fi
-
-      wait
-    '';
-
-    tail2VncTunnel = pkgs.writeShellScriptBin "tail2-vnc-tunnel" ''
-      set -eu
-
-      if [ "$#" -ne 2 ]; then
-        echo "usage: tail2-vnc-tunnel <alias> <start|stop>" >&2
-        exit 64
-      fi
-
-      alias="$1"
-      action="$2"
-      config_file=${runtimeConfig}
-
-      ${validateRuntimeConfig}/bin/tail2-validate-config "$config_file"
-
-      if ! printf '%s\n' "$alias" | ${pkgs.gnugrep}/bin/grep -Eq '^[A-Za-z0-9_.:-]+$'; then
-        echo "invalid VNC host: $alias" >&2
-        exit 64
-      fi
-
-      host_json="$(${pkgs.jq}/bin/jq -e --arg alias "$alias" '.hosts[$alias] | select(. != null and (.vnc.enable // false) == true)' "$config_file")" || {
-        echo "unknown VNC host: $alias" >&2
-        exit 64
-      }
-
-      vnc_index="$(${pkgs.jq}/bin/jq -r --arg alias "$alias" '
-        [
-          .hosts
-          | to_entries
-          | sort_by(.key)
-          | .[]
-          | select((.value.vnc.enable // false) == true)
-          | .key
-        ]
-        | index($alias)
-      ' "$config_file")"
-
-      remote_host="$(printf '%s\n' "$host_json" | ${pkgs.jq}/bin/jq -r '.vnc.remoteHost // "127.0.0.1"')"
-      remote_port="$(printf '%s\n' "$host_json" | ${pkgs.jq}/bin/jq -r '.vnc.remotePort // 5900')"
-      local_port="$(printf '%s\n' "$host_json" | ${pkgs.jq}/bin/jq -r --argjson vncIndex "$vnc_index" --argjson vncLocalPortBase ${toString cfg.vnc.localPortBase} '.vnc.localPort // ($vncLocalPortBase + $vncIndex)')"
-
-      ${renderSshConfig}/bin/tail2-render-ssh-config "$config_file" ${lib.escapeShellArg sshConfigPath}
-
-      runtime_dir="''${XDG_RUNTIME_DIR:-/run/user/$(${pkgs.coreutils}/bin/id -u)}/tail2-vnc"
-      control_socket="$runtime_dir/$alias.ctl"
-
-      case "$action" in
-        start)
-          ${pkgs.coreutils}/bin/mkdir -p "$runtime_dir"
-          if [ -S "$control_socket" ]; then
-            if ${pkgs.openssh}/bin/ssh -F ${lib.escapeShellArg sshConfigPath} -S "$control_socket" -O check "$alias" >/dev/null 2>&1; then
-              exit 0
-            fi
-            ${pkgs.coreutils}/bin/rm -f "$control_socket"
-          fi
-
-          exec ${pkgs.openssh}/bin/ssh \
-            -F ${lib.escapeShellArg sshConfigPath} \
-            -f \
-            -N \
-            -M \
-            -S "$control_socket" \
-            -L "127.0.0.1:$local_port:$remote_host:$remote_port" \
-            -o ExitOnForwardFailure=yes \
-            -o ControlMaster=yes \
-            "$alias"
-          ;;
-        stop)
-          if [ -S "$control_socket" ]; then
-            ${pkgs.openssh}/bin/ssh -F ${lib.escapeShellArg sshConfigPath} -S "$control_socket" -O exit "$alias" >/dev/null 2>&1 || true
-            ${pkgs.coreutils}/bin/rm -f "$control_socket"
-          fi
-          ;;
-        *)
-          echo "unknown action: $action" >&2
-          exit 64
-          ;;
-      esac
-    '';
-
-    tail2Vnc = pkgs.writeShellScriptBin cfg.vnc.command ''
-      set -eu
-
-      config_file=${runtimeConfig}
-
-      ${validateRuntimeConfig}/bin/tail2-validate-config "$config_file"
-
-      list_hosts() {
-        ${pkgs.jq}/bin/jq -r '
-          .hosts
-          | to_entries
-          | sort_by(.key)
-          | .[]
-          | select((.value.vnc.enable // false) == true)
-          | .key
-        ' "$config_file"
-      }
-
-      usage() {
-        echo "usage: ${cfg.vnc.command} <host>|--list|--show <host>" >&2
-        echo "available hosts:" >&2
-        list_hosts >&2
-      }
-
-      if [ "$#" -eq 1 ] && [ "$1" = "--list" ]; then
-        list_hosts
-        exit 0
-      fi
-
-      if [ "$#" -eq 2 ] && [ "$1" = "--show" ]; then
-        alias="$2"
-        host_json="$(${pkgs.jq}/bin/jq -e --arg alias "$alias" '.hosts[$alias] | select(. != null and (.vnc.enable // false) == true)' "$config_file")" || {
-          echo "unknown VNC host: $alias" >&2
-          exit 64
-        }
-        vnc_index="$(${pkgs.jq}/bin/jq -r --arg alias "$alias" '
-          [
-            .hosts
-            | to_entries
-            | sort_by(.key)
-            | .[]
-            | select((.value.vnc.enable // false) == true)
-            | .key
-          ]
-          | index($alias)
-        ' "$config_file")"
-        remote_host="$(printf '%s\n' "$host_json" | ${pkgs.jq}/bin/jq -r '.vnc.remoteHost // "127.0.0.1"')"
-        remote_port="$(printf '%s\n' "$host_json" | ${pkgs.jq}/bin/jq -r '.vnc.remotePort // 5900')"
-        local_port="$(printf '%s\n' "$host_json" | ${pkgs.jq}/bin/jq -r --argjson vncIndex "$vnc_index" --argjson vncLocalPortBase ${toString cfg.vnc.localPortBase} '.vnc.localPort // ($vncLocalPortBase + $vncIndex)')"
-
-        printf 'alias=%s\n' "$alias"
-        printf 'remote=%s:%s\n' "$remote_host" "$remote_port"
-        printf 'local=127.0.0.1:%s\n' "$local_port"
-        exit 0
-      fi
-
-      if [ "$#" -ne 1 ]; then
-        usage
-        exit 64
-      fi
-
-      alias="$1"
-      host_json="$(${pkgs.jq}/bin/jq -e --arg alias "$alias" '.hosts[$alias] | select(. != null and (.vnc.enable // false) == true)' "$config_file")" || {
-        usage
-        exit 64
-      }
-      vnc_index="$(${pkgs.jq}/bin/jq -r --arg alias "$alias" '
-        [
-          .hosts
-          | to_entries
-          | sort_by(.key)
-          | .[]
-          | select((.value.vnc.enable // false) == true)
-          | .key
-        ]
-        | index($alias)
-      ' "$config_file")"
-      local_port="$(printf '%s\n' "$host_json" | ${pkgs.jq}/bin/jq -r --argjson vncIndex "$vnc_index" --argjson vncLocalPortBase ${toString cfg.vnc.localPortBase} '.vnc.localPort // ($vncLocalPortBase + $vncIndex)')"
-
-      runtime_root="''${XDG_RUNTIME_DIR:-''${TMPDIR:-/tmp}/tail2-remmina-$(${pkgs.coreutils}/bin/id -u)}"
-      runtime_dir="$runtime_root/tail2-remmina"
-      profile="$runtime_dir/$alias.remmina"
-
-      ${pkgs.coreutils}/bin/mkdir -p "$runtime_dir"
-      {
-        printf '[remmina]\n'
-        printf 'name=%s\n' "$alias"
-        printf 'protocol=VNC\n'
-        printf 'server=127.0.0.1:%s\n' "$local_port"
-        printf 'precommand=%s %s start\n' "${tail2VncTunnel}/bin/tail2-vnc-tunnel" "$alias"
-        printf 'postcommand=%s %s stop\n' "${tail2VncTunnel}/bin/tail2-vnc-tunnel" "$alias"
-        printf '%s\n' "$host_json" | ${pkgs.jq}/bin/jq -r '
-          def remmina_value:
-            if type == "boolean" then tostring else tostring end;
-
-          .vnc.profileOptions // {}
-          | to_entries
-          | sort_by(.key)
-          | .[]
-          | "\(.key)=\(.value | remmina_value)"
-        '
-      } >"$profile"
-      ${pkgs.coreutils}/bin/chmod 0600 "$profile"
-
-      exec ${cfg.vnc.viewer.package}/bin/${cfg.vnc.viewer.executable} -c "$profile"
-    '';
+    tailscaleCommand = "${tail2}/bin/${cfg.clientCommand}";
   in {
     options.features.multi-tailnet = {
       enable = lib.mkEnableOption "a second Tailscale tailnet in a network namespace";
 
       runtimeConfigFile = lib.mkOption {
         type = lib.types.path;
-        description = "Runtime JSON config file containing secondary tailnet host details.";
+        description = "Runtime JSON config file containing secondary tailnet aliases.";
       };
 
       namespace = lib.mkOption {
@@ -716,51 +492,6 @@
         default = 24;
       };
 
-      sshUsers = lib.mkOption {
-        type = lib.types.listOf lib.types.str;
-        default = ["tarttelin"];
-        description = "Local users allowed to open SSH proxy connections through the secondary tailnet namespace.";
-      };
-
-      vnc = {
-        enable = lib.mkEnableOption "VNC access to secondary tailnet hosts";
-
-        command = lib.mkOption {
-          type = lib.types.str;
-          default = "tail2-vnc";
-        };
-
-        localPortBase = lib.mkOption {
-          type = lib.types.port;
-          default = 15900;
-        };
-
-        extraPackages = lib.mkOption {
-          type = lib.types.listOf lib.types.package;
-          default = [pkgs.libvncserver];
-          defaultText = lib.literalExpression "[pkgs.libvncserver]";
-          description = "Extra packages installed with VNC support.";
-        };
-
-        viewer = {
-          package = lib.mkOption {
-            type = lib.types.package;
-            default = pkgs.remmina;
-            defaultText = lib.literalExpression "pkgs.remmina";
-          };
-
-          executable = lib.mkOption {
-            type = lib.types.str;
-            default = "remmina";
-          };
-
-          backend = lib.mkOption {
-            type = lib.types.enum ["remmina-profile"];
-            default = "remmina-profile";
-          };
-        };
-      };
-
       authKeyFile = lib.mkOption {
         type = lib.types.nullOr lib.types.path;
         default = null;
@@ -798,36 +529,26 @@
         default = "tail2";
       };
 
-      sshCommand = lib.mkOption {
+      sshConfigUser = lib.mkOption {
         type = lib.types.str;
-        default = "tail2-ssh";
+        default = "tarttelin";
+        description = "Local user that owns the generated SSH alias include file.";
+      };
+
+      sshConfigGroup = lib.mkOption {
+        type = lib.types.str;
+        default = "users";
+        description = "Local group that owns the generated SSH alias include file.";
       };
     };
 
     config = lib.mkIf cfg.enable {
       boot.kernel.sysctl."net.ipv4.ip_forward" = 1;
 
-      environment.systemPackages =
-        [
-          tail2
-          tail2Ssh
-          tail2Connect
-          syncDirectAccess
-          renderSshConfig
-          validateRuntimeConfig
-        ]
-        ++ lib.optionals cfg.vnc.enable [
-          cfg.vnc.viewer.package
-          tail2VncTunnel
-          tail2Vnc
-        ]
-        ++ cfg.vnc.extraPackages;
-
-      assertions = [
-        {
-          assertion = cfg.vnc.viewer.backend != "remmina-profile" || cfg.vnc.viewer.executable == "remmina";
-          message = "features.multi-tailnet.vnc.viewer.backend = \"remmina-profile\" requires viewer.executable = \"remmina\".";
-        }
+      environment.systemPackages = [
+        tail2
+        tail2Publish
+        validateRuntimeConfig
       ];
 
       networking = {
@@ -836,6 +557,9 @@
           iifname "${cfg.hostVeth}" oifname != "${cfg.hostVeth}" accept
           oifname "${cfg.hostVeth}" ct state established,related accept
         '';
+        firewall.extraInputRules = ''
+          iifname "${cfg.hostVeth}" ip daddr ${cfg.hostAddress} tcp flags & ack == ack accept
+        '';
 
         nftables.tables."tail2-root-guard" = {
           family = "inet";
@@ -843,7 +567,8 @@
           content = ''
             chain input {
               type filter hook input priority -100; policy accept;
-              iifname "${cfg.hostVeth}" ct state established,related accept
+              iifname "${cfg.hostVeth}" ct state established,related counter accept
+              iifname "${cfg.hostVeth}" ip daddr ${cfg.hostAddress} tcp flags & ack == ack counter accept
               iifname "${cfg.hostVeth}" drop
             }
 
@@ -866,36 +591,24 @@
         };
       };
 
-      environment.etc.hosts.mode = "0644";
-      system.nssDatabases.hosts = lib.mkForce [
-        "files"
-        "mymachines"
-        "resolve [!UNAVAIL=return]"
-        "myhostname"
-        "dns"
-      ];
-
       programs.ssh.extraConfig = ''
         Include ${sshConfigPath}
       '';
 
-      security.sudo.extraRules = lib.mkIf (cfg.sshUsers != []) [
-        {
-          users = cfg.sshUsers;
-          commands = [
-            {
-              command = "${tail2Connect}/bin/tail2-connect *";
-              options = ["NOPASSWD"];
-            }
-          ];
-        }
-      ];
+      environment.etc.hosts.mode = "0644";
 
-      system.activationScripts."${cfg.namespace}-direct-access" = {
-        deps = ["etc" "agenix"];
+      system.activationScripts."${cfg.namespace}-state-backup" = {
+        deps = [];
         text = ''
-          if ${pkgs.iproute2}/bin/ip netns list | ${pkgs.gnugrep}/bin/grep -Eq '^${cfg.namespace}( |$)'; then
-            ${syncDirectAccess}/bin/tail2-sync-direct-access
+          backup_root=/var/lib/multi-tailnet-backup/initial
+          if [ ! -e "$backup_root" ]; then
+            ${pkgs.coreutils}/bin/mkdir -p "$backup_root"
+            if [ -e /var/lib/tailscale ]; then
+              ${pkgs.coreutils}/bin/cp -a /var/lib/tailscale "$backup_root/tailscale"
+            fi
+            if [ -e ${lib.escapeShellArg cfg.stateDir} ]; then
+              ${pkgs.coreutils}/bin/cp -a ${lib.escapeShellArg cfg.stateDir} "$backup_root/${baseNameOf cfg.stateDir}"
+            fi
           fi
         '';
       };
@@ -920,10 +633,21 @@
 
         tmpfiles.rules = [
           "d ${runtimeDir} 0755 root root -"
-          "f ${sshConfigPath} 0644 root root -"
-          "z ${sshConfigPath} 0644 root root -"
+          "f ${routeStatePath} 0644 root root -"
+          "d ${sshConfigDir} 0755 ${cfg.sshConfigUser} ${cfg.sshConfigGroup} -"
+          "f ${sshConfigPath} 0644 ${cfg.sshConfigUser} ${cfg.sshConfigGroup} -"
+          "z ${sshConfigPath} 0644 ${cfg.sshConfigUser} ${cfg.sshConfigGroup} -"
           "d ${cfg.stateDir} 0700 root root -"
         ];
+
+        timers."${cfg.namespace}-publish" = {
+          wantedBy = ["timers.target"];
+          timerConfig = {
+            OnBootSec = "15s";
+            OnUnitActiveSec = "300s";
+            Unit = "${cfg.namespace}-publish.service";
+          };
+        };
 
         services =
           {
@@ -955,55 +679,24 @@
               };
             };
 
-            "${cfg.namespace}-runtime-config" = {
-              description = "Render ${cfg.namespace} SSH runtime config";
-              wantedBy = ["multi-user.target"];
-              after = ["agenix.service"];
-              wants = ["agenix.service"];
-              serviceConfig = {
-                Type = "oneshot";
-                RemainAfterExit = true;
-                ExecStart = "${renderSshConfig}/bin/tail2-render-ssh-config";
-              };
-            };
-
-            "${cfg.namespace}-local-forwards" = {
-              description = "Local service proxies for ${cfg.namespace}";
-              wantedBy = ["multi-user.target"];
-              after = [
-                "${cfg.namespace}-netns.service"
-                "tailscaled-${cfg.namespace}.service"
-                "${cfg.namespace}-runtime-config.service"
-              ];
-              wants = [
-                "tailscaled-${cfg.namespace}.service"
-                "${cfg.namespace}-runtime-config.service"
-              ];
-              serviceConfig = {
-                ExecStart = "${tail2LocalForwards}/bin/tail2-local-forwards";
-                Restart = "on-failure";
-                RestartSec = "2s";
-              };
-            };
-
-            "${cfg.namespace}-direct-access" = {
-              description = "Direct one-way access routes for ${cfg.namespace}";
+            "${cfg.namespace}-publish" = {
+              description = "Publish additive access for ${cfg.namespace} Tailscale";
               wantedBy = ["multi-user.target"];
               after = [
                 "agenix.service"
+                "tailscaled.service"
                 "${cfg.namespace}-netns.service"
                 "tailscaled-${cfg.namespace}.service"
               ];
-              requires = [
-                "${cfg.namespace}-netns.service"
-              ];
+              requires = ["${cfg.namespace}-netns.service"];
               wants = [
+                "agenix.service"
+                "tailscaled.service"
                 "tailscaled-${cfg.namespace}.service"
               ];
               serviceConfig = {
                 Type = "oneshot";
-                RemainAfterExit = true;
-                ExecStart = "${syncDirectAccess}/bin/tail2-sync-direct-access";
+                ExecStart = "${tail2Publish}/bin/${cfg.namespace}-publish";
               };
             };
           }

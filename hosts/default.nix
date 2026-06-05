@@ -51,7 +51,6 @@
               multi-tailnet = {
                 enable = true;
                 runtimeConfigFile = config.age.secrets.tail2.path;
-                vnc.enable = true;
               };
               shell.enable = true;
             };
@@ -105,7 +104,6 @@
               multi-tailnet = {
                 enable = true;
                 runtimeConfigFile = config.age.secrets.tail2.path;
-                vnc.enable = true;
               };
               shell.enable = true;
             };
