@@ -32,13 +32,44 @@
         def safe_alias:
           type == "string" and test("^[A-Za-z0-9_.:-]+$");
 
+        def safe_direct_alias:
+          type == "string" and test("^[A-Za-z0-9_.-]+$");
+
         def safe_user:
           type == "string" and length > 0 and test("^[A-Za-z0-9_.@+-]+$");
 
         def scalar:
           type == "string" or type == "number" or type == "boolean";
 
-        def host_valid:
+        def ipv4_literal:
+          type == "string"
+          and (
+            split(".") as $octets
+            | ($octets | length) == 4
+            and all($octets[]; test("^[0-9]+$") and (tonumber >= 0 and tonumber <= 255))
+          );
+
+        def direct_aliases($host_alias):
+          if ((.directAccess.aliases // []) | length) == 0 then
+            [$host_alias]
+          else
+            .directAccess.aliases
+          end;
+
+        def direct_access_valid($host_alias):
+          ((.directAccess // {}) | type == "object")
+          and (((.directAccess // {}) | .enable // false) | type == "boolean")
+          and (
+            if (((.directAccess // {}) | .enable // false) == true) then
+              (.directAccess.address | ipv4_literal)
+              and ((.directAccess.aliases // []) | type == "array")
+              and (direct_aliases($host_alias) | all(.[]; safe_direct_alias))
+            else
+              true
+            end
+          );
+
+        def host_valid($host_alias):
           (.hostName | safe_host)
           and (.user | safe_user)
           and ((.port // 22) | is_port)
@@ -51,7 +82,8 @@
           and (((.vnc // {}) | .remoteHost // "127.0.0.1") | safe_host)
           and (((.vnc // {}) | .remotePort // 5900) | is_port)
           and (((.vnc // {}) | .localPort // null) == null or (((.vnc // {}) | .localPort) | is_port))
-          and (((.vnc // {}) | .profileOptions // {}) | type == "object" and all(.[]; scalar));
+          and (((.vnc // {}) | .profileOptions // {}) | type == "object" and all(.[]; scalar))
+          and direct_access_valid($host_alias);
 
         def local_forward_ports:
           [
@@ -71,12 +103,23 @@
             | (.value.value.vnc.localPort // ($vncLocalPortBase + .key))
           ];
 
+        def direct_access_aliases:
+          [
+            .hosts
+            | to_entries[]
+            | .key as $host_alias
+            | .value as $host
+            | select((($host.directAccess // {}) | type == "object") and (($host.directAccess.enable // false) == true))
+            | ($host | direct_aliases($host_alias)[])
+          ];
+
         type == "object"
         and (.hosts | type == "object")
         and (.hosts | to_entries | all(.key | safe_alias))
-        and (.hosts | to_entries | all(.value | host_valid))
+        and (.hosts | to_entries | all(.[]; .key as $host_alias | .value | host_valid($host_alias)))
         and ((local_forward_ports | length) == (local_forward_ports | unique | length))
         and ((vnc_ports | length) == (vnc_ports | unique | length))
+        and ((direct_access_aliases | length) == (direct_access_aliases | unique | length))
       ' "$config_file" >/dev/null
     '';
 
@@ -106,10 +149,16 @@
         | .[]
         | [
             "Host \(.key)",
-            "  HostName \(.value.hostName)",
+            "  HostName \(if ((.value.directAccess.enable // false) == true) then .value.directAccess.address else .value.hostName end)",
             "  User \(.value.user)",
             "  Port \(.value.port // 22)",
-            "  ProxyCommand \($proxy)",
+            (
+              if ((.value.directAccess.enable // false) == true) then
+                empty
+              else
+                "  ProxyCommand \($proxy)"
+              end
+            ),
             "  CheckHostIP no",
             (
               .value.extraOptions // {}
@@ -123,8 +172,14 @@
         | .[]
       ' "$config_file" >"$tmp_file"
 
+      if [ "$(${pkgs.coreutils}/bin/id -u)" -eq 0 ]; then
+        ${pkgs.coreutils}/bin/chown root:root "$tmp_file"
+      fi
       ${pkgs.coreutils}/bin/chmod 0644 "$tmp_file"
       ${pkgs.coreutils}/bin/mv "$tmp_file" "$output_file"
+      if [ "$(${pkgs.coreutils}/bin/id -u)" -eq 0 ]; then
+        ${pkgs.coreutils}/bin/chown root:root "$output_file"
+      fi
     '';
 
     setupNamespace = pkgs.writeShellScript "setup-${cfg.namespace}-tailnet" ''
@@ -133,8 +188,14 @@
       ${pkgs.iproute2}/bin/ip netns add ${cfg.namespace} 2>/dev/null || true
       ${pkgs.iproute2}/bin/ip -n ${cfg.namespace} link set lo up
 
+      if ! ${pkgs.iproute2}/bin/ip link show ${cfg.hostVeth} >/dev/null 2>&1 \
+        && ! ${pkgs.iproute2}/bin/ip -n ${cfg.namespace} link show ${cfg.namespaceVeth} >/dev/null 2>&1; then
+        ${pkgs.iproute2}/bin/ip link add ${cfg.hostVeth} type veth peer name ${cfg.namespaceVeth}
+      fi
+
       for _ in $(${pkgs.coreutils}/bin/seq 1 50); do
-        if ${pkgs.iproute2}/bin/ip link show ${cfg.namespaceVeth} >/dev/null 2>&1; then
+        if ${pkgs.iproute2}/bin/ip link show ${cfg.namespaceVeth} >/dev/null 2>&1 \
+          || ${pkgs.iproute2}/bin/ip -n ${cfg.namespace} link show ${cfg.namespaceVeth} >/dev/null 2>&1; then
           break
         fi
         ${pkgs.coreutils}/bin/sleep 0.1
@@ -144,9 +205,12 @@
         ${pkgs.iproute2}/bin/ip link set ${cfg.namespaceVeth} netns ${cfg.namespace}
       fi
 
+      ${pkgs.iproute2}/bin/ip addr replace ${hostAddr} dev ${cfg.hostVeth}
+      ${pkgs.iproute2}/bin/ip link set ${cfg.hostVeth} up
       ${pkgs.iproute2}/bin/ip -n ${cfg.namespace} addr replace ${namespaceAddr} dev ${cfg.namespaceVeth}
       ${pkgs.iproute2}/bin/ip -n ${cfg.namespace} link set ${cfg.namespaceVeth} up
       ${pkgs.iproute2}/bin/ip -n ${cfg.namespace} route replace default via ${cfg.hostAddress}
+      ${pkgs.iproute2}/bin/ip netns exec ${cfg.namespace} ${pkgs.procps}/bin/sysctl -w net.ipv4.ip_forward=1 >/dev/null
     '';
 
     cleanupNamespace = pkgs.writeShellScript "cleanup-${cfg.namespace}-tailnet" ''
@@ -199,6 +263,172 @@
       exec ${pkgs.openssh}/bin/ssh \
         -F ${lib.escapeShellArg sshConfigPath} \
         "$@"
+    '';
+
+    syncDirectAccess = pkgs.writeShellScriptBin "tail2-sync-direct-access" ''
+            set -eu
+
+            log() {
+              printf 'tail2-direct-access: %s\n' "$*" >&2
+            }
+
+            config_file=${runtimeConfig}
+            hosts_file="/etc/hosts"
+            state_file="${runtimeDir}/direct-routes"
+            begin_marker="# BEGIN ${cfg.namespace} direct access"
+            end_marker="# END ${cfg.namespace} direct access"
+
+            entries_file="$(${pkgs.coreutils}/bin/mktemp)"
+            desired_routes="$(${pkgs.coreutils}/bin/mktemp)"
+            nft_file="$(${pkgs.coreutils}/bin/mktemp)"
+            tmp_hosts=""
+
+            cleanup() {
+              ${pkgs.coreutils}/bin/rm -f "$entries_file" "$desired_routes" "$nft_file"
+              if [ -n "$tmp_hosts" ]; then
+                ${pkgs.coreutils}/bin/rm -f "$tmp_hosts"
+              fi
+            }
+
+            trap cleanup EXIT INT TERM
+
+            log "validating runtime config at $config_file"
+            if ! ${validateRuntimeConfig}/bin/tail2-validate-config "$config_file"; then
+              log "runtime config is invalid; check directAccess.enable, directAccess.address, and directAccess.aliases"
+              exit 1
+            fi
+            ${pkgs.coreutils}/bin/mkdir -p ${lib.escapeShellArg runtimeDir}
+
+            log "extracting direct access entries"
+            ${pkgs.jq}/bin/jq -r '
+              .hosts
+              | to_entries
+              | sort_by(.key)
+              | .[]
+              | select(((.value.directAccess // {}) | .enable // false) == true)
+              | .key as $host_alias
+              | .value.directAccess as $direct
+              | [
+                  $direct.address,
+                  (
+                    if (($direct.aliases // []) | length) == 0 then
+                      [$host_alias]
+                    else
+                      $direct.aliases
+                    end
+                    | join(" ")
+                  )
+                ]
+              | @tsv
+            ' "$config_file" >"$entries_file"
+
+            ${pkgs.jq}/bin/jq -r '
+              .hosts
+              | to_entries
+              | .[]
+              | select(((.value.directAccess // {}) | .enable // false) == true)
+              | .value.directAccess.address
+            ' "$config_file" | ${pkgs.coreutils}/bin/sort -u >"$desired_routes"
+
+            route_count="$(${pkgs.coreutils}/bin/wc -l <"$desired_routes" | ${pkgs.coreutils}/bin/tr -d ' ')"
+            log "found $route_count direct access route(s)"
+
+            hosts_target="$hosts_file"
+            if [ -L "$hosts_target" ]; then
+              hosts_target="$(${pkgs.coreutils}/bin/readlink -f "$hosts_target")"
+            fi
+            hosts_dir="$(${pkgs.coreutils}/bin/dirname "$hosts_target")"
+
+            log "updating hosts file at $hosts_target"
+            tmp_hosts="$(${pkgs.coreutils}/bin/mktemp "$hosts_dir/hosts.tail2.XXXXXX")"
+            if [ -e "$hosts_target" ]; then
+              ${pkgs.gawk}/bin/awk -v begin="$begin_marker" -v end="$end_marker" '
+                $0 == begin { skip = 1; next }
+                $0 == end { skip = 0; next }
+                !skip { print }
+              ' "$hosts_target" >"$tmp_hosts"
+            else
+              : >"$tmp_hosts"
+            fi
+
+            if [ -s "$entries_file" ]; then
+              {
+                printf '\n%s\n' "$begin_marker"
+                while IFS=$'\t' read -r address aliases; do
+                  [ -n "$address" ] || continue
+                  printf '%s %s\n' "$address" "$aliases"
+                done <"$entries_file"
+                printf '%s\n' "$end_marker"
+              } >>"$tmp_hosts"
+            fi
+
+            ${pkgs.coreutils}/bin/chown root:root "$tmp_hosts"
+            ${pkgs.coreutils}/bin/chmod 0644 "$tmp_hosts"
+            ${pkgs.coreutils}/bin/mv "$tmp_hosts" "$hosts_target"
+            tmp_hosts=""
+
+            log "enabling IPv4 forwarding inside ${cfg.namespace}"
+            ${pkgs.iproute2}/bin/ip netns exec ${cfg.namespace} ${pkgs.procps}/bin/sysctl -w net.ipv4.ip_forward=1 >/dev/null
+
+            log "rendering nftables rules inside ${cfg.namespace}"
+            addresses="$(${pkgs.coreutils}/bin/tr '\n' ',' <"$desired_routes" | ${pkgs.gnused}/bin/sed 's/,$//')"
+            {
+              cat <<'NFT'
+      table inet tail2_direct_access {
+        chain input {
+          type filter hook input priority -100; policy accept;
+          iifname "${cfg.tailscaleInterface}" ct state established,related accept
+          iifname "${cfg.tailscaleInterface}" drop
+        }
+
+        chain forward {
+          type filter hook forward priority -100; policy drop;
+          ct state established,related accept
+      NFT
+              if [ -n "$addresses" ]; then
+                printf '    iifname "%s" oifname "%s" ip daddr { %s } accept\n' "${cfg.namespaceVeth}" "${cfg.tailscaleInterface}" "$addresses"
+              fi
+              cat <<'NFT'
+        }
+      }
+
+      table ip tail2_direct_access_nat {
+        chain postrouting {
+          type nat hook postrouting priority srcnat; policy accept;
+          ip saddr ${cfg.vethSubnet} oifname "${cfg.tailscaleInterface}" masquerade
+        }
+      }
+      NFT
+            } >"$nft_file"
+
+            ${pkgs.iproute2}/bin/ip netns exec ${cfg.namespace} ${pkgs.nftables}/bin/nft list table inet tail2_direct_access >/dev/null 2>&1 \
+              && ${pkgs.iproute2}/bin/ip netns exec ${cfg.namespace} ${pkgs.nftables}/bin/nft delete table inet tail2_direct_access \
+              || true
+            ${pkgs.iproute2}/bin/ip netns exec ${cfg.namespace} ${pkgs.nftables}/bin/nft list table ip tail2_direct_access_nat >/dev/null 2>&1 \
+              && ${pkgs.iproute2}/bin/ip netns exec ${cfg.namespace} ${pkgs.nftables}/bin/nft delete table ip tail2_direct_access_nat \
+              || true
+            log "applying nftables rules inside ${cfg.namespace}"
+            ${pkgs.iproute2}/bin/ip netns exec ${cfg.namespace} ${pkgs.nftables}/bin/nft -f "$nft_file"
+
+            log "removing stale direct access routes"
+            if [ -e "$state_file" ]; then
+              while IFS= read -r old_address; do
+                [ -n "$old_address" ] || continue
+                if ! ${pkgs.gnugrep}/bin/grep -Fxq "$old_address" "$desired_routes"; then
+                  ${pkgs.iproute2}/bin/ip route del "$old_address/32" via ${cfg.namespaceAddress} dev ${cfg.hostVeth} >/dev/null 2>&1 || true
+                fi
+              done <"$state_file"
+            fi
+
+            log "installing direct access routes"
+            while IFS= read -r address; do
+              [ -n "$address" ] || continue
+              ${pkgs.iproute2}/bin/ip route replace "$address/32" via ${cfg.namespaceAddress} dev ${cfg.hostVeth}
+            done <"$desired_routes"
+
+            ${pkgs.coreutils}/bin/cp "$desired_routes" "$state_file"
+            ${pkgs.coreutils}/bin/chmod 0644 "$state_file"
+            log "done"
     '';
 
     tail2LocalForwards = pkgs.writeShellScriptBin "tail2-local-forwards" ''
@@ -582,6 +812,7 @@
           tail2
           tail2Ssh
           tail2Connect
+          syncDirectAccess
           renderSshConfig
           validateRuntimeConfig
         ]
@@ -601,9 +832,27 @@
 
       networking = {
         firewall.extraForwardRules = ''
+          iifname "${cfg.hostVeth}" oifname "${cfg.tailscaleInterface}" drop
           iifname "${cfg.hostVeth}" oifname != "${cfg.hostVeth}" accept
           oifname "${cfg.hostVeth}" ct state established,related accept
         '';
+
+        nftables.tables."tail2-root-guard" = {
+          family = "inet";
+          name = "tail2_root_guard";
+          content = ''
+            chain input {
+              type filter hook input priority -100; policy accept;
+              iifname "${cfg.hostVeth}" ct state established,related accept
+              iifname "${cfg.hostVeth}" drop
+            }
+
+            chain forward {
+              type filter hook forward priority -100; policy accept;
+              iifname "${cfg.hostVeth}" oifname "${cfg.tailscaleInterface}" drop
+            }
+          '';
+        };
 
         nftables.tables."tail2-nat" = {
           family = "ip";
@@ -611,11 +860,20 @@
           content = ''
             chain postrouting {
               type nat hook postrouting priority srcnat; policy accept;
-              ip saddr ${cfg.vethSubnet} oifname != "${cfg.hostVeth}" masquerade
+              ip saddr ${cfg.vethSubnet} oifname != "${cfg.hostVeth}" oifname != "${cfg.tailscaleInterface}" masquerade
             }
           '';
         };
       };
+
+      environment.etc.hosts.mode = "0644";
+      system.nssDatabases.hosts = lib.mkForce [
+        "files"
+        "mymachines"
+        "resolve [!UNAVAIL=return]"
+        "myhostname"
+        "dns"
+      ];
 
       programs.ssh.extraConfig = ''
         Include ${sshConfigPath}
@@ -632,6 +890,15 @@
           ];
         }
       ];
+
+      system.activationScripts."${cfg.namespace}-direct-access" = {
+        deps = ["etc" "agenix"];
+        text = ''
+          if ${pkgs.iproute2}/bin/ip netns list | ${pkgs.gnugrep}/bin/grep -Eq '^${cfg.namespace}( |$)'; then
+            ${syncDirectAccess}/bin/tail2-sync-direct-access
+          fi
+        '';
+      };
 
       systemd = {
         network = {
@@ -654,6 +921,7 @@
         tmpfiles.rules = [
           "d ${runtimeDir} 0755 root root -"
           "f ${sshConfigPath} 0644 root root -"
+          "z ${sshConfigPath} 0644 root root -"
           "d ${cfg.stateDir} 0700 root root -"
         ];
 
@@ -700,7 +968,7 @@
             };
 
             "${cfg.namespace}-local-forwards" = {
-              description = "Local SSH proxies for ${cfg.namespace}";
+              description = "Local service proxies for ${cfg.namespace}";
               wantedBy = ["multi-user.target"];
               after = [
                 "${cfg.namespace}-netns.service"
@@ -715,6 +983,27 @@
                 ExecStart = "${tail2LocalForwards}/bin/tail2-local-forwards";
                 Restart = "on-failure";
                 RestartSec = "2s";
+              };
+            };
+
+            "${cfg.namespace}-direct-access" = {
+              description = "Direct one-way access routes for ${cfg.namespace}";
+              wantedBy = ["multi-user.target"];
+              after = [
+                "agenix.service"
+                "${cfg.namespace}-netns.service"
+                "tailscaled-${cfg.namespace}.service"
+              ];
+              requires = [
+                "${cfg.namespace}-netns.service"
+              ];
+              wants = [
+                "tailscaled-${cfg.namespace}.service"
+              ];
+              serviceConfig = {
+                Type = "oneshot";
+                RemainAfterExit = true;
+                ExecStart = "${syncDirectAccess}/bin/tail2-sync-direct-access";
               };
             };
           }

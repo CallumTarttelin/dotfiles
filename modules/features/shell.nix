@@ -6,7 +6,7 @@
     ...
   }: let
     cfg = config.features.shell;
-    inherit (self.packages.${pkgs.stdenv.hostPlatform.system}) myZsh;
+    inherit (self.packages.${pkgs.stdenv.hostPlatform.system}) localproxy myZsh;
   in {
     options.features.shell = {
       enable = lib.mkEnableOption "Custom wrapped shell as default";
@@ -25,6 +25,7 @@
       home-manager.users.tarttelin = {
         # ssh-agent as a systemd user service — socket available to all user sessions
         services.ssh-agent.enable = true;
+        home.packages = [localproxy];
       };
     };
   };
