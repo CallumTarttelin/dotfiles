@@ -104,8 +104,13 @@ func disable(host string) error {
 func enabledPortSummaries(specs []PortSpec) []string {
 	out := make([]string, 0, len(specs))
 	for _, spec := range specs {
+		spec = normalizePortSpec(spec)
 		if spec.Mode == ModeTCP {
-			out = append(out, fmt.Sprintf("%d[tcp]", spec.Port))
+			if spec.TargetPort == spec.ListenPort {
+				out = append(out, fmt.Sprintf("%d[tcp]", spec.ListenPort))
+			} else {
+				out = append(out, fmt.Sprintf("%d[tcp->%d]", spec.ListenPort, spec.TargetPort))
+			}
 		} else {
 			out = append(out, fmt.Sprintf("%d[client=%s,backend=%s,effective=%s]", spec.Port, spec.Client, spec.BackendPolicy, spec.BackendEffective))
 		}
@@ -123,9 +128,12 @@ func usage() {
 
 port specs:
   --port 22:tcp
+  --port 2222:tcp,target=22
   --port 5173:client=http,backend=https
   --port 3000:client=http,backend=http
   --port 9000:client=https,backend=http
+
+TCP target defaults to the listen port when omitted.
 
 options:
   --max-total-conns N

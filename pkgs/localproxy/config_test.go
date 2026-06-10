@@ -84,3 +84,36 @@ func TestStateRoundTrip(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestLoadStateNormalizesLegacyPorts(t *testing.T) {
+	dir := t.TempDir()
+	data := []byte(`{
+  "host": "devbox",
+  "bind_addr": "127.0.0.1",
+  "state_dir": "` + dir + `",
+  "http3_policy": "auto",
+  "frontend_alpn": "h2,http/1.1",
+  "ports": [
+    {
+      "port": 2222,
+      "mode": "tcp"
+    }
+  ],
+  "limits": {
+    "max_total_conns": 1000
+  }
+}
+`)
+	if err := os.WriteFile(statePath(dir), data, 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	loaded, err := loadState(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	spec := loaded.Ports[0]
+	if spec.Port != 2222 || spec.ListenPort != 2222 || spec.TargetPort != 2222 {
+		t.Fatalf("unexpected normalized spec: %#v", spec)
+	}
+}

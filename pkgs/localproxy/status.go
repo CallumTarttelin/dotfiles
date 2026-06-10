@@ -114,8 +114,13 @@ func statusOne(host string) error {
 func statusPortSpecs(specs []PortSpec) string {
 	parts := make([]string, 0, len(specs))
 	for _, spec := range specs {
+		spec = normalizePortSpec(spec)
 		if spec.Mode == ModeTCP {
-			parts = append(parts, fmt.Sprintf("%d[tcp]", spec.Port))
+			if spec.TargetPort == spec.ListenPort {
+				parts = append(parts, fmt.Sprintf("%d[tcp]", spec.ListenPort))
+			} else {
+				parts = append(parts, fmt.Sprintf("%d[tcp->%d]", spec.ListenPort, spec.TargetPort))
+			}
 		} else {
 			parts = append(parts, fmt.Sprintf("%d[client=%s,backend=%s,effective=%s]", spec.Port, spec.Client, spec.BackendPolicy, spec.BackendEffective))
 		}
