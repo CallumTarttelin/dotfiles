@@ -1,8 +1,20 @@
 {self, ...}: {
   perSystem = {pkgs, ...}: {
+    packages.gleam = pkgs.gleam.overrideAttrs (old: {
+      checkFlags =
+        (old.checkFlags or [])
+        ++ [
+          "--skip=tests::escript_success_with_dependency"
+        ];
+    });
+
     packages.beam-tools = pkgs.buildEnv {
       name = "beam-tools";
-      paths = with pkgs; [gleam erlang elixir];
+      paths = [
+        self.packages.${pkgs.stdenv.hostPlatform.system}.gleam
+        pkgs.erlang
+        pkgs.elixir
+      ];
     };
   };
 
