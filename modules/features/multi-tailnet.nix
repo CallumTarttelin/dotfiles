@@ -17,6 +17,8 @@
     legacyRouteStatePath = "${runtimeDir}/direct-routes";
 
     runtimeConfig = lib.escapeShellArg cfg.runtimeConfigFile;
+    effectiveUpFlags = cfg.extraUpFlags ++ ["--netfilter-mode=off"];
+    effectiveUpFlagsShell = lib.escapeShellArgs effectiveUpFlags;
 
     validateRuntimeConfig = pkgs.writeShellScriptBin "tail2-validate-config" ''
       set -eu
@@ -356,6 +358,14 @@
           handle.write("\n")
       PY
 
+            log "applying root tailscale input exception"
+            if ${pkgs.iptables}/bin/iptables -w -S ts-input >/dev/null 2>&1; then
+              while ${pkgs.iptables}/bin/iptables -w -D ts-input -i ${cfg.hostVeth} -j RETURN >/dev/null 2>&1; do
+                :
+              done
+              ${pkgs.iptables}/bin/iptables -w -I ts-input 1 -i ${cfg.hostVeth} -j RETURN
+            fi
+
             log "applying namespace firewall"
             ${pkgs.iproute2}/bin/ip netns exec ${cfg.namespace} ${pkgs.nftables}/bin/nft list table inet tail2_publish >/dev/null 2>&1 \
               && ${pkgs.iproute2}/bin/ip netns exec ${cfg.namespace} ${pkgs.nftables}/bin/nft delete table inet tail2_publish \
@@ -511,7 +521,7 @@
       extraUpFlags = lib.mkOption {
         type = lib.types.listOf lib.types.str;
         default = ["--accept-routes"];
-        description = "Flags passed to tailscale up for the secondary tailnet.";
+        description = "Additional flags passed to tailscale up for the secondary tailnet. The module always appends --netfilter-mode=off.";
       };
 
       socketPath = lib.mkOption {
@@ -543,6 +553,13 @@
     };
 
     config = lib.mkIf cfg.enable {
+      assertions = [
+        {
+          assertion = !lib.any (flag: lib.hasPrefix "--netfilter-mode" flag) cfg.extraUpFlags;
+          message = "features.multi-tailnet.extraUpFlags must not set --netfilter-mode; the module owns it and forces off.";
+        }
+      ];
+
       boot.kernel.sysctl."net.ipv4.ip_forward" = 1;
 
       environment.systemPackages = [
@@ -552,13 +569,15 @@
       ];
 
       networking = {
+        # The early tail2_root_guard table remains the isolation boundary. Trusting
+        # the veth here only prevents the stock NixOS firewall from dropping
+        # replies that tail2_root_guard has already allowed.
+        firewall.trustedInterfaces = [cfg.hostVeth];
+
         firewall.extraForwardRules = ''
           iifname "${cfg.hostVeth}" oifname "${cfg.tailscaleInterface}" drop
           iifname "${cfg.hostVeth}" oifname != "${cfg.hostVeth}" accept
           oifname "${cfg.hostVeth}" ct state established,related accept
-        '';
-        firewall.extraInputRules = ''
-          iifname "${cfg.hostVeth}" ip daddr ${cfg.hostAddress} tcp flags & ack == ack accept
         '';
 
         nftables.tables."tail2-root-guard" = {
@@ -568,7 +587,6 @@
             chain input {
               type filter hook input priority -100; policy accept;
               iifname "${cfg.hostVeth}" ct state established,related counter accept
-              iifname "${cfg.hostVeth}" ip daddr ${cfg.hostAddress} tcp flags & ack == ack counter accept
               iifname "${cfg.hostVeth}" drop
             }
 
@@ -679,6 +697,47 @@
               };
             };
 
+            "${cfg.namespace}-configure" = {
+              description = "Configure ${cfg.namespace} Tailscale preferences";
+              wantedBy = ["multi-user.target"];
+              after =
+                ["tailscaled-${cfg.namespace}.service"]
+                ++ lib.optional (cfg.authKeyFile != null) "tailscaled-${cfg.namespace}-autoconnect.service";
+              requires = ["tailscaled-${cfg.namespace}.service"];
+              wants =
+                ["tailscaled-${cfg.namespace}.service"]
+                ++ lib.optional (cfg.authKeyFile != null) "tailscaled-${cfg.namespace}-autoconnect.service";
+              path = [
+                tail2
+                pkgs.jq
+                pkgs.coreutils
+              ];
+              serviceConfig.Type = "oneshot";
+              script = ''
+                getState() {
+                  ${tailscaleCommand} status --json --peers=false | ${pkgs.jq}/bin/jq -r '.BackendState // "Unknown"'
+                }
+
+                state="Unknown"
+                for _ in $(${pkgs.coreutils}/bin/seq 1 120); do
+                  state="$(getState 2>/dev/null || true)"
+                  case "$state" in
+                    Running)
+                      ${tailscaleCommand} up ${effectiveUpFlagsShell}
+                      exit 0
+                      ;;
+                    NeedsLogin|NeedsMachineAuth)
+                      exit 0
+                      ;;
+                  esac
+                  ${pkgs.coreutils}/bin/sleep 0.5
+                done
+
+                printf '${cfg.namespace}-configure: timed out waiting for tailnet to run, last state: %s\n' "$state" >&2
+                exit 1
+              '';
+            };
+
             "${cfg.namespace}-publish" = {
               description = "Publish additive access for ${cfg.namespace} Tailscale";
               wantedBy = ["multi-user.target"];
@@ -687,12 +746,17 @@
                 "tailscaled.service"
                 "${cfg.namespace}-netns.service"
                 "tailscaled-${cfg.namespace}.service"
+                "${cfg.namespace}-configure.service"
               ];
-              requires = ["${cfg.namespace}-netns.service"];
+              requires = [
+                "${cfg.namespace}-netns.service"
+                "${cfg.namespace}-configure.service"
+              ];
               wants = [
                 "agenix.service"
                 "tailscaled.service"
                 "tailscaled-${cfg.namespace}.service"
+                "${cfg.namespace}-configure.service"
               ];
               serviceConfig = {
                 Type = "oneshot";
@@ -735,7 +799,7 @@
                   if [ "$state" != "$lastState" ]; then
                     case "$state" in
                       NeedsLogin|NeedsMachineAuth|Stopped)
-                        ${tailscaleCommand} up --auth-key "$(${pkgs.coreutils}/bin/cat ${cfg.authKeyFile})${params}" ${lib.escapeShellArgs cfg.extraUpFlags}
+                        ${tailscaleCommand} up --auth-key "$(${pkgs.coreutils}/bin/cat ${cfg.authKeyFile})${params}" ${effectiveUpFlagsShell}
                         ;;
                       Running)
                         ${pkgs.systemd}/bin/systemd-notify --ready
