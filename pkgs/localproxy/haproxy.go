@@ -38,6 +38,7 @@ func probeBackendTLS(host string, port int) bool {
 }
 
 func renderConfig(cfg Config) string {
+	cfg.Ports = normalizePortSpecs(cfg.Ports)
 	tcpPorts, webPorts := splitPortKinds(cfg.Ports)
 	safeHost := safeName(cfg.Host)
 	var out strings.Builder
@@ -78,13 +79,13 @@ func renderConfig(cfg Config) string {
 			out.WriteString(fmt.Sprintf("  rate-limit sessions %d\n", cfg.Limits.MaxSessionsPerSecond))
 		}
 		for _, spec := range tcpPorts {
-			out.WriteString(fmt.Sprintf("  bind %s:%d backlog 64\n", cfg.BindAddr, spec.Port))
-			out.WriteString(fmt.Sprintf("  use_backend localproxy_tcp_%s_%d_backend if { dst_port %d }\n", safeHost, spec.Port, spec.Port))
+			out.WriteString(fmt.Sprintf("  bind %s:%d backlog 64\n", cfg.BindAddr, spec.ListenPort))
+			out.WriteString(fmt.Sprintf("  use_backend localproxy_tcp_%s_%d_backend if { dst_port %d }\n", safeHost, spec.ListenPort, spec.ListenPort))
 		}
 		out.WriteByte('\n')
 		for _, spec := range tcpPorts {
-			out.WriteString(fmt.Sprintf("backend localproxy_tcp_%s_%d_backend\n", safeHost, spec.Port))
-			out.WriteString(fmt.Sprintf("  server target %s:%d maxconn %d\n\n", cfg.Host, spec.Port, cfg.Limits.MaxTotalConns))
+			out.WriteString(fmt.Sprintf("backend localproxy_tcp_%s_%d_backend\n", safeHost, spec.ListenPort))
+			out.WriteString(fmt.Sprintf("  server target %s:%d maxconn %d\n\n", cfg.Host, spec.TargetPort, cfg.Limits.MaxTotalConns))
 		}
 	}
 

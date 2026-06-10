@@ -28,6 +28,8 @@ var hostRe = regexp.MustCompile(`^[A-Za-z0-9_.-]+$`)
 
 type PortSpec struct {
 	Port             int          `json:"port"`
+	ListenPort       int          `json:"listen_port,omitempty"`
+	TargetPort       int          `json:"target_port,omitempty"`
 	Mode             Mode         `json:"mode"`
 	Client           ClientProto  `json:"client,omitempty"`
 	BackendPolicy    BackendProto `json:"backend_policy,omitempty"`
@@ -67,7 +69,7 @@ func parseBarePort(value string) (PortSpec, error) {
 	if err != nil {
 		return PortSpec{}, err
 	}
-	return PortSpec{Port: port, Mode: ModeTCP}, nil
+	return tcpPortSpec(port, port), nil
 }
 
 func parsePortSpec(value string) (PortSpec, error) {
@@ -81,7 +83,10 @@ func parsePortSpec(value string) (PortSpec, error) {
 		return PortSpec{}, err
 	}
 	if rest == "tcp" {
-		return PortSpec{Port: port, Mode: ModeTCP}, nil
+		return tcpPortSpec(port, port), nil
+	}
+	if strings.HasPrefix(rest, "tcp,") {
+		return parseTCPPortSpec(port, strings.TrimPrefix(rest, "tcp,"))
 	}
 	if rest == "" {
 		return PortSpec{}, usageErrorf("invalid --port spec: %s", value)
@@ -128,13 +133,83 @@ func parsePortSpec(value string) (PortSpec, error) {
 	return parsed, nil
 }
 
+func parseTCPPortSpec(listenPort int, rest string) (PortSpec, error) {
+	parsed := tcpPortSpec(listenPort, listenPort)
+	seen := map[string]bool{}
+
+	for _, item := range strings.Split(rest, ",") {
+		key, raw, ok := strings.Cut(item, "=")
+		if !ok || key == "" || raw == "" {
+			return PortSpec{}, usageErrorf("invalid --port spec item: %s", item)
+		}
+		if seen[key] {
+			return PortSpec{}, usageErrorf("duplicate --port spec key: %s", key)
+		}
+		seen[key] = true
+
+		switch key {
+		case "target":
+			target, err := parsePortNumber(raw)
+			if err != nil {
+				return PortSpec{}, err
+			}
+			parsed.TargetPort = target
+		default:
+			return PortSpec{}, usageErrorf("unknown --port spec key: %s", key)
+		}
+	}
+
+	return parsed, nil
+}
+
+func tcpPortSpec(listenPort int, targetPort int) PortSpec {
+	return PortSpec{
+		Port:       listenPort,
+		ListenPort: listenPort,
+		TargetPort: targetPort,
+		Mode:       ModeTCP,
+	}
+}
+
+func normalizePortSpec(spec PortSpec) PortSpec {
+	if spec.Mode != ModeTCP {
+		return spec
+	}
+	if spec.ListenPort == 0 {
+		spec.ListenPort = spec.Port
+	}
+	if spec.Port == 0 {
+		spec.Port = spec.ListenPort
+	}
+	if spec.TargetPort == 0 {
+		spec.TargetPort = spec.ListenPort
+	}
+	return spec
+}
+
+func normalizePortSpecs(specs []PortSpec) []PortSpec {
+	out := make([]PortSpec, len(specs))
+	for i, spec := range specs {
+		out[i] = normalizePortSpec(spec)
+	}
+	return out
+}
+
+func effectiveListenPort(spec PortSpec) int {
+	if spec.Mode == ModeTCP {
+		return normalizePortSpec(spec).ListenPort
+	}
+	return spec.Port
+}
+
 func dedupePorts(specs []PortSpec) error {
 	seen := map[int]bool{}
 	for _, spec := range specs {
-		if seen[spec.Port] {
-			return usageErrorf("duplicate port: %d", spec.Port)
+		port := effectiveListenPort(spec)
+		if seen[port] {
+			return usageErrorf("duplicate port: %d", port)
 		}
-		seen[spec.Port] = true
+		seen[port] = true
 	}
 	return nil
 }
@@ -152,14 +227,19 @@ func safeName(value string) string {
 }
 
 func portSpecText(spec PortSpec) string {
+	spec = normalizePortSpec(spec)
 	if spec.Mode == ModeTCP {
-		return fmt.Sprintf("%d=tcp", spec.Port)
+		if spec.TargetPort == spec.ListenPort {
+			return fmt.Sprintf("%d=tcp", spec.ListenPort)
+		}
+		return fmt.Sprintf("%d=tcp,target=%d", spec.ListenPort, spec.TargetPort)
 	}
 	return fmt.Sprintf("%d=client:%s,backend:%s,effective:%s", spec.Port, spec.Client, spec.BackendPolicy, spec.BackendEffective)
 }
 
 func splitPortKinds(specs []PortSpec) (tcp []PortSpec, web []PortSpec) {
 	for _, spec := range specs {
+		spec = normalizePortSpec(spec)
 		if spec.Mode == ModeTCP {
 			tcp = append(tcp, spec)
 		} else {

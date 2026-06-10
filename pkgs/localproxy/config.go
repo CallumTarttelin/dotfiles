@@ -308,13 +308,15 @@ func parseEnableConfig(host string, args []string) (Config, error) {
 		return Config{}, err
 	}
 
-	sort.Slice(specs, func(i, j int) bool { return specs[i].Port < specs[j].Port })
+	specs = normalizePortSpecs(specs)
+	sort.Slice(specs, func(i, j int) bool { return effectiveListenPort(specs[i]) < effectiveListenPort(specs[j]) })
 	cfg.Ports = specs
 	cfg.StateDir = hostDir(host)
 	return cfg, nil
 }
 
 func finalizeEnableConfig(cfg Config) (Config, error) {
+	cfg.Ports = normalizePortSpecs(cfg.Ports)
 	needsCert := false
 	for i := range cfg.Ports {
 		if cfg.Ports[i].Mode != ModeWeb {
@@ -568,5 +570,6 @@ func loadState(dir string) (Config, error) {
 	if err := json.Unmarshal(data, &cfg); err != nil {
 		return Config{}, err
 	}
+	cfg.Ports = normalizePortSpecs(cfg.Ports)
 	return cfg, nil
 }
