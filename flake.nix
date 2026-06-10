@@ -37,7 +37,7 @@
       url = "github:numtide/llm-agents.nix";
     };
     noctalia = {
-      url = "github:noctalia-dev/noctalia-shell";
+      url = "github:noctalia-dev/noctalia-shell/legacy-v4";
     };
     nix-index-database = {
       url = "github:nix-community/nix-index-database";

@@ -16,6 +16,7 @@
     flakeDir = "/home/tarttelin/Documents/dotfiles";
 
     mkNoctalia = hostname: let
+      executableName = builtins.baseNameOf (lib.getExe noctaliaPkg);
       stateFile = ./_noctalia-state-${hostname}.json;
       hasState = builtins.pathExists stateFile;
       settingsFile = pkgs.runCommand "noctalia-settings-${hostname}" {} ''
@@ -29,10 +30,10 @@
           paths = [noctaliaPkg];
           nativeBuildInputs = [pkgs.makeWrapper];
           postBuild = ''
-            wrapProgram $out/bin/noctalia-shell \
+            wrapProgram $out/bin/${executableName} \
               --set NOCTALIA_SETTINGS_FILE "${settingsFile}"
           '';
-          meta.mainProgram = "noctalia-shell";
+          meta.mainProgram = executableName;
         }
       else noctaliaPkg;
 
