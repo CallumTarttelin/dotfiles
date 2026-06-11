@@ -154,6 +154,7 @@
       alias vi="nvim"
       alias vim="nvim"
       alias ex="hyprctl dispatch exec"
+      alias dev='ssh -t devbox "SHELL=$HOME/.local/bin/remote-zsh zellij attach work --create"'
       alias cat="bat"
       alias ls="eza --icons=auto --git"
       alias ll="eza --icons=auto --git -lga"
