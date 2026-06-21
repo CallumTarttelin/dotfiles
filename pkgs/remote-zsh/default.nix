@@ -2,6 +2,8 @@
   lib,
   neovim,
   pkgs,
+  extraZshConfig ? "",
+  extraRuntimeInputs ? [],
 }: let
   atuinConf = (pkgs.formats.toml {}).generate "remote-atuin-config.toml" {
     dialect = "uk";
@@ -36,7 +38,7 @@
   skimDefaultCommand = "fd --type f";
   skimChangeDirCommand = "fd --type d";
 
-  runtimeInputs = with pkgs; [
+  builtInRuntimeInputs = with pkgs; [
     neovim
     starship
     bat
@@ -54,6 +56,8 @@
     zip
     unzip
   ];
+
+  runtimeInputs = builtInRuntimeInputs ++ extraRuntimeInputs;
 
   zshConf = pkgs.writeText "remote-zshrc" ''
     # Restore wrapped PATH for login shells that reset it.
@@ -147,6 +151,15 @@
     alias ltt="eza --icons=auto --git -T -L 2"
     alias lttt="eza --icons=auto --git -T -L 3"
     alias tree="eza --icons=auto --git -T"
+
+    ${extraZshConfig}
+
+    # Source machine-local remote-zsh config if present.
+    remote_zsh_local_rc="''${REMOTE_ZSH_LOCAL_RC:-''${XDG_CONFIG_HOME:-$HOME/.config}/remote-zsh/local.zsh}"
+    if [[ -r "$remote_zsh_local_rc" ]]; then
+      source "$remote_zsh_local_rc"
+    fi
+    unset remote_zsh_local_rc
   '';
 in
   pkgs.symlinkJoin {
