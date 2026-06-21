@@ -15,10 +15,9 @@
     sshConfigPath = "${sshConfigDir}/ssh_config";
     routeStatePath = "${runtimeDir}/routes.state";
     legacyRouteStatePath = "${runtimeDir}/direct-routes";
+    nftStatePath = "${runtimeDir}/tail2-publish.nft";
 
     runtimeConfig = lib.escapeShellArg cfg.runtimeConfigFile;
-    effectiveUpFlags = cfg.extraUpFlags ++ ["--netfilter-mode=off"];
-    effectiveUpFlagsShell = lib.escapeShellArgs effectiveUpFlags;
 
     validateRuntimeConfig = pkgs.writeShellScriptBin "tail2-validate-config" ''
       set -eu
@@ -115,6 +114,7 @@
             hosts_file="/etc/hosts"
             route_state=${lib.escapeShellArg routeStatePath}
             legacy_route_state=${lib.escapeShellArg legacyRouteStatePath}
+            nft_state=${lib.escapeShellArg nftStatePath}
             ssh_config=${lib.escapeShellArg sshConfigPath}
             work_dir="$(${pkgs.coreutils}/bin/mktemp -d)"
             tmp_hosts=""
@@ -137,9 +137,13 @@
             log "validating alias config at $config_file"
             ${validateRuntimeConfig}/bin/tail2-validate-config "$config_file"
 
-            log "reading primary and secondary tailnet status"
+            log "reading primary tailnet status"
             ${pkgs.tailscale}/bin/tailscale status --json >"$work_dir/primary.json"
-            ${tail2}/bin/${cfg.clientCommand} status --json >"$work_dir/secondary.json"
+            log "reading secondary tailnet status"
+            if ! ${tail2}/bin/${cfg.clientCommand} status --json >"$work_dir/secondary.json"; then
+              log "secondary tailnet status unavailable; publishing empty access"
+              printf '{"BackendState":"Unavailable","Peer":{}}\n' >"$work_dir/secondary.json"
+            fi
 
             export TAIL2_NAMESPACE=${lib.escapeShellArg cfg.namespace}
             export TAIL2_NAMESPACE_VETH=${lib.escapeShellArg cfg.namespaceVeth}
@@ -230,20 +234,26 @@
       primary_nodes = status_nodes(primary, include_self=True)
       primary_ips = {ip for node in primary_nodes if (ip := first_ipv4(node))}
       primary_labels = {label for node in primary_nodes if (label := dns_label(node))}
+      secondary_state = secondary.get("BackendState")
       secondary_self_ip = first_ipv4(secondary.get("Self") or {})
-      if not secondary_self_ip:
-          fail("secondary tailnet self IPv4 is not available")
+      secondary_running = secondary_state == "Running" and secondary_self_ip is not None
+      if not secondary_running:
+          print(
+              f"{namespace}-publish: secondary tailnet is not running; publishing empty access",
+              file=sys.stderr,
+          )
 
       secondary_entries = []
-      for node in status_nodes(secondary, include_self=False):
-          ip = first_ipv4(node)
-          fqdn = dns_name(node)
-          if not ip or not fqdn:
-              continue
-          if ip in primary_ips:
-              continue
-          label = fqdn.split(".", 1)[0]
-          secondary_entries.append({"ip": ip, "fqdn": fqdn, "label": label})
+      if secondary_running:
+          for node in status_nodes(secondary, include_self=False):
+              ip = first_ipv4(node)
+              fqdn = dns_name(node)
+              if not ip or not fqdn:
+                  continue
+              if ip in primary_ips:
+                  continue
+              label = fqdn.split(".", 1)[0]
+              secondary_entries.append({"ip": ip, "fqdn": fqdn, "label": label})
 
       label_counts = collections.Counter(entry["label"] for entry in secondary_entries)
       target_map = collections.defaultdict(list)
@@ -270,39 +280,40 @@
       ssh_lines = []
       hosts = alias_config.get("hosts") or {}
 
-      for alias, details in sorted(hosts.items()):
-          alias_key = alias.lower()
-          if alias_key in primary_labels:
-              fail(f"manual alias {alias!r} collides with primary tailnet name")
+      if secondary_running:
+          for alias, details in sorted(hosts.items()):
+              alias_key = alias.lower()
+              if alias_key in primary_labels:
+                  fail(f"manual alias {alias!r} collides with primary tailnet name")
 
-          target = str(details["target"]).rstrip(".").lower()
-          matches = target_map.get(target, [])
-          if len(matches) == 0:
-              fail(f"manual alias {alias!r} targets unknown secondary host {details['target']!r}")
-          if len(matches) > 1:
-              choices = ", ".join(sorted(match["fqdn"] for match in matches))
-              fail(f"manual alias {alias!r} target {details['target']!r} is ambiguous: {choices}")
+              target = str(details["target"]).rstrip(".").lower()
+              matches = target_map.get(target, [])
+              if len(matches) == 0:
+                  fail(f"manual alias {alias!r} targets unknown secondary host {details['target']!r}")
+              if len(matches) > 1:
+                  choices = ", ".join(sorted(match["fqdn"] for match in matches))
+                  fail(f"manual alias {alias!r} target {details['target']!r} is ambiguous: {choices}")
 
-          entry = matches[0]
-          generated_ip = generated_owner.get(alias_key)
-          if generated_ip is not None and generated_ip != entry["ip"]:
-              fail(f"manual alias {alias!r} collides with generated name for {generated_ip}")
+              entry = matches[0]
+              generated_ip = generated_owner.get(alias_key)
+              if generated_ip is not None and generated_ip != entry["ip"]:
+                  fail(f"manual alias {alias!r} collides with generated name for {generated_ip}")
 
-          add_unique(manual_by_ip[entry["ip"]], alias)
+              add_unique(manual_by_ip[entry["ip"]], alias)
 
-          ssh_lines.append(f"Host {alias}")
-          ssh_lines.append(f"  HostName {entry['ip']}")
-          if details.get("user") is not None:
-              ssh_lines.append(f"  User {details['user']}")
-          ssh_lines.append(f"  Port {details.get('port', 22)}")
-          ssh_lines.append("  CheckHostIP no")
-          for key, value in sorted((details.get("extraOptions") or {}).items()):
-              if isinstance(value, bool):
-                  rendered = "yes" if value else "no"
-              else:
-                  rendered = str(value)
-              ssh_lines.append(f"  {key} {rendered}")
-          ssh_lines.append("")
+              ssh_lines.append(f"Host {alias}")
+              ssh_lines.append(f"  HostName {entry['ip']}")
+              if details.get("user") is not None:
+                  ssh_lines.append(f"  User {details['user']}")
+              ssh_lines.append(f"  Port {details.get('port', 22)}")
+              ssh_lines.append("  CheckHostIP no")
+              for key, value in sorted((details.get("extraOptions") or {}).items()):
+                  if isinstance(value, bool):
+                      rendered = "yes" if value else "no"
+                  else:
+                      rendered = str(value)
+                  ssh_lines.append(f"  {key} {rendered}")
+              ssh_lines.append("")
 
       routes = sorted({entry["ip"] for entry in secondary_entries}, key=ipaddress.IPv4Address)
 
@@ -348,7 +359,14 @@
               "table ip tail2_publish_nat {",
               "  chain postrouting {",
               "    type nat hook postrouting priority srcnat; policy accept;",
-              f"    ip saddr {veth_subnet} oifname \"{tailscale_interface}\" counter snat to {secondary_self_ip}",
+          ]
+      )
+      if secondary_self_ip:
+          nft_lines.append(
+              f"    ip saddr {veth_subnet} oifname \"{tailscale_interface}\" counter snat to {secondary_self_ip}"
+          )
+      nft_lines.extend(
+          [
               "  }",
               "}",
           ]
@@ -360,46 +378,78 @@
 
             log "applying root tailscale input exception"
             if ${pkgs.iptables}/bin/iptables -w -S ts-input >/dev/null 2>&1; then
-              while ${pkgs.iptables}/bin/iptables -w -D ts-input -i ${cfg.hostVeth} -j RETURN >/dev/null 2>&1; do
-                :
-              done
-              ${pkgs.iptables}/bin/iptables -w -I ts-input 1 -i ${cfg.hostVeth} -j RETURN
+              if ${pkgs.iptables}/bin/iptables -w -C ts-input -i ${cfg.hostVeth} -j RETURN >/dev/null 2>&1; then
+                log "root tailscale input exception unchanged"
+              else
+                ${pkgs.iptables}/bin/iptables -w -I ts-input 1 -i ${cfg.hostVeth} -j RETURN
+              fi
             fi
 
             log "applying namespace firewall"
-            ${pkgs.iproute2}/bin/ip netns exec ${cfg.namespace} ${pkgs.nftables}/bin/nft list table inet tail2_publish >/dev/null 2>&1 \
-              && ${pkgs.iproute2}/bin/ip netns exec ${cfg.namespace} ${pkgs.nftables}/bin/nft delete table inet tail2_publish \
-              || true
-            ${pkgs.iproute2}/bin/ip netns exec ${cfg.namespace} ${pkgs.nftables}/bin/nft list table ip tail2_publish_nat >/dev/null 2>&1 \
-              && ${pkgs.iproute2}/bin/ip netns exec ${cfg.namespace} ${pkgs.nftables}/bin/nft delete table ip tail2_publish_nat \
-              || true
-            ${pkgs.iproute2}/bin/ip netns exec ${cfg.namespace} ${pkgs.nftables}/bin/nft list table inet tail2_direct_access >/dev/null 2>&1 \
-              && ${pkgs.iproute2}/bin/ip netns exec ${cfg.namespace} ${pkgs.nftables}/bin/nft delete table inet tail2_direct_access \
-              || true
-            ${pkgs.iproute2}/bin/ip netns exec ${cfg.namespace} ${pkgs.nftables}/bin/nft list table ip tail2_direct_access_nat >/dev/null 2>&1 \
-              && ${pkgs.iproute2}/bin/ip netns exec ${cfg.namespace} ${pkgs.nftables}/bin/nft delete table ip tail2_direct_access_nat \
-              || true
-            ${pkgs.iproute2}/bin/ip netns exec ${cfg.namespace} ${pkgs.nftables}/bin/nft -f "$work_dir/tail2-publish.nft"
+            if [ -e "$nft_state" ] \
+              && ${pkgs.diffutils}/bin/cmp -s "$work_dir/tail2-publish.nft" "$nft_state" \
+              && ${pkgs.iproute2}/bin/ip netns exec ${cfg.namespace} ${pkgs.nftables}/bin/nft list table inet tail2_publish >/dev/null 2>&1 \
+              && ${pkgs.iproute2}/bin/ip netns exec ${cfg.namespace} ${pkgs.nftables}/bin/nft list table ip tail2_publish_nat >/dev/null 2>&1; then
+              log "namespace firewall unchanged"
+            else
+              log "replacing namespace firewall"
+              ${pkgs.iproute2}/bin/ip netns exec ${cfg.namespace} ${pkgs.nftables}/bin/nft list table inet tail2_publish >/dev/null 2>&1 \
+                && ${pkgs.iproute2}/bin/ip netns exec ${cfg.namespace} ${pkgs.nftables}/bin/nft delete table inet tail2_publish \
+                || true
+              ${pkgs.iproute2}/bin/ip netns exec ${cfg.namespace} ${pkgs.nftables}/bin/nft list table ip tail2_publish_nat >/dev/null 2>&1 \
+                && ${pkgs.iproute2}/bin/ip netns exec ${cfg.namespace} ${pkgs.nftables}/bin/nft delete table ip tail2_publish_nat \
+                || true
+              ${pkgs.iproute2}/bin/ip netns exec ${cfg.namespace} ${pkgs.nftables}/bin/nft list table inet tail2_direct_access >/dev/null 2>&1 \
+                && ${pkgs.iproute2}/bin/ip netns exec ${cfg.namespace} ${pkgs.nftables}/bin/nft delete table inet tail2_direct_access \
+                || true
+              ${pkgs.iproute2}/bin/ip netns exec ${cfg.namespace} ${pkgs.nftables}/bin/nft list table ip tail2_direct_access_nat >/dev/null 2>&1 \
+                && ${pkgs.iproute2}/bin/ip netns exec ${cfg.namespace} ${pkgs.nftables}/bin/nft delete table ip tail2_direct_access_nat \
+                || true
+              ${pkgs.iproute2}/bin/ip netns exec ${cfg.namespace} ${pkgs.nftables}/bin/nft -f "$work_dir/tail2-publish.nft"
+              ${pkgs.coreutils}/bin/cp "$work_dir/tail2-publish.nft" "$nft_state"
+              ${pkgs.coreutils}/bin/chmod 0644 "$nft_state"
+            fi
 
-            log "installing direct routes"
+            routes_present=true
             while IFS= read -r address; do
               [ -n "$address" ] || continue
-              ${pkgs.iproute2}/bin/ip route replace "$address/32" via ${cfg.namespaceAddress} dev ${cfg.hostVeth} src ${cfg.hostAddress}
+              if ! ${pkgs.iproute2}/bin/ip route show "$address/32" \
+                | ${pkgs.gnugrep}/bin/grep -Fq "via ${cfg.namespaceAddress} dev ${cfg.hostVeth}"; then
+                routes_present=false
+                break
+              fi
             done <"$work_dir/routes.desired"
 
-            log "removing stale direct routes"
-            for previous_state in "$route_state" "$legacy_route_state"; do
-              [ -e "$previous_state" ] || continue
-              while IFS= read -r old_address; do
-                old_address="''${old_address%/32}"
-                [ -n "$old_address" ] || continue
-                if ! ${pkgs.gnugrep}/bin/grep -Fxq "$old_address" "$work_dir/routes.desired"; then
-                  ${pkgs.iproute2}/bin/ip route del "$old_address/32" via ${cfg.namespaceAddress} dev ${cfg.hostVeth} >/dev/null 2>&1 \
-                    || ${pkgs.iproute2}/bin/ip route del "$old_address/32" dev ${cfg.hostVeth} >/dev/null 2>&1 \
-                    || true
-                fi
-              done <"$previous_state"
-            done
+            if [ -e "$route_state" ] \
+              && [ ! -e "$legacy_route_state" ] \
+              && [ "$routes_present" = true ] \
+              && ${pkgs.diffutils}/bin/cmp -s "$work_dir/routes.desired" "$route_state"; then
+              log "direct routes unchanged"
+            else
+              log "installing direct routes"
+              while IFS= read -r address; do
+                [ -n "$address" ] || continue
+                ${pkgs.iproute2}/bin/ip route replace "$address/32" via ${cfg.namespaceAddress} dev ${cfg.hostVeth} src ${cfg.hostAddress}
+              done <"$work_dir/routes.desired"
+
+              log "removing stale direct routes"
+              for previous_state in "$route_state" "$legacy_route_state"; do
+                [ -e "$previous_state" ] || continue
+                while IFS= read -r old_address; do
+                  old_address="''${old_address%/32}"
+                  [ -n "$old_address" ] || continue
+                  if ! ${pkgs.gnugrep}/bin/grep -Fxq "$old_address" "$work_dir/routes.desired"; then
+                    ${pkgs.iproute2}/bin/ip route del "$old_address/32" via ${cfg.namespaceAddress} dev ${cfg.hostVeth} >/dev/null 2>&1 \
+                      || ${pkgs.iproute2}/bin/ip route del "$old_address/32" dev ${cfg.hostVeth} >/dev/null 2>&1 \
+                      || true
+                  fi
+                done <"$previous_state"
+              done
+
+              ${pkgs.coreutils}/bin/cp "$work_dir/routes.desired" "$route_state"
+              ${pkgs.coreutils}/bin/chmod 0644 "$route_state"
+              ${pkgs.coreutils}/bin/rm -f "$legacy_route_state"
+            fi
 
             log "updating hosts file"
             hosts_target="$hosts_file"
@@ -412,47 +462,64 @@
               esac
             fi
             hosts_dir="$(${pkgs.coreutils}/bin/dirname "$hosts_target")"
-            tmp_hosts="$(${pkgs.coreutils}/bin/mktemp "$hosts_dir/hosts.${cfg.namespace}.XXXXXX")"
+            hosts_candidate="$work_dir/hosts"
             if [ -e "$hosts_target" ]; then
               ${pkgs.gawk}/bin/awk \
                 -v begin="# BEGIN ${cfg.namespace} published access" \
                 -v end="# END ${cfg.namespace} published access" \
                 -v legacy_begin="# BEGIN ${cfg.namespace} direct access" \
                 -v legacy_end="# END ${cfg.namespace} direct access" '
-                  $0 == begin || $0 == legacy_begin { skip = 1; next }
-                  $0 == end || $0 == legacy_end { skip = 0; next }
-                  !skip { print }
-                ' "$hosts_target" >"$tmp_hosts"
+                   $0 == begin || $0 == legacy_begin { skip = 1; pending_blank = 0; next }
+                   $0 == end || $0 == legacy_end { skip = 0; next }
+                   skip { next }
+                   $0 == "" { pending_blank++; next }
+                   {
+                     while (pending_blank > 0) {
+                       print ""
+                       pending_blank--
+                     }
+                     print
+                   }
+                 ' "$hosts_target" >"$hosts_candidate"
             else
-              : >"$tmp_hosts"
+              : >"$hosts_candidate"
             fi
             if [ -s "$work_dir/hosts.block" ]; then
               {
-                printf '\n# BEGIN ${cfg.namespace} published access\n'
+                if [ -s "$hosts_candidate" ]; then
+                  printf '\n'
+                fi
+                printf '# BEGIN ${cfg.namespace} published access\n'
                 ${pkgs.coreutils}/bin/cat "$work_dir/hosts.block"
                 printf '# END ${cfg.namespace} published access\n'
-              } >>"$tmp_hosts"
+              } >>"$hosts_candidate"
             fi
-            ${pkgs.coreutils}/bin/chown root:root "$tmp_hosts"
-            ${pkgs.coreutils}/bin/chmod 0644 "$tmp_hosts"
-            ${pkgs.coreutils}/bin/mv "$tmp_hosts" "$hosts_target"
-            tmp_hosts=""
+            if [ -e "$hosts_target" ] && ${pkgs.diffutils}/bin/cmp -s "$hosts_candidate" "$hosts_target"; then
+              log "hosts file unchanged"
+            else
+              log "replacing hosts file"
+              tmp_hosts="$(${pkgs.coreutils}/bin/mktemp "$hosts_dir/hosts.${cfg.namespace}.XXXXXX")"
+              ${pkgs.coreutils}/bin/cp "$hosts_candidate" "$tmp_hosts"
+              ${pkgs.coreutils}/bin/chown root:root "$tmp_hosts"
+              ${pkgs.coreutils}/bin/chmod 0644 "$tmp_hosts"
+              ${pkgs.coreutils}/bin/mv "$tmp_hosts" "$hosts_target"
+              tmp_hosts=""
+            fi
 
-            log "updating ssh aliases"
-            tmp_ssh="$ssh_config.tmp.$$"
-            ${pkgs.coreutils}/bin/cp "$work_dir/ssh_config" "$tmp_ssh"
-            ${pkgs.coreutils}/bin/chown ${lib.escapeShellArg cfg.sshConfigUser}:${lib.escapeShellArg cfg.sshConfigGroup} "$tmp_ssh"
-            ${pkgs.coreutils}/bin/chmod 0644 "$tmp_ssh"
-            ${pkgs.coreutils}/bin/mv "$tmp_ssh" "$ssh_config"
-            tmp_ssh=""
+            if [ -e "$ssh_config" ] && ${pkgs.diffutils}/bin/cmp -s "$work_dir/ssh_config" "$ssh_config"; then
+              log "ssh aliases unchanged"
+            else
+              log "updating ssh aliases"
+              tmp_ssh="$ssh_config.tmp.$$"
+              ${pkgs.coreutils}/bin/cp "$work_dir/ssh_config" "$tmp_ssh"
+              ${pkgs.coreutils}/bin/chown ${lib.escapeShellArg cfg.sshConfigUser}:${lib.escapeShellArg cfg.sshConfigGroup} "$tmp_ssh"
+              ${pkgs.coreutils}/bin/chmod 0644 "$tmp_ssh"
+              ${pkgs.coreutils}/bin/mv "$tmp_ssh" "$ssh_config"
+              tmp_ssh=""
+            fi
 
-            ${pkgs.coreutils}/bin/cp "$work_dir/routes.desired" "$route_state"
-            ${pkgs.coreutils}/bin/chmod 0644 "$route_state"
-            ${pkgs.coreutils}/bin/rm -f "$legacy_route_state"
             log "done"
     '';
-
-    tailscaleCommand = "${tail2}/bin/${cfg.clientCommand}";
   in {
     options.features.multi-tailnet = {
       enable = lib.mkEnableOption "a second Tailscale tailnet in a network namespace";
@@ -502,28 +569,6 @@
         default = 24;
       };
 
-      authKeyFile = lib.mkOption {
-        type = lib.types.nullOr lib.types.path;
-        default = null;
-        description = "Optional file containing a Tailscale auth key for unattended secondary tailnet login.";
-      };
-
-      authKeyParameters = lib.mkOption {
-        type = lib.types.attrsOf (lib.types.oneOf [
-          lib.types.str
-          lib.types.int
-          lib.types.bool
-        ]);
-        default = {};
-        description = "Optional query parameters appended to the auth key.";
-      };
-
-      extraUpFlags = lib.mkOption {
-        type = lib.types.listOf lib.types.str;
-        default = ["--accept-routes"];
-        description = "Additional flags passed to tailscale up for the secondary tailnet. The module always appends --netfilter-mode=off.";
-      };
-
       socketPath = lib.mkOption {
         type = lib.types.str;
         default = "/run/tail2/tailscaled.sock";
@@ -553,13 +598,6 @@
     };
 
     config = lib.mkIf cfg.enable {
-      assertions = [
-        {
-          assertion = !lib.any (flag: lib.hasPrefix "--netfilter-mode" flag) cfg.extraUpFlags;
-          message = "features.multi-tailnet.extraUpFlags must not set --netfilter-mode; the module owns it and forces off.";
-        }
-      ];
-
       boot.kernel.sysctl."net.ipv4.ip_forward" = 1;
 
       environment.systemPackages = [
@@ -652,6 +690,7 @@
         tmpfiles.rules = [
           "d ${runtimeDir} 0755 root root -"
           "f ${routeStatePath} 0644 root root -"
+          "f ${nftStatePath} 0644 root root -"
           "d ${sshConfigDir} 0755 ${cfg.sshConfigUser} ${cfg.sshConfigGroup} -"
           "f ${sshConfigPath} 0644 ${cfg.sshConfigUser} ${cfg.sshConfigGroup} -"
           "z ${sshConfigPath} 0644 ${cfg.sshConfigUser} ${cfg.sshConfigGroup} -"
@@ -667,153 +706,56 @@
           };
         };
 
-        services =
-          {
-            "${cfg.namespace}-netns" = {
-              description = "Network namespace for ${cfg.namespace} Tailscale";
-              wantedBy = ["multi-user.target"];
-              before = ["tailscaled-${cfg.namespace}.service"];
-              after = ["systemd-networkd.service"];
-              wants = ["systemd-networkd.service"];
-              serviceConfig = {
-                Type = "oneshot";
-                RemainAfterExit = true;
-                ExecStart = setupNamespace;
-                ExecStop = cleanupNamespace;
-              };
-            };
-
-            "tailscaled-${cfg.namespace}" = {
-              description = "Tailscale daemon for ${cfg.namespace}";
-              wantedBy = ["multi-user.target"];
-              after = ["${cfg.namespace}-netns.service"];
-              requires = ["${cfg.namespace}-netns.service"];
-              serviceConfig = {
-                NetworkNamespacePath = namespacePath;
-                ExecStart = "${pkgs.tailscale}/bin/tailscaled --tun ${cfg.tailscaleInterface} --socket ${cfg.socketPath} --statedir=${cfg.stateDir} --state=${cfg.stateDir}/tailscaled.state";
-                Restart = "on-failure";
-                RuntimeDirectory = cfg.namespace;
-                StateDirectory = baseNameOf cfg.stateDir;
-              };
-            };
-
-            "${cfg.namespace}-configure" = {
-              description = "Configure ${cfg.namespace} Tailscale preferences";
-              wantedBy = ["multi-user.target"];
-              after =
-                ["tailscaled-${cfg.namespace}.service"]
-                ++ lib.optional (cfg.authKeyFile != null) "tailscaled-${cfg.namespace}-autoconnect.service";
-              requires = ["tailscaled-${cfg.namespace}.service"];
-              wants =
-                ["tailscaled-${cfg.namespace}.service"]
-                ++ lib.optional (cfg.authKeyFile != null) "tailscaled-${cfg.namespace}-autoconnect.service";
-              path = [
-                tail2
-                pkgs.jq
-                pkgs.coreutils
-              ];
-              serviceConfig.Type = "oneshot";
-              script = ''
-                getState() {
-                  ${tailscaleCommand} status --json --peers=false | ${pkgs.jq}/bin/jq -r '.BackendState // "Unknown"'
-                }
-
-                state="Unknown"
-                for _ in $(${pkgs.coreutils}/bin/seq 1 120); do
-                  state="$(getState 2>/dev/null || true)"
-                  case "$state" in
-                    Running)
-                      ${tailscaleCommand} up ${effectiveUpFlagsShell}
-                      exit 0
-                      ;;
-                    NeedsLogin|NeedsMachineAuth)
-                      exit 0
-                      ;;
-                  esac
-                  ${pkgs.coreutils}/bin/sleep 0.5
-                done
-
-                printf '${cfg.namespace}-configure: timed out waiting for tailnet to run, last state: %s\n' "$state" >&2
-                exit 1
-              '';
-            };
-
-            "${cfg.namespace}-publish" = {
-              description = "Publish additive access for ${cfg.namespace} Tailscale";
-              wantedBy = ["multi-user.target"];
-              after = [
-                "agenix.service"
-                "tailscaled.service"
-                "${cfg.namespace}-netns.service"
-                "tailscaled-${cfg.namespace}.service"
-                "${cfg.namespace}-configure.service"
-              ];
-              requires = [
-                "${cfg.namespace}-netns.service"
-                "${cfg.namespace}-configure.service"
-              ];
-              wants = [
-                "agenix.service"
-                "tailscaled.service"
-                "tailscaled-${cfg.namespace}.service"
-                "${cfg.namespace}-configure.service"
-              ];
-              serviceConfig = {
-                Type = "oneshot";
-                ExecStart = "${tail2Publish}/bin/${cfg.namespace}-publish";
-              };
-            };
-          }
-          // lib.optionalAttrs (cfg.authKeyFile != null) {
-            "tailscaled-${cfg.namespace}-autoconnect" = {
-              description = "Authenticate ${cfg.namespace} Tailscale";
-              wantedBy = ["multi-user.target"];
-              after = ["tailscaled-${cfg.namespace}.service"];
-              wants = ["tailscaled-${cfg.namespace}.service"];
-              path = [
-                tail2
-                pkgs.jq
-              ];
-              serviceConfig.Type = "notify";
-              script = let
-                paramToString = value:
-                  if builtins.isBool value
-                  then lib.boolToString value
-                  else toString value;
-                params = lib.pipe cfg.authKeyParameters [
-                  (lib.filterAttrs (_: value: value != null))
-                  (lib.mapAttrsToList (key: value: "${key}=${paramToString value}"))
-                  (builtins.concatStringsSep "&")
-                  (value:
-                    if value == ""
-                    then ""
-                    else "?${value}")
-                ];
-              in ''
-                getState() {
-                  ${tailscaleCommand} status --json --peers=false | ${pkgs.jq}/bin/jq -r '.BackendState'
-                }
-
-                lastState=""
-                while state="$(getState)"; do
-                  if [ "$state" != "$lastState" ]; then
-                    case "$state" in
-                      NeedsLogin|NeedsMachineAuth|Stopped)
-                        ${tailscaleCommand} up --auth-key "$(${pkgs.coreutils}/bin/cat ${cfg.authKeyFile})${params}" ${effectiveUpFlagsShell}
-                        ;;
-                      Running)
-                        ${pkgs.systemd}/bin/systemd-notify --ready
-                        exit 0
-                        ;;
-                    esac
-                  fi
-
-                  lastState="$state"
-                  ${pkgs.coreutils}/bin/sleep 0.5
-                done
-              '';
+        services = {
+          "${cfg.namespace}-netns" = {
+            description = "Network namespace for ${cfg.namespace} Tailscale";
+            wantedBy = ["multi-user.target"];
+            before = ["tailscaled-${cfg.namespace}.service"];
+            after = ["systemd-networkd.service"];
+            wants = ["systemd-networkd.service"];
+            serviceConfig = {
+              Type = "oneshot";
+              RemainAfterExit = true;
+              ExecStart = setupNamespace;
+              ExecStop = cleanupNamespace;
             };
           };
+
+          "tailscaled-${cfg.namespace}" = {
+            description = "Tailscale daemon for ${cfg.namespace}";
+            wantedBy = ["multi-user.target"];
+            after = ["${cfg.namespace}-netns.service"];
+            requires = ["${cfg.namespace}-netns.service"];
+            serviceConfig = {
+              NetworkNamespacePath = namespacePath;
+              ExecStart = "${pkgs.tailscale}/bin/tailscaled --tun ${cfg.tailscaleInterface} --socket ${cfg.socketPath} --statedir=${cfg.stateDir} --state=${cfg.stateDir}/tailscaled.state";
+              Restart = "on-failure";
+              RuntimeDirectory = cfg.namespace;
+              StateDirectory = baseNameOf cfg.stateDir;
+            };
+          };
+
+          "${cfg.namespace}-publish" = {
+            description = "Publish additive access for ${cfg.namespace} Tailscale";
+            wantedBy = ["multi-user.target"];
+            after = [
+              "agenix.service"
+              "tailscaled.service"
+              "${cfg.namespace}-netns.service"
+              "tailscaled-${cfg.namespace}.service"
+            ];
+            requires = ["${cfg.namespace}-netns.service"];
+            wants = [
+              "agenix.service"
+              "tailscaled.service"
+              "tailscaled-${cfg.namespace}.service"
+            ];
+            serviceConfig = {
+              Type = "oneshot";
+              ExecStart = "${tail2Publish}/bin/${cfg.namespace}-publish";
+            };
+          };
+        };
       };
     };
   };
