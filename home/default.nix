@@ -1,7 +1,7 @@
-_: {
+{lib, ...}: {
   home = {
-    username = "tarttelin";
-    homeDirectory = "/home/tarttelin";
+    username = lib.mkDefault "tarttelin";
+    homeDirectory = lib.mkDefault "/home/tarttelin";
     stateVersion = "23.11";
     extraOutputsToInstall = ["doc" "devdoc"];
   };

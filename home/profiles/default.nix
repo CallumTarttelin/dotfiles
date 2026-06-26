@@ -13,10 +13,18 @@
     ../xdg.nix
   ];
 
+  userModule = username: {
+    home = {
+      inherit username;
+      homeDirectory = "/home/${username}";
+    };
+  };
+
   homeImports = {
     "tarttelin@nixshark" = [./nixshark] ++ sharedModules;
     "tarttelin@nixwork" = [./nixwork] ++ sharedModules;
     "tarttelin@nixie" = [./nixie] ++ sharedModules;
+    "ninassin@nixie" = [./nixie (userModule "ninassin")] ++ sharedModules;
   };
 
   inherit (inputs.hm.lib) homeManagerConfiguration;
@@ -37,6 +45,10 @@ in {
       };
       "tarttelin@nixie" = homeManagerConfiguration {
         modules = homeImports."tarttelin@nixie";
+        inherit pkgs;
+      };
+      "ninassin@nixie" = homeManagerConfiguration {
+        modules = homeImports."ninassin@nixie";
         inherit pkgs;
       };
     });

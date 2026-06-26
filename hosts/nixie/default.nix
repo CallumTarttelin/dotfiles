@@ -17,6 +17,9 @@
 
   users.users.ninassin = {
     isNormalUser = true;
+    description = "ninassin";
+    home = "/home/ninassin";
+    createHome = true;
     extraGroups = ["wheel"];
     shell = pkgs.zsh;
     hashedPasswordFile = config.age.secrets.root.path;

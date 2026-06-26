@@ -128,7 +128,12 @@
       modules =
         [
           ./nixie
-          {home-manager.users.tarttelin.imports = homeImports."tarttelin@nixie";}
+          {
+            home-manager.users = {
+              tarttelin.imports = homeImports."tarttelin@nixie";
+              ninassin.imports = homeImports."ninassin@nixie";
+            };
+          }
           inputs.hardware.nixosModules.common-pc
           inputs.hardware.nixosModules.common-pc-ssd
           inputs.hardware.nixosModules.common-cpu-intel
@@ -139,7 +144,10 @@
               virtualization.enable = true;
               atuin-server.enable = true;
               monitoring.enable = true;
-              shell.enable = true;
+              shell = {
+                enable = true;
+                users = ["tarttelin" "ninassin"];
+              };
             };
             bundles.nix-tools.enable = true;
             bundles.io-tools.enable = true;
