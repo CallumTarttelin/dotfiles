@@ -15,6 +15,13 @@
 
   networking.hostName = "nixie";
 
+  users.users.ninassin = {
+    isNormalUser = true;
+    extraGroups = ["wheel"];
+    shell = pkgs.zsh;
+    hashedPasswordFile = config.age.secrets.root.path;
+  };
+
   environment.systemPackages = with pkgs; [
     inputs.agenix.packages.x86_64-linux.default
     xdg-utils
