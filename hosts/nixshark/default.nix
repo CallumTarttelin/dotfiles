@@ -25,8 +25,6 @@
     bubblewrap
   ];
 
-  boot.kernelPackages = pkgs.linuxPackages_latest;
-
   services.xserver.videoDrivers = ["amdgpu"];
 
   services.flatpak.enable = true;
