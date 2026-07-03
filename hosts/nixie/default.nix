@@ -29,6 +29,7 @@
     inputs.agenix.packages.x86_64-linux.default
     xdg-utils
     nss
+    intel-gpu-tools
     (writeShellScriptBin "backup-mount-s3" ''
       set -ea
       source ${config.age.secrets.restic-s3.path}
@@ -125,6 +126,7 @@
     port = 2283;
     mediaLocation = "/var/lib/immich";
     openFirewall = false;
+    accelerationDevices = ["/dev/dri/renderD128"];
 
     database = {
       enable = true;
@@ -135,6 +137,26 @@
     };
 
     machine-learning.enable = true;
+
+    settings = {
+      server.externalDomain = "https://photos.callumtarttelin.com";
+      ffmpeg = {
+        accel = "qsv";
+        accelDecode = true;
+      };
+      notifications.smtp = {
+        enabled = true;
+        from = "photos@callumtarttelin.com";
+        replyTo = "photos@callumtarttelin.com";
+        transport = {
+          ignoreCert = false;
+          host._secret = config.age.secrets.ses-smtp-addr.path;
+          port = 465;
+          username._secret = config.age.secrets.ses-smtp-user.path;
+          password._secret = config.age.secrets.ses-smtp-password.path;
+        };
+      };
+    };
   };
 
   services.forgejo = {
