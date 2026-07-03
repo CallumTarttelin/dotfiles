@@ -96,6 +96,7 @@ _: {
                     "https://git.callumtarttelin.com"
                     "https://sync.callumtarttelin.com"
                     "https://vault.callumtarttelin.com"
+                    "https://photos.callumtarttelin.com"
                     "https://nix-cache.callumtarttelin.com"
                     "https://grafana.callumtarttelin.com"
                     "https://loki.callumtarttelin.com/ready"
