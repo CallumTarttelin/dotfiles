@@ -110,7 +110,31 @@
         }
         reverse_proxy http://localhost:5000
       '';
+      "photos.callumtarttelin.com".extraConfig = ''
+        tls /var/lib/acme/callumtarttelin.com/fullchain.pem /var/lib/acme/callumtarttelin.com/key.pem {
+          protocols tls1.3
+        }
+        reverse_proxy http://127.0.0.1:2283
+      '';
     };
+  };
+
+  services.immich = {
+    enable = true;
+    host = "127.0.0.1";
+    port = 2283;
+    mediaLocation = "/var/lib/immich";
+    openFirewall = false;
+
+    database = {
+      enable = true;
+      createDB = true;
+      host = "/run/postgresql";
+      name = "immich";
+      user = "immich";
+    };
+
+    machine-learning.enable = true;
   };
 
   services.forgejo = {
@@ -198,6 +222,38 @@
     };
   };
 
+  systemd.tmpfiles.rules = [
+    "d /var/backup/nixie/immich-dump 0750 postgres postgres - -"
+  ];
+
+  systemd.services.backup-immich = {
+    description = "Backup Immich database";
+    after = ["postgresql.service"];
+    requires = ["postgresql.service"];
+    path = [config.services.postgresql.package pkgs.coreutils];
+    script = ''
+      set -euo pipefail
+      cd /var/backup/nixie/immich-dump
+      pg_dump --clean --if-exists --dbname=immich --file=immich-database.sql.tmp
+      mv immich-database.sql.tmp immich-database.sql
+      chmod 0640 immich-database.sql
+    '';
+    serviceConfig = {
+      Type = "oneshot";
+      User = "postgres";
+      Group = "postgres";
+      WorkingDirectory = "/var/backup/nixie/immich-dump";
+    };
+  };
+
+  systemd.timers.backup-immich = {
+    wantedBy = ["timers.target"];
+    timerConfig = {
+      OnCalendar = "00:00:00";
+      Persistent = true;
+    };
+  };
+
   # Auto-apply latest main — CI pre-builds the closure so this is near-instant
   systemd.services.nixie-auto-update = {
     description = "Apply latest dotfiles from main";
@@ -219,14 +275,17 @@
     nixiePaths = [
       "/var/backup/nixie"
       "/var/backup/restic"
+      "/var/lib/immich"
     ];
   in {
     nixie-s3 = {
       environmentFile = config.age.secrets.restic-s3.path;
       paths = nixiePaths;
-      # Vaultwarden backup: services.vaultwarden.backupDir (runs at 23:00)
-      # Forgejo backup: services.forgejo.dump (runs at midnight)
-      # Both land under /var/backup/nixie before this 1am restic run
+      # Vaultwarden backup: /var/backup/nixie/vaultwarden (runs at midnight)
+      # Forgejo backup: /var/backup/nixie/forgejo-dump (runs at midnight)
+      # Immich DB dump: /var/backup/nixie/immich-dump (runs at midnight)
+      # Immich media/library: /var/lib/immich
+      # Service-specific backups land before this 1am restic run
       extraBackupArgs = ["--compression max"];
       timerConfig = {
         OnCalendar = "*-*-* 01:00:00"; # daily, 1 hour after midnight client backup

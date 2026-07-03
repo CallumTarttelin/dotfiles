@@ -82,7 +82,7 @@
       },
       "targets": [
         {
-          "expr": "node_systemd_unit_state{name=~\"restic-backups-.*|backup-vaultwarden.*|forgejo-dump.*\", state=\"failed\"}",
+          "expr": "node_systemd_unit_state{name=~\"restic-backups-.*|backup-vaultwarden.*|backup-immich.*|forgejo-dump.*\", state=\"failed\"}",
           "legendFormat": "{{name}}"
         }
       ]
@@ -127,7 +127,7 @@
       },
       "targets": [
         {
-          "expr": "{unit=~\"restic-backups-.*\\.service|backup-vaultwarden\\.service|forgejo-dump\\.service|restic-snapshot-check\\.service\"}",
+          "expr": "{unit=~\"restic-backups-.*\\.service|backup-vaultwarden\\.service|backup-immich\\.service|forgejo-dump\\.service|restic-snapshot-check\\.service\"}",
           "legendFormat": ""
         }
       ]
