@@ -8,7 +8,7 @@
   stdenvNoCC,
 }: let
   pname = "jetbrains-toolbox";
-  version = "3.5.0.84344";
+  version = "3.6.0.85549";
 
   selectSystem = attrs:
     attrs.${stdenvNoCC.hostPlatform.system}
@@ -22,8 +22,8 @@
   src = fetchzip {
     url = "https://download.jetbrains.com/toolbox/jetbrains-toolbox-${version}${archSuffix}.tar.gz";
     hash = selectSystem {
-      x86_64-linux = "sha256-u+ATMiioJAmr8wTde4g1hB/DZqPnLZoPNJp6Oiq6m5o=";
-      aarch64-linux = "sha256-5sOJ7nrhNDCtAlrh2yoCUX/nGDm6gM5gV/y592zWQqQ=";
+      x86_64-linux = "sha256-UWsEB6y8YMV4CE/iKktpDphbKDItGh/vvQXdgN5eP78=";
+      aarch64-linux = "sha256-T0C35pGJQMoKOtBe3kUf7g4u1H2IGzlIYXx2/ZvCq5M=";
     };
   };
 in
