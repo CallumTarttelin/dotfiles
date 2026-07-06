@@ -122,6 +122,7 @@
 
   services.immich = {
     enable = true;
+    package = inputs."nixpkgs-master".legacyPackages.${pkgs.stdenv.hostPlatform.system}.immich;
     host = "127.0.0.1";
     port = 2283;
     mediaLocation = "/var/lib/immich";
