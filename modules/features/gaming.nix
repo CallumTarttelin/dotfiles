@@ -19,6 +19,7 @@ _: {
         oversteer
         linuxConsoleTools
         ckan
+        prismlauncher
       ];
 
       nixpkgs.config.packageOverrides = pkgs: {
