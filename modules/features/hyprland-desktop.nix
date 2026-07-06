@@ -20,6 +20,8 @@
     execDsp = cmd: "hl.dsp.exec_cmd(${q cmd})";
     bind = key: dispatcher: "hl.bind(${q key}, ${dispatcher})";
     bindWith = key: dispatcher: opts: "hl.bind(${q key}, ${dispatcher}, ${lua opts})";
+    dpmsCmd = action: "${pkgs.hyprland}/bin/hyprctl eval 'hl.dispatch(hl.dsp.dpms({ action = \"${action}\" }))'";
+    lockCmd = "${pkgs.procps}/bin/pgrep -x hyprlock >/dev/null || ${pkgs.hyprlock}/bin/hyprlock";
 
     suspendScript = pkgs.writeShellScript "suspend-script" ''
       ${pkgs.pipewire}/bin/pw-cli i all | ${pkgs.ripgrep}/bin/rg running
@@ -60,7 +62,7 @@
             ${pkgs.coreutils}/bin/env \
             XDG_RUNTIME_DIR="$runtime_dir" \
             HYPRLAND_INSTANCE_SIGNATURE="$signature" \
-            ${pkgs.hyprland}/bin/hyprctl eval 'hl.dispatch(hl.dsp.dpms({ action = "on" }))' >/dev/null 2>&1 || true
+            ${dpmsCmd "enable"} >/dev/null 2>&1 || true
         done
       done
     '';
@@ -358,29 +360,44 @@
           };
         };
 
-        # Hypridle + Hyprlock (standard shell only — noctalia has built-in idle management)
-        services.hypridle = lib.mkIf isStandard {
+        # Keep idle/lock/display power in Hyprland's own daemons, even when Noctalia is the shell.
+        services.hypridle = {
           enable = true;
           settings = {
             general = {
-              lock_cmd = lib.mkDefault "pidof hyprlock || hyprlock";
-              before_sleep_cmd = "loginctl lock-session";
-              after_sleep_cmd = "hyprctl eval 'hl.dispatch(hl.dsp.dpms({ action = \"on\" }))'";
+              lock_cmd = lib.mkDefault lockCmd;
+              before_sleep_cmd = "${pkgs.systemd}/bin/loginctl lock-session";
+              after_sleep_cmd = dpmsCmd "enable";
+              on_unlock_cmd = dpmsCmd "enable";
+              inhibit_sleep = 2;
             };
             listener = [
               {
                 timeout = 600;
+                on-timeout = "${pkgs.systemd}/bin/loginctl lock-session";
+              }
+              {
+                timeout = 660;
+                on-timeout = dpmsCmd "disable";
+                on-resume = dpmsCmd "enable";
+              }
+              {
+                timeout = 1800;
                 on-timeout = suspendScript.outPath;
               }
             ];
           };
         };
 
-        programs.hyprlock = lib.mkIf isStandard {
+        programs.hyprlock = {
           enable = true;
           settings = {
             background.color = "#000000";
-            general.ignore_empty_input = true;
+            general = {
+              disable_loading_bar = true;
+              hide_cursor = true;
+              ignore_empty_input = true;
+            };
           };
         };
 
