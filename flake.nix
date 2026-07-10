@@ -37,6 +37,15 @@
     llm-agents = {
       url = "github:numtide/llm-agents.nix";
     };
+    codex-desktop-linux = {
+      url = "github:ilysenko/codex-desktop-linux";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    claude-desktop-debian = {
+      url = "github:aaddrick/claude-desktop-debian";
+      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.flake-parts.follows = "flake-parts";
+    };
     noctalia = {
       url = "github:noctalia-dev/noctalia-shell/legacy-v4";
     };

@@ -9,6 +9,8 @@
     ...
   }: let
     llm-agents = inputs.llm-agents.packages.${system};
+    codex-desktop-linux = inputs.codex-desktop-linux.packages.${system};
+    claude-desktop-debian = inputs.claude-desktop-debian.packages.${system};
   in {
     packages.llms = pkgs.buildEnv {
       name = "llm-tools";
@@ -17,6 +19,8 @@
         llm-agents.codex
         llm-agents.codex-acp
         llm-agents.opencode
+        codex-desktop-linux.codex-desktop
+        claude-desktop-debian.claude-desktop-fhs
         self.packages.${system}.t3code
       ];
     };
