@@ -10,7 +10,10 @@ _: {
       services.harmonia.cache = {
         enable = true;
         signKeyPaths = [config.age.secrets.cache-key.path];
-        settings.bind = "[::]:5000";
+        settings = {
+          bind = "[::]:5000";
+          priority = 30;
+        };
       };
 
       # Auto-sign all store paths built on this host
