@@ -262,6 +262,7 @@
       # Home-manager config
       home-manager.users.tarttelin = {
         home.pointerCursor = {
+          enable = true;
           gtk.enable = true;
           inherit (cfg.cursor) package;
           inherit (cfg.cursor) name;

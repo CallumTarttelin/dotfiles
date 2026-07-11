@@ -12,8 +12,8 @@
       name = "beam-tools";
       paths = [
         self.packages.${pkgs.stdenv.hostPlatform.system}.gleam
-        pkgs.erlang
-        pkgs.elixir
+        pkgs.beamPackages.erlang
+        pkgs.beamPackages.elixir
       ];
     };
   };
