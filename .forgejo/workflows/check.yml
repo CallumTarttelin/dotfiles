@@ -24,7 +24,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Build ${{ matrix.host }}
-        run: nix build .#nixosConfigurations.${{ matrix.host }}.config.system.build.toplevel
+        run: |
+          mkdir -p "$HOME/nix-ci-roots"
+          nix build \
+            ".#nixosConfigurations.${{ matrix.host }}.config.system.build.toplevel" \
+            --out-link "$HOME/nix-ci-roots/${{ matrix.host }}"
 
   auto-merge:
     runs-on: nix-native
