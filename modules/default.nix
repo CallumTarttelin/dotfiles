@@ -14,6 +14,7 @@
   allModules =
     [
       {
+        nixpkgs.overlays = [(import ../overlays {inherit inputs;})];
         home-manager = {
           useGlobalPkgs = true;
           useUserPackages = true;
