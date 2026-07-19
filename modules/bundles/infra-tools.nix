@@ -26,6 +26,7 @@
     config = lib.mkIf config.bundles.infra-tools.enable {
       home-manager.users.tarttelin.home.packages = [
         self.packages.${pkgs.stdenv.hostPlatform.system}.infra-tools
+        self.packages.${pkgs.stdenv.hostPlatform.system}.gcloud-remote-login
       ];
     };
   };
