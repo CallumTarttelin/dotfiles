@@ -136,9 +136,61 @@
       ]
     },
     {
+      "title": "Nixie CPU Temperature",
+      "description": "CPU package temperature reported by nixie's coretemp sensor.",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 24 },
+      "datasource": { "type": "prometheus", "uid": "victoriametrics" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "celsius",
+          "min": 0,
+          "custom": { "fillOpacity": 20 },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "orange", "value": 80 },
+              { "color": "red", "value": 95 }
+            ]
+          }
+        }
+      },
+      "targets": [
+        {
+          "expr": "node_hwmon_temp_celsius{instance=\"nixie\", chip=\"platform_coretemp_0\", sensor=\"temp1\"}",
+          "legendFormat": "nixie CPU package"
+        }
+      ]
+    },
+    {
+      "title": "Nixie Thermal Throttle Events",
+      "description": "CPU thermal throttle counter rate for nixie, averaged over five minutes.",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 24 },
+      "datasource": { "type": "prometheus", "uid": "victoriametrics" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops",
+          "min": 0,
+          "custom": { "fillOpacity": 20 }
+        }
+      },
+      "targets": [
+        {
+          "expr": "sum(rate(node_cpu_core_throttles_total{instance=\"nixie\"}[5m]))",
+          "legendFormat": "Core events"
+        },
+        {
+          "expr": "sum(rate(node_cpu_package_throttles_total{instance=\"nixie\"}[5m]))",
+          "legendFormat": "Package events"
+        }
+      ]
+    },
+    {
       "title": "Failed Systemd Units",
       "type": "table",
-      "gridPos": { "h": 6, "w": 24, "x": 0, "y": 24 },
+      "gridPos": { "h": 6, "w": 24, "x": 0, "y": 32 },
       "datasource": { "type": "prometheus", "uid": "victoriametrics" },
       "fieldConfig": {
         "defaults": {},
