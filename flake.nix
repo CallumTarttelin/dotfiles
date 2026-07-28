@@ -4,9 +4,6 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     nixpkgs-2511.url = "github:NixOS/nixpkgs/nixos-25.11";
-    # Temporary: Firefox built against fontconfig 2.17.1 avoids Mozilla bug 2051021.
-    # Remove this input and the overlay pin once nixpkgs Firefox is >= 153.
-    nixpkgs-firefox-152.url = "github:NixOS/nixpkgs/d407951447dcd00442e97087bf374aad70c04cea";
     nixpkgs-master.url = "github:NixOS/nixpkgs/master";
     flake-parts = {
       url = "github:hercules-ci/flake-parts";
