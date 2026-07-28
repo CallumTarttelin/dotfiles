@@ -5,11 +5,11 @@
   makeDesktopItem,
 }: let
   pname = "t3code";
-  version = "0.0.28";
+  version = "0.0.29";
 
   src = fetchurl {
     url = "https://github.com/pingdotgg/t3code/releases/download/v${version}/T3-Code-${version}-x86_64.AppImage";
-    hash = "sha256-+mBp+wPrJRV/HpaimQHcqBuwqZcPWTbKJVNCVW7ELgo=";
+    hash = "sha256-OAMKpPD+ATFCaXh4dELKkDtAsvko1SoR0WiTudnKjPQ=";
   };
 
   desktopItem = makeDesktopItem {
