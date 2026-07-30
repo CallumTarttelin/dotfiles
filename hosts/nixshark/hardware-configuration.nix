@@ -20,11 +20,13 @@
   fileSystems."/" = {
     device = "/dev/disk/by-label/nixos";
     fsType = "btrfs";
+    options = ["compress=zstd:1"];
   };
 
   fileSystems."/home" = {
     device = "/dev/disk/by-label/home";
     fsType = "btrfs";
+    options = ["compress=zstd:1"];
   };
 
   fileSystems."/boot" = {
