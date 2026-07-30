@@ -47,7 +47,7 @@
     options.bundles.electronics.enable = lib.mkEnableOption "electronics tools (kicad, ngspice)";
     config = lib.mkIf config.bundles.electronics.enable {
       nixpkgs.config.permittedInsecurePackages = [
-        "segger-jlink-qt4-874"
+        "segger-jlink-qt4-952"
       ];
       home-manager.users.tarttelin.home.packages = [
         self.packages.${pkgs.stdenv.hostPlatform.system}.electronics
