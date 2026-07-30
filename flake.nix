@@ -68,7 +68,7 @@
         ];
         config.allowUnfree = true;
         config.segger-jlink.acceptLicense = true;
-        config.permittedInsecurePackages = ["segger-jlink-qt4-874"];
+        config.permittedInsecurePackages = ["segger-jlink-qt4-952"];
       };
 
     mkNeovim = system: let
