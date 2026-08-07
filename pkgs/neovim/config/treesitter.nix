@@ -1,6 +1,7 @@
 {
   plugins.treesitter = {
     enable = true;
+    indent.disable = ["ruby"];
 
     settings = {
       highlight = {
@@ -11,7 +12,6 @@
 
       indent = {
         enable = true;
-        disable = ["ruby"];
       };
     };
   };
