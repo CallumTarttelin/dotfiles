@@ -19,7 +19,7 @@
       inputs.home-manager.follows = "hm";
     };
     fenix = {
-      url = "github:nix-community/fenix/monthly";
+      url = "github:nix-community/fenix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     deploy-rs = {
