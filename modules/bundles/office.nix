@@ -3,7 +3,7 @@
     packages.office = pkgs.buildEnv {
       name = "office";
       paths = with pkgs; [
-        libreoffice-fresh
+        libreoffice-stable
         obsidian
       ];
     };
