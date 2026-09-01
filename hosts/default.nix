@@ -91,6 +91,7 @@
                 desktopShell = "noctalia";
                 noctaliaPackage = selfpkgs.myNoctalia-nixwork;
                 monitors = ["eDP-1,preferred,auto,1"];
+                idleLockTimeoutSeconds = 300;
               };
               firefox-work-profile.enable = true;
               logiops.enable = true;
