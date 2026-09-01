@@ -140,6 +140,7 @@
       ${lib.concatMapStringsSep "\n" monitorLua cfg.monitors}
 
       ${lib.concatStringsSep "\n" shellBinds}
+      ${bind "CTRL + ALT + L" (execDsp lockCmd)}
 
       hl.on("hyprland.start", function()
       ${lib.concatMapStringsSep "\n" (e: "  ${exec e}") (noctaliaExecOnce ++ cfg.extraExecOnce)}
@@ -179,6 +180,11 @@
       extraExecOnce = lib.mkOption {
         type = lib.types.listOf lib.types.str;
         default = [];
+      };
+      idleLockTimeoutSeconds = lib.mkOption {
+        type = lib.types.nullOr lib.types.ints.positive;
+        default = null;
+        description = "Seconds of inactivity before locking, or null to disable inactivity locking";
       };
     };
 
@@ -372,21 +378,22 @@
               on_unlock_cmd = dpmsCmd "enable";
               inhibit_sleep = 2;
             };
-            listener = [
-              {
-                timeout = 600;
+            listener =
+              lib.optional (cfg.idleLockTimeoutSeconds != null) {
+                timeout = cfg.idleLockTimeoutSeconds;
                 on-timeout = "${pkgs.systemd}/bin/loginctl lock-session";
               }
-              {
-                timeout = 660;
-                on-timeout = dpmsCmd "disable";
-                on-resume = dpmsCmd "enable";
-              }
-              {
-                timeout = 1800;
-                on-timeout = suspendScript.outPath;
-              }
-            ];
+              ++ [
+                {
+                  timeout = 660;
+                  on-timeout = dpmsCmd "disable";
+                  on-resume = dpmsCmd "enable";
+                }
+                {
+                  timeout = 1800;
+                  on-timeout = suspendScript.outPath;
+                }
+              ];
           };
         };
 
