@@ -1,6 +1,15 @@
 {
+  config,
+  pkgs,
+  ...
+}: {
   plugins.treesitter = {
     enable = true;
+    grammarPackages =
+      config.plugins.treesitter.package.allGrammars
+      ++ [
+        pkgs.tree-sitter-grammars.tree-sitter-lean
+      ];
     indent.disable = ["ruby"];
 
     settings = {

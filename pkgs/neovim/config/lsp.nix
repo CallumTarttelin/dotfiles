@@ -1,4 +1,4 @@
-{
+{pkgs, ...}: {
   plugins.lsp = {
     enable = true;
 
@@ -19,6 +19,7 @@
       "javascript"
       "typescriptreact"
       "javascriptreact"
+      "lean"
     ];
 
     keymaps = {
@@ -106,6 +107,20 @@
       kotlin_language_server.enable = true;
       ts_ls.enable = true;
     };
+  };
+
+  # Lean's LSP is provided by the project-selected elan toolchain. lean.nvim
+  # adds the infoview, unicode abbreviations, progress indicators, and mappings.
+  plugins.lean = {
+    enable = true;
+    settings.mappings = true;
+  };
+
+  # Keep elan behind the inherited PATH so a project dev shell can provide its
+  # own Lean installation. The system bundle also makes the CLI shims available.
+  dependencies.lean = {
+    package = pkgs.elan;
+    packageFallback = true;
   };
 
   # Fidget for LSP progress notifications

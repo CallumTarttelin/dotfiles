@@ -64,6 +64,7 @@
               infra-tools.enable = true;
               build-tools.enable = true;
               rust-tools.enable = true;
+              lean-tools.enable = true;
               nix-tools.enable = true;
               io-tools.enable = true;
             };
@@ -118,6 +119,7 @@
               infra-tools.enable = true;
               build-tools.enable = true;
               rust-tools.enable = true;
+              lean-tools.enable = true;
               nix-tools.enable = true;
               io-tools.enable = true;
             };
