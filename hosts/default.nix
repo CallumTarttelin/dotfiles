@@ -154,6 +154,7 @@
             };
             bundles.nix-tools.enable = true;
             bundles.io-tools.enable = true;
+            bundles.llms.enable = true;
           }
         ]
         ++ allModules;
