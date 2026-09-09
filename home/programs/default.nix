@@ -25,6 +25,7 @@ in {
   home.packages = [
     pkgs.obsidian
     pkgs.bruno
+    pkgs.postman
     pkgs.websocat
     pkgs.google-chrome
   ];
