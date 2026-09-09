@@ -62,6 +62,7 @@
 
     zshConf = pkgs.writeText "zshrc" ''
       # Restore wrapped PATH (NixOS set-environment resets it for login shells)
+      typeset -U path PATH
       export PATH="${lib.makeBinPath runtimeInputs}:$PATH"
 
       # history
@@ -183,7 +184,6 @@
       pkgs.lsof
       pkgs.atuin
       pkgs.direnv
-      pkgs.nix-direnv
       pkgs.yazi
       pkgs.tmux
       pkgs.zip

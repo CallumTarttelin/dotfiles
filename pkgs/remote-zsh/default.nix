@@ -61,6 +61,7 @@
 
   zshConf = pkgs.writeText "remote-zshrc" ''
     # Restore wrapped PATH for login shells that reset it.
+    typeset -U path PATH
     export PATH="${lib.makeBinPath runtimeInputs}:$PATH"
 
     # history
