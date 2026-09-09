@@ -134,8 +134,9 @@
         }
         // extras);
 
-    hostLua = pkgs.writeText "hyprland-host.lua" ''
-      ${builtins.readFile hyprlandLua}
+    # Keep configuration as text so evaluation does not need to build it first.
+    hostLua = ''
+      ${hyprlandLua.text}
 
       ${lib.concatMapStringsSep "\n" monitorLua cfg.monitors}
 
@@ -282,7 +283,7 @@
             variables = ["--all"];
             enable = true;
           };
-          extraConfig = builtins.readFile hostLua;
+          extraConfig = hostLua;
         };
 
         home.sessionVariables = {
