@@ -586,13 +586,13 @@
 
       sshConfigUser = lib.mkOption {
         type = lib.types.str;
-        default = "tarttelin";
-        description = "Local user that owns the generated SSH alias include file.";
+        default = "root";
+        description = "Owner of the global SSH alias include; root ownership allows both user and root SSH clients to read it.";
       };
 
       sshConfigGroup = lib.mkOption {
         type = lib.types.str;
-        default = "users";
+        default = "root";
         description = "Local group that owns the generated SSH alias include file.";
       };
     };
@@ -691,6 +691,7 @@
           "d ${runtimeDir} 0755 root root -"
           "f ${routeStatePath} 0644 root root -"
           "f ${nftStatePath} 0644 root root -"
+          # Global SSH includes must also be trusted by root's SSH client.
           "d ${sshConfigDir} 0755 ${cfg.sshConfigUser} ${cfg.sshConfigGroup} -"
           "f ${sshConfigPath} 0644 ${cfg.sshConfigUser} ${cfg.sshConfigGroup} -"
           "z ${sshConfigPath} 0644 ${cfg.sshConfigUser} ${cfg.sshConfigGroup} -"
