@@ -7,9 +7,77 @@
   "time": { "from": "now-7d", "to": "now" },
   "panels": [
     {
+      "title": "Repository Check Health",
+      "description": "Failed or missing queries and checks older than 25 hours are unhealthy.",
+      "type": "stat",
+      "gridPos": {
+        "h": 6,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "victoriametrics"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "OK",
+                  "color": "green"
+                },
+                "1": {
+                  "text": "FAILED",
+                  "color": "red"
+                },
+                "2": {
+                  "text": "FAILED",
+                  "color": "red"
+                }
+              }
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          }
+        }
+      },
+      "options": {
+        "colorMode": "background",
+        "textMode": "value_and_name",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "graphMode": "none"
+      },
+      "targets": [
+        {
+          "expr": "((1 - restic_snapshot_check_success) + (time() - restic_snapshot_check_timestamp_seconds > bool 90000)) or absent(restic_snapshot_check_success{repo=\"nixie-s3\"}) or absent(restic_snapshot_check_success{repo=\"nixie-borgbase\"}) or absent(restic_snapshot_check_success{repo=\"nixshark\"}) or absent(restic_snapshot_check_success{repo=\"nixwork\"})",
+          "legendFormat": "{{repo}}",
+          "instant": true
+        }
+      ]
+    },
+    {
       "title": "Backup Status",
       "type": "stat",
-      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 0 },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 6 },
       "datasource": { "type": "prometheus", "uid": "victoriametrics" },
       "fieldConfig": {
         "defaults": {
@@ -40,7 +108,7 @@
     {
       "title": "Last Snapshot Time",
       "type": "stat",
-      "gridPos": { "h": 6, "w": 24, "x": 0, "y": 6 },
+      "gridPos": { "h": 6, "w": 24, "x": 0, "y": 14 },
       "datasource": { "type": "prometheus", "uid": "victoriametrics" },
       "fieldConfig": {
         "defaults": {
@@ -60,7 +128,7 @@
     {
       "title": "Backup Service Status",
       "type": "stat",
-      "gridPos": { "h": 6, "w": 24, "x": 0, "y": 12 },
+      "gridPos": { "h": 6, "w": 24, "x": 0, "y": 20 },
       "datasource": { "type": "prometheus", "uid": "victoriametrics" },
       "fieldConfig": {
         "defaults": {
@@ -90,12 +158,11 @@
     {
       "title": "Snapshot Age Over Time",
       "type": "timeseries",
-      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 18 },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 26 },
       "datasource": { "type": "prometheus", "uid": "victoriametrics" },
       "fieldConfig": {
         "defaults": {
           "unit": "h",
-          "custom": { "fillOpacity": 15 },
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -116,7 +183,7 @@
     {
       "title": "Backup Logs",
       "type": "logs",
-      "gridPos": { "h": 12, "w": 24, "x": 0, "y": 26 },
+      "gridPos": { "h": 12, "w": 24, "x": 0, "y": 34 },
       "datasource": { "type": "loki", "uid": "loki" },
       "options": {
         "showTime": true,

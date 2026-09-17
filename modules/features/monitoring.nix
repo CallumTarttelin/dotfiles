@@ -161,26 +161,12 @@ _: {
           description = "Check restic snapshot ages and write metrics";
           path = with pkgs; [restic jq coreutils];
           script = ''
-            set -euo pipefail
-            TEXTFILE_DIR="/var/lib/prometheus-node-exporter/textfile"
-
-            check_repo() {
-              local name="$1" env_file="$2"
-              set -a; source "$env_file"; set +a
-              local ts
-              ts=$(restic snapshots --latest 1 --json 2>/dev/null \
-                | jq -r '.[0].time // empty' \
-                | xargs -I{} date -d {} +%s 2>/dev/null || echo "")
-              if [ -n "$ts" ]; then
-                echo "restic_last_snapshot_timestamp_seconds{repo=\"$name\"} $ts" > "$TEXTFILE_DIR/restic_$name.prom.$$"
-                mv "$TEXTFILE_DIR/restic_$name.prom.$$" "$TEXTFILE_DIR/restic_$name.prom"
-              fi
-            }
-
-            check_repo "nixie-s3" "${config.age.secrets.restic-s3.path}"
-            check_repo "nixie-borgbase" "${config.age.secrets.restic-borgbase.path}"
-            check_repo "nixshark" "${config.age.secrets.restic-nixshark.path}"
-            check_repo "nixwork" "${config.age.secrets.restic-nixwork.path}"
+            exec ${pkgs.bash}/bin/bash ${./restic-snapshot-check.sh} \
+              /var/lib/prometheus-node-exporter/textfile \
+              nixie-s3 ${config.age.secrets.restic-s3.path} "" \
+              nixie-borgbase ${config.age.secrets.restic-borgbase.path} "" \
+              nixshark ${config.age.secrets.restic-nixshark.path} /var/backup/restic/nixshark \
+              nixwork ${config.age.secrets.restic-nixwork.path} /var/backup/restic/nixwork
           '';
           serviceConfig.Type = "oneshot";
         };
@@ -391,7 +377,46 @@ _: {
                         refId = "A";
                         datasourceUid = "victoriametrics";
                         model = {
-                          expr = "time() - restic_last_snapshot_timestamp_seconds > 172800";
+                          expr = "time() - restic_last_snapshot_timestamp_seconds";
+                          refId = "A";
+                        };
+                        relativeTimeRange = {
+                          from = 300;
+                          to = 0;
+                        };
+                      }
+                      {
+                        refId = "C";
+                        datasourceUid = "__expr__";
+                        model = {
+                          type = "threshold";
+                          expression = "A";
+                          conditions = [
+                            {
+                              evaluator = {
+                                type = "gt";
+                                params = [172800];
+                              };
+                            }
+                          ];
+                          refId = "C";
+                        };
+                      }
+                    ];
+                    noDataState = "Alerting";
+                    execErrState = "Alerting";
+                  }
+                  {
+                    uid = "backup-monitor-unhealthy";
+                    title = "Backup monitoring failed or stopped";
+                    condition = "C";
+                    for = "5m";
+                    data = [
+                      {
+                        refId = "A";
+                        datasourceUid = "victoriametrics";
+                        model = {
+                          expr = "((1 - restic_snapshot_check_success) + (time() - restic_snapshot_check_timestamp_seconds > bool 90000)) or absent(restic_snapshot_check_success{repo=\"nixie-s3\"}) or absent(restic_snapshot_check_success{repo=\"nixie-borgbase\"}) or absent(restic_snapshot_check_success{repo=\"nixshark\"}) or absent(restic_snapshot_check_success{repo=\"nixwork\"})";
                           refId = "A";
                         };
                         relativeTimeRange = {
