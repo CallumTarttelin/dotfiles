@@ -16,7 +16,6 @@
     agenix = {
       url = "github:ryantm/agenix";
       inputs.nixpkgs.follows = "nixpkgs";
-      inputs.home-manager.follows = "hm";
     };
     fenix = {
       url = "github:nix-community/fenix";
