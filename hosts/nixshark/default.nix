@@ -1,6 +1,7 @@
 {
   pkgs,
   inputs,
+  lib,
   ...
 }: {
   imports = [
@@ -13,7 +14,35 @@
     systemd-boot.enable = true;
   };
 
+  # Linux 7.2 provides the Steam Frame adapter's rtw89_8852cu driver.
+  boot.kernelPackages = pkgs.linuxPackages_latest;
+  boot.extraModprobeConfig = ''
+    options cfg80211 ieee80211_regdom=GB
+  '';
+
   networking.hostName = "nixshark";
+
+  # Let Steam configure its adapter through NetworkManager while iwd and
+  # networkd continue managing the existing LAN connection.
+  networking.networkmanager = {
+    enable = true;
+    wifi.backend = "iwd";
+    dns = "systemd-resolved";
+    unmanaged = ["*" "except:interface-name:steamframe0"];
+    settings."device-steam-frame" = {
+      match-device = "interface-name:steamframe0";
+      "wifi.iwd.autoconnect" = false;
+    };
+  };
+  # NetworkManager otherwise disables the existing networkd DHCP defaults.
+  networking.useDHCP = lib.mkForce true;
+  networking.wireless.iwd.settings.General.Country = "GB";
+  systemd.network.networks."10-steam-frame" = {
+    matchConfig.Name = "steamframe0";
+    linkConfig.Unmanaged = true;
+  };
+
+  programs.steam.remotePlay.openFirewall = true;
 
   environment.systemPackages = with pkgs; [
     inputs.agenix.packages.x86_64-linux.default
@@ -42,6 +71,7 @@
   };
 
   services.udev.extraRules = ''
+    ACTION=="add", SUBSYSTEM=="net", ATTRS{idVendor}=="28de", ATTRS{idProduct}=="2432", NAME="steamframe0", ENV{ID_NET_MANAGED_BY}="org.freedesktop.NetworkManager"
     KERNEL=="hidraw*", SUBSYSTEM=="hidraw", MODE="0660", GROUP="100", TAG+="uaccess", TAG+="udev-acl"
     KERNEL=="hidraw*", SUBSYSTEM=="hidraw", ATTRS{serial}=="*vial:f64c2b3c*", MODE="0660", GROUP="100", TAG+="uaccess", TAG+="udev-acl"
   '';

@@ -289,7 +289,16 @@
               target = str(details["target"]).rstrip(".").lower()
               matches = target_map.get(target, [])
               if len(matches) == 0:
-                  fail(f"manual alias {alias!r} targets unknown secondary host {details['target']!r}")
+                  # Tailscale can report Running before its peer map is populated,
+                  # and configured hosts can leave the tailnet between refreshes.
+                  # Omit unavailable aliases; the timer will publish them when
+                  # their targets reappear. Ambiguous names still fail closed.
+                  print(
+                      f"{namespace}-publish: skipping manual alias {alias!r}: "
+                      f"secondary host {details['target']!r} is unavailable",
+                      file=sys.stderr,
+                  )
+                  continue
               if len(matches) > 1:
                   choices = ", ".join(sorted(match["fqdn"] for match in matches))
                   fail(f"manual alias {alias!r} target {details['target']!r} is ambiguous: {choices}")
