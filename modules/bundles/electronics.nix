@@ -46,9 +46,8 @@
   }: {
     options.bundles.electronics.enable = lib.mkEnableOption "electronics tools (kicad, ngspice)";
     config = lib.mkIf config.bundles.electronics.enable {
-      nixpkgs.config.permittedInsecurePackages = [
-        "segger-jlink-qt4-952"
-      ];
+      # Match the flake package set's exception for J-Link's bundled Qt4.
+      nixpkgs.config.allowInsecurePredicate = pkg: lib.getName pkg == "segger-jlink-qt4";
       home-manager.users.tarttelin.home.packages = [
         self.packages.${pkgs.stdenv.hostPlatform.system}.electronics
       ];
