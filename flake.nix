@@ -67,7 +67,9 @@
         ];
         config.allowUnfree = true;
         config.segger-jlink.acceptLicense = true;
-        config.permittedInsecurePackages = ["segger-jlink-qt4-952"];
+        # J-Link bundles Qt4; keep the existing exception scoped to that
+        # dependency without tying it to the daily J-Link version update.
+        config.allowInsecurePredicate = pkg: inputs.nixpkgs.lib.getName pkg == "segger-jlink-qt4";
       };
 
     mkNeovim = system: let
