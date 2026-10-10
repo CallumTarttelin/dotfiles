@@ -16,19 +16,6 @@
     execDsp = cmd: "hl.dsp.exec_cmd(${q cmd})";
     bind = key: dispatcher: "hl.bind(${q key}, ${dispatcher})";
     bindWith = key: dispatcher: opts: "hl.bind(${q key}, ${dispatcher}, ${lua opts})";
-    dpmsCmd = action: "${pkgs.hyprland}/bin/hyprctl eval 'hl.dispatch(hl.dsp.dpms({ action = \"${action}\" }))'";
-    lockCmd =
-      if isNoctalia
-      then "${ipc} session lock"
-      else "${pkgs.procps}/bin/pgrep -x hyprlock >/dev/null || ${pkgs.hyprlock}/bin/hyprlock";
-
-    suspendScript = pkgs.writeShellScript "suspend-script" ''
-      ${pkgs.pipewire}/bin/pw-cli i all | ${pkgs.ripgrep}/bin/rg running
-      if [ $? == 1 ]; then
-        ${pkgs.systemd}/bin/systemctl suspend
-      fi
-    '';
-
     pipewireIdleInhibitConfig = pkgs.writeText "wayland-pipewire-idle-inhibit.toml" ''
       verbosity = "WARN"
       media_minimum_duration = 10
@@ -38,11 +25,6 @@
       [[node_blacklist]]
       app_name = "[Ss]potify"
     '';
-
-    isStandard = cfg.desktopShell == "standard";
-    isNoctalia = cfg.desktopShell == "noctalia";
-
-    standardPackages = [selfpkgs.myWaybar selfpkgs.myMako selfpkgs.myWofi];
 
     startHyprland = pkgs.writeShellScript "start-hyprland-with-home-session" ''
       hmSessionVars="/etc/profiles/per-user/tarttelin/etc/profile.d/hm-session-vars.sh"
@@ -55,24 +37,19 @@
 
     ipc = "${lib.getExe noctalia} msg";
 
-    shellBinds =
-      if isNoctalia
-      then [
-        (bind "SUPER + D" (execDsp "${ipc} panel-toggle launcher"))
-        (bind "SUPER + C" (execDsp "${ipc} panel-toggle control-center"))
-        (bind "SUPER + comma" (execDsp "${ipc} settings-toggle"))
-        (bindWith "XF86MonBrightnessUp" (execDsp "${ipc} brightness-up") {
-          locked = true;
-          repeating = true;
-        })
-        (bindWith "XF86MonBrightnessDown" (execDsp "${ipc} brightness-down") {
-          locked = true;
-          repeating = true;
-        })
-      ]
-      else [
-        (bind "SUPER + D" (execDsp "${lib.getExe selfpkgs.myWofi} --show drun"))
-      ];
+    shellBinds = [
+      (bind "SUPER + D" (execDsp "${ipc} panel-toggle launcher"))
+      (bind "SUPER + C" (execDsp "${ipc} panel-toggle control-center"))
+      (bind "SUPER + comma" (execDsp "${ipc} settings-toggle"))
+      (bindWith "XF86MonBrightnessUp" (execDsp "${ipc} brightness-up") {
+        locked = true;
+        repeating = true;
+      })
+      (bindWith "XF86MonBrightnessDown" (execDsp "${ipc} brightness-down") {
+        locked = true;
+        repeating = true;
+      })
+    ];
 
     parseMonitorValue = value: let
       trimmed = lib.trim value;
@@ -111,7 +88,7 @@
       ${lib.concatMapStringsSep "\n" monitorLua cfg.monitors}
 
       ${lib.concatStringsSep "\n" shellBinds}
-      ${bind "CTRL + ALT + L" (execDsp lockCmd)}
+      ${bind "CTRL + ALT + L" (execDsp "${ipc} session lock")}
 
       hl.on("hyprland.start", function()
       ${lib.concatMapStringsSep "\n" (e: "  ${exec e}") cfg.extraExecOnce}
@@ -119,7 +96,7 @@
     '';
   in {
     options.features.hyprland-desktop = {
-      enable = lib.mkEnableOption "Hyprland desktop environment";
+      enable = lib.mkEnableOption "Hyprland desktop environment with Noctalia";
       monitors = lib.mkOption {
         type = lib.types.listOf lib.types.str;
         default = [",preferred,auto,1"];
@@ -137,11 +114,6 @@
           type = lib.types.int;
           default = 16;
         };
-      };
-      desktopShell = lib.mkOption {
-        type = lib.types.enum ["standard" "noctalia"];
-        default = "standard";
-        description = "Desktop shell: standard (waybar + mako + wofi) or noctalia (unified shell)";
       };
       extraExecOnce = lib.mkOption {
         type = lib.types.listOf lib.types.str;
@@ -168,7 +140,6 @@
           binPath = "/run/current-system/sw/bin/start-hyprland";
         };
       };
-      security.pam.services.hyprlock = lib.mkIf isStandard {};
       security.pam.services.greetd.enableGnomeKeyring = true;
       security.rtkit.enable = true;
 
@@ -259,36 +230,7 @@
         home.file."Pictures/Wallpapers/s-p-a-c-e-2-1920x1080.jpg".source = ./_wallpapers/s-p-a-c-e-2-1920x1080.jpg;
         home.file."Pictures/Wallpapers/s-p-a-c-e-2-2560x1440.jpg".source = ./_wallpapers/s-p-a-c-e-2-2560x1440.jpg;
 
-        # Standard shell: waybar + mako via systemd
-        systemd.user.services.waybar = lib.mkIf isStandard {
-          Unit = {
-            Description = "Waybar status bar";
-            PartOf = ["graphical-session.target"];
-            After = ["graphical-session.target"];
-          };
-          Service = {
-            ExecStart = "${lib.getExe selfpkgs.myWaybar}";
-            Restart = "on-failure";
-            RestartSec = 1;
-          };
-          Install.WantedBy = ["graphical-session.target"];
-        };
-
-        systemd.user.services.mako = lib.mkIf isStandard {
-          Unit = {
-            Description = "Mako notification daemon";
-            PartOf = ["graphical-session.target"];
-            After = ["graphical-session.target"];
-          };
-          Service = {
-            ExecStart = "${lib.getExe selfpkgs.myMako}";
-            Restart = "on-failure";
-            RestartSec = 1;
-          };
-          Install.WantedBy = ["graphical-session.target"];
-        };
-
-        systemd.user.services.wayland-pipewire-idle-inhibit = lib.mkIf isNoctalia {
+        systemd.user.services.wayland-pipewire-idle-inhibit = {
           Unit = {
             Description = "Inhibit Wayland idle while media is playing";
             PartOf = ["graphical-session.target"];
@@ -302,67 +244,14 @@
           Install.WantedBy = ["graphical-session.target"];
         };
 
-        # Hyprpaper - not needed with noctalia (has built-in wallpaper management)
-        services.hyprpaper = lib.mkIf isStandard {
-          enable = true;
-          settings.wallpaper = {
-            monitor = "";
-            path = "~/Pictures/Wallpapers/s-p-a-c-e-2-2560x1440.jpg";
-          };
-        };
-
-        # Noctalia owns idle, locking, and display power for its sessions.
-        services.hypridle = lib.mkIf isStandard {
-          enable = true;
-          settings = {
-            general = {
-              lock_cmd = lib.mkDefault lockCmd;
-              before_sleep_cmd = "${pkgs.systemd}/bin/loginctl lock-session";
-              after_sleep_cmd = dpmsCmd "enable";
-              on_unlock_cmd = dpmsCmd "enable";
-              inhibit_sleep = 2;
-            };
-            listener =
-              lib.optional (cfg.idleLockTimeoutSeconds != null) {
-                timeout = cfg.idleLockTimeoutSeconds;
-                on-timeout = "${pkgs.systemd}/bin/loginctl lock-session";
-              }
-              ++ [
-                {
-                  timeout = 660;
-                  on-timeout = dpmsCmd "disable";
-                  on-resume = dpmsCmd "enable";
-                }
-                {
-                  timeout = 1800;
-                  on-timeout = suspendScript.outPath;
-                }
-              ];
-          };
-        };
-
-        programs.hyprlock = lib.mkIf isStandard {
-          enable = true;
-          settings = {
-            background.color = "#000000";
-            general = {
-              disable_loading_bar = true;
-              hide_cursor = true;
-              ignore_empty_input = true;
-            };
-          };
-        };
-
-        home.packages =
-          (lib.optionals isStandard (standardPackages ++ (with pkgs; [hyprsunset hyprshot grim slurp gammastep])))
-          ++ (with pkgs; [
-            grimblast
-            satty
-            wezterm
-            wmname
-            hyprpolkitagent
-            wl-clipboard
-          ]);
+        home.packages = with pkgs; [
+          grimblast
+          satty
+          wezterm
+          wmname
+          hyprpolkitagent
+          wl-clipboard
+        ];
       };
     };
   };

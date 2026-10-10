@@ -16,9 +16,6 @@ _: {
       wrapped.ghostty.enable = lib.mkDefault true;
       wrapped.foot.enable = lib.mkDefault true;
       wrapped.starship.enable = lib.mkDefault true;
-      wrapped.mako.enable = lib.mkDefault true;
-      wrapped.wofi.enable = lib.mkDefault true;
-      wrapped.waybar.enable = lib.mkDefault true;
 
       # Desktop app bundles
       bundles.social.enable = lib.mkDefault true;

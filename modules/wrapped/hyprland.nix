@@ -1,5 +1,5 @@
 # Wrapped hyprland shared config.
-# Monitor config and desktop shell (waybar/mako/wofi vs noctalia) are
+# Monitor config and Noctalia integration are
 # handled by the hyprland-desktop feature module, not baked in here.
 _: {
   perSystem = {
