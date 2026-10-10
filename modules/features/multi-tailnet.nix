@@ -19,6 +19,20 @@
 
     runtimeConfig = lib.escapeShellArg cfg.runtimeConfigFile;
 
+    mirrorSshAliases = pkgs.writeShellScript "${cfg.namespace}-mirror-ssh-aliases" ''
+      set -eu
+      umask 077
+      source=${lib.escapeShellArg sshConfigPath}
+      destination="$1"
+      [ -r "$source" ] || exit 0
+      ${pkgs.coreutils}/bin/mkdir -p "$(${pkgs.coreutils}/bin/dirname "$destination")"
+      temporary="$(${pkgs.coreutils}/bin/mktemp "$destination.XXXXXX")"
+      trap '${pkgs.coreutils}/bin/rm -f "$temporary"' EXIT
+      ${pkgs.coreutils}/bin/cp "$source" "$temporary"
+      ${pkgs.coreutils}/bin/chmod 0600 "$temporary"
+      ${pkgs.coreutils}/bin/mv "$temporary" "$destination"
+    '';
+
     validateRuntimeConfig = pkgs.writeShellScriptBin "tail2-validate-config" ''
       set -eu
 
@@ -651,6 +665,95 @@
       programs.ssh.extraConfig = ''
         Include ${sshConfigPath}
       '';
+
+      # Host root appears unmapped in user namespaces. User SSH configs need
+      # their own alias copy; the system-wide include stays root-owned.
+      home-manager.sharedModules = [
+        ({config, ...}: let
+          userSshConfig = "${config.home.homeDirectory}/.ssh/config";
+          userAliases = "${config.xdg.cacheHome}/${cfg.namespace}/ssh_config";
+          mirrorCommand = "${mirrorSshAliases} ${lib.escapeShellArg userAliases}";
+          serviceName = "${cfg.namespace}-ssh-aliases";
+        in {
+          programs.ssh.includes = [userAliases];
+
+          home.activation."${cfg.namespace}-ssh-aliases" = {
+            after = ["writeBoundary"];
+            before = ["reloadSystemd"];
+            data = ''
+              ${mirrorCommand}
+              ${lib.optionalString (!config.programs.ssh.enable) ''
+                (
+                  set -eu
+                  umask 077
+                  ssh_config=${lib.escapeShellArg userSshConfig}
+                  if [ -L "$ssh_config" ] || { [ -e "$ssh_config" ] && [ ! -O "$ssh_config" ]; }; then
+                    echo "Refusing to replace a symlink or foreign-owned SSH config: $ssh_config" >&2
+                    exit 1
+                  fi
+                  ${pkgs.coreutils}/bin/mkdir -p "$(${pkgs.coreutils}/bin/dirname "$ssh_config")"
+                  ssh_input="$ssh_config"
+                  [ -e "$ssh_config" ] || ssh_input=/dev/null
+                  ssh_temporary="$(${pkgs.coreutils}/bin/mktemp "$ssh_config.XXXXXX")"
+                  trap '${pkgs.coreutils}/bin/rm -f "$ssh_temporary"' EXIT
+                  ${pkgs.gawk}/bin/awk \
+                    -v source=${lib.escapeShellArg sshConfigPath} \
+                    -v destination=${lib.escapeShellArg userAliases} '
+                    {
+                      lines[NR] = $0
+                      trimmed = $0
+                      sub(/^[[:space:]]+/, "", trimmed)
+                      sub(/[[:space:]]+$/, "", trimmed)
+                      legacy[NR] = (trimmed == "Include " source || trimmed == "Include \"" source "\"")
+                      if (trimmed == "Include " destination || trimmed == "Include \"" destination "\"") present = 1
+                      if (legacy[NR]) has_legacy = 1
+                    }
+                    END {
+                      include = "Include \"" destination "\""
+                      if (!present && !has_legacy) print include
+                      for (i = 1; i <= NR; i++) {
+                        if (legacy[i]) {
+                          if (!present) { print include; present = 1 }
+                        } else print lines[i]
+                      }
+                    }
+                  ' "$ssh_input" > "$ssh_temporary"
+                  if [ -e "$ssh_config" ]; then
+                    ${pkgs.coreutils}/bin/chmod --reference="$ssh_config" "$ssh_temporary"
+                  fi
+                  ${pkgs.coreutils}/bin/chmod go-w "$ssh_temporary"
+                  if ${pkgs.diffutils}/bin/cmp -s "$ssh_config" "$ssh_temporary"; then
+                    ${pkgs.coreutils}/bin/chmod go-w "$ssh_config"
+                  else
+                    ${pkgs.coreutils}/bin/mv "$ssh_temporary" "$ssh_config"
+                  fi
+                )
+              ''}
+            '';
+          };
+
+          systemd.user.services.${serviceName} = {
+            Unit = {
+              Description = "Refresh user-owned ${cfg.namespace} SSH aliases";
+              ConditionPathExists = sshConfigPath;
+            };
+            Service = {
+              Type = "oneshot";
+              ExecStart = mirrorCommand;
+            };
+            Install.WantedBy = ["default.target"];
+          };
+
+          systemd.user.paths.${serviceName} = {
+            Unit.Description = "Watch published ${cfg.namespace} SSH aliases";
+            Path = {
+              PathChanged = sshConfigPath;
+              Unit = "${serviceName}.service";
+            };
+            Install.WantedBy = ["default.target"];
+          };
+        })
+      ];
 
       environment.etc.hosts.mode = "0644";
 
