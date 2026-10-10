@@ -66,14 +66,6 @@
         ${pkgs.iproute2}/bin/ip link add ${cfg.hostVeth} type veth peer name ${cfg.namespaceVeth}
       fi
 
-      for _ in $(${pkgs.coreutils}/bin/seq 1 50); do
-        if ${pkgs.iproute2}/bin/ip link show ${cfg.namespaceVeth} >/dev/null 2>&1 \
-          || ${pkgs.iproute2}/bin/ip -n ${cfg.namespace} link show ${cfg.namespaceVeth} >/dev/null 2>&1; then
-          break
-        fi
-        ${pkgs.coreutils}/bin/sleep 0.1
-      done
-
       if ${pkgs.iproute2}/bin/ip link show ${cfg.namespaceVeth} >/dev/null 2>&1; then
         ${pkgs.iproute2}/bin/ip link set ${cfg.namespaceVeth} netns ${cfg.namespace}
       fi
@@ -679,23 +671,6 @@
       };
 
       systemd = {
-        network = {
-          netdevs."10-${cfg.namespace}" = {
-            netdevConfig = {
-              Kind = "veth";
-              Name = cfg.hostVeth;
-            };
-            peerConfig.Name = cfg.namespaceVeth;
-          };
-
-          networks."10-${cfg.namespace}-host" = {
-            matchConfig.Name = cfg.hostVeth;
-            address = [hostAddr];
-            linkConfig.RequiredForOnline = "no";
-            networkConfig.IPv4Forwarding = "yes";
-          };
-        };
-
         tmpfiles.rules = [
           "d ${runtimeDir} 0755 root root -"
           "f ${routeStatePath} 0644 root root -"
@@ -721,8 +696,6 @@
             description = "Network namespace for ${cfg.namespace} Tailscale";
             wantedBy = ["multi-user.target"];
             before = ["tailscaled-${cfg.namespace}.service"];
-            after = ["systemd-networkd.service"];
-            wants = ["systemd-networkd.service"];
             serviceConfig = {
               Type = "oneshot";
               RemainAfterExit = true;

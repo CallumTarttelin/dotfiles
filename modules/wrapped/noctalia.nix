@@ -82,9 +82,6 @@
           pkgs.gpu-screen-recorder
         ];
 
-        # Install iwd-connections plugin to noctalia config dir
-        home.file.".config/noctalia/plugins/iwd-connections".source = ../plugins/iwd-connections;
-
         # Seed plugin registry on fresh installs (mutable — noctalia needs to write to it)
         home.activation.noctalia-plugins = {
           after = ["writeBoundary"];
@@ -94,6 +91,12 @@
             if [ ! -f "$pluginsFile" ]; then
               mkdir -p "$(dirname "$pluginsFile")"
               cp ${./_noctalia-plugins-${hostname}.json} "$pluginsFile"
+            fi
+            # Remove the retired network plugin from existing mutable registries.
+            if ${pkgs.jq}/bin/jq -e '.states | has("iwd-connections")' "$pluginsFile" >/dev/null; then
+              pluginsTmp=$(mktemp "$pluginsFile.XXXXXX")
+              ${pkgs.jq}/bin/jq 'del(.states["iwd-connections"])' "$pluginsFile" > "$pluginsTmp"
+              mv "$pluginsTmp" "$pluginsFile"
             fi
           '';
         };

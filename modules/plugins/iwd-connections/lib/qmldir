@@ -1,2 +1,0 @@
-module Lib
-singleton IwdService 1.0 IwdService.qml
