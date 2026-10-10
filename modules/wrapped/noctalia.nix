@@ -20,7 +20,7 @@
       countdown_seconds = 10;
     };
   in {
-    config = lib.mkIf (desktop.enable && desktop.desktopShell == "noctalia") {
+    config = lib.mkIf desktop.enable {
       xdg.sounds.enable = true;
 
       home-manager.users.tarttelin = {
