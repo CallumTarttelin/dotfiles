@@ -17,7 +17,10 @@
     bind = key: dispatcher: "hl.bind(${q key}, ${dispatcher})";
     bindWith = key: dispatcher: opts: "hl.bind(${q key}, ${dispatcher}, ${lua opts})";
     dpmsCmd = action: "${pkgs.hyprland}/bin/hyprctl eval 'hl.dispatch(hl.dsp.dpms({ action = \"${action}\" }))'";
-    lockCmd = "${pkgs.procps}/bin/pgrep -x hyprlock >/dev/null || ${pkgs.hyprlock}/bin/hyprlock";
+    lockCmd =
+      if isNoctalia
+      then "${ipc} session lock"
+      else "${pkgs.procps}/bin/pgrep -x hyprlock >/dev/null || ${pkgs.hyprlock}/bin/hyprlock";
 
     suspendScript = pkgs.writeShellScript "suspend-script" ''
       ${pkgs.pipewire}/bin/pw-cli i all | ${pkgs.ripgrep}/bin/rg running
@@ -34,33 +37,6 @@
 
       [[node_blacklist]]
       app_name = "[Ss]potify"
-    '';
-
-    hyprlandDpmsResumeScript = pkgs.writeShellScript "hyprland-dpms-on-resume" ''
-      if [ "''${1:-}" != post ]; then
-        exit 0
-      fi
-
-      ${pkgs.coreutils}/bin/sleep 1
-
-      for runtime_dir in /run/user/[0-9]*; do
-        [ -d "$runtime_dir/hypr" ] || continue
-
-        uid="''${runtime_dir#/run/user/}"
-        user="$(${pkgs.glibc.bin}/bin/getent passwd "$uid" | ${pkgs.coreutils}/bin/cut -d: -f1)"
-        [ -n "$user" ] || continue
-
-        for instance_dir in "$runtime_dir"/hypr/*; do
-          [ -d "$instance_dir" ] || continue
-
-          signature="''${instance_dir##*/}"
-          ${pkgs.util-linux}/bin/runuser -u "$user" -- \
-            ${pkgs.coreutils}/bin/env \
-            XDG_RUNTIME_DIR="$runtime_dir" \
-            HYPRLAND_INSTANCE_SIGNATURE="$signature" \
-            ${dpmsCmd "enable"} >/dev/null 2>&1 || true
-        done
-      done
     '';
 
     isStandard = cfg.desktopShell == "standard";
@@ -192,7 +168,7 @@
           binPath = "/run/current-system/sw/bin/start-hyprland";
         };
       };
-      security.pam.services.hyprlock = {};
+      security.pam.services.hyprlock = lib.mkIf isStandard {};
       security.pam.services.greetd.enableGnomeKeyring = true;
       security.rtkit.enable = true;
 
@@ -242,7 +218,6 @@
       programs.xwayland.enable = true;
       services.gnome.gnome-keyring.enable = true;
       environment.variables.NIXOS_OZONE_WL = "1";
-      environment.etc."systemd/system-sleep/hyprland-dpms-on-resume".source = lib.mkIf isNoctalia hyprlandDpmsResumeScript;
 
       services.greetd = {
         enable = true;
@@ -336,8 +311,8 @@
           };
         };
 
-        # Keep idle/lock/display power in Hyprland's own daemons, even when Noctalia is the shell.
-        services.hypridle = {
+        # Noctalia owns idle, locking, and display power for its sessions.
+        services.hypridle = lib.mkIf isStandard {
           enable = true;
           settings = {
             general = {
@@ -366,7 +341,7 @@
           };
         };
 
-        programs.hyprlock = {
+        programs.hyprlock = lib.mkIf isStandard {
           enable = true;
           settings = {
             background.color = "#000000";
@@ -379,18 +354,14 @@
         };
 
         home.packages =
-          (lib.optionals isStandard (standardPackages ++ [pkgs.hyprsunset]))
+          (lib.optionals isStandard (standardPackages ++ (with pkgs; [hyprsunset hyprshot grim slurp gammastep])))
           ++ (with pkgs; [
             grimblast
+            satty
             wezterm
             wmname
-            hyprshot
             hyprpolkitagent
-            satty
-            grim
-            slurp
             wl-clipboard
-            gammastep
           ]);
       };
     };
