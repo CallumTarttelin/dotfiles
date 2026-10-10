@@ -225,6 +225,8 @@
           SSH_AUTH_SOCK = "$XDG_RUNTIME_DIR/ssh-agent";
         };
 
+        dconf.settings."org/gnome/desktop/interface".color-scheme = "prefer-dark";
+
         # Wallpapers
         home.file."Pictures/Wallpapers/aperture-science-bg.jpg".source = ./_wallpapers/aperture-science-bg.jpg;
         home.file."Pictures/Wallpapers/s-p-a-c-e-2-1920x1080.jpg".source = ./_wallpapers/s-p-a-c-e-2-1920x1080.jpg;

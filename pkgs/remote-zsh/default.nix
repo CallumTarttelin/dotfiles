@@ -174,7 +174,7 @@ in
       cp ${starshipConf} $out/share/remote-zsh/starship/starship.toml
 
       wrapProgram $out/bin/zsh \
-        --set EDITOR "${lib.getExe pkgs.neovim}" \
+        --set EDITOR "${lib.getExe neovim}" \
         --set ATUIN_CONFIG_DIR "$out/share/remote-zsh/atuin" \
         --set STARSHIP_CONFIG "$out/share/remote-zsh/starship/starship.toml" \
         --set ZDOTDIR "$out/share/remote-zsh/zdotdir" \
