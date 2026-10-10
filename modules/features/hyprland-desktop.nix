@@ -1,8 +1,4 @@
-{
-  self,
-  inputs,
-  ...
-}: {
+{self, ...}: {
   flake.nixosModules.hyprland-desktop = {
     config,
     lib,
@@ -12,7 +8,7 @@
     cfg = config.features.hyprland-desktop;
     selfpkgs = self.packages.${pkgs.stdenv.hostPlatform.system};
     hyprlandLua = selfpkgs.myHyprlandLua;
-    myNoctalia = cfg.noctaliaPackage;
+    noctalia = config.home-manager.users.tarttelin.programs.noctalia.package;
     lua = lib.generators.toLua {};
     q = builtins.toJSON;
     call = name: value: "hl.${name}(${lua value})";
@@ -81,21 +77,19 @@
       exec /run/current-system/sw/bin/start-hyprland
     '';
 
-    noctaliaExecOnce = []; # noctalia managed via systemd user service
-
-    ipc = "${lib.getExe myNoctalia} ipc call";
+    ipc = "${lib.getExe noctalia} msg";
 
     shellBinds =
       if isNoctalia
       then [
-        (bind "SUPER + D" (execDsp "${ipc} launcher toggle"))
-        (bind "SUPER + C" (execDsp "${ipc} controlCenter toggle"))
-        (bind "SUPER + comma" (execDsp "${ipc} settings toggle"))
-        (bindWith "XF86MonBrightnessUp" (execDsp "${ipc} brightness increase") {
+        (bind "SUPER + D" (execDsp "${ipc} panel-toggle launcher"))
+        (bind "SUPER + C" (execDsp "${ipc} panel-toggle control-center"))
+        (bind "SUPER + comma" (execDsp "${ipc} settings-toggle"))
+        (bindWith "XF86MonBrightnessUp" (execDsp "${ipc} brightness-up") {
           locked = true;
           repeating = true;
         })
-        (bindWith "XF86MonBrightnessDown" (execDsp "${ipc} brightness decrease") {
+        (bindWith "XF86MonBrightnessDown" (execDsp "${ipc} brightness-down") {
           locked = true;
           repeating = true;
         })
@@ -144,7 +138,7 @@
       ${bind "CTRL + ALT + L" (execDsp lockCmd)}
 
       hl.on("hyprland.start", function()
-      ${lib.concatMapStringsSep "\n" (e: "  ${exec e}") (noctaliaExecOnce ++ cfg.extraExecOnce)}
+      ${lib.concatMapStringsSep "\n" (e: "  ${exec e}") cfg.extraExecOnce}
       end)
     '';
   in {
@@ -173,11 +167,6 @@
         default = "standard";
         description = "Desktop shell: standard (waybar + mako + wofi) or noctalia (unified shell)";
       };
-      noctaliaPackage = lib.mkOption {
-        type = lib.types.package;
-        inherit (inputs.noctalia.packages.${pkgs.stdenv.hostPlatform.system}) default;
-        description = "Noctalia package to use; defaults to upstream, override with per-host wrapped variant";
-      };
       extraExecOnce = lib.mkOption {
         type = lib.types.listOf lib.types.str;
         default = [];
@@ -190,8 +179,6 @@
     };
 
     config = lib.mkIf cfg.enable {
-      noctalia.enable = isNoctalia;
-
       # System-level
       programs.hyprland = {
         enable = true;
@@ -207,7 +194,6 @@
       };
       security.pam.services.hyprlock = {};
       security.pam.services.greetd.enableGnomeKeyring = true;
-      security.pam.services.swaylock.text = "auth include login";
       security.rtkit.enable = true;
 
       xdg.portal = {
@@ -327,24 +313,6 @@
           Install.WantedBy = ["graphical-session.target"];
         };
 
-        # Noctalia: systemd user service so it restarts on rebuild (store path change)
-        systemd.user.services.noctalia-shell = lib.mkIf isNoctalia {
-          Unit = {
-            Description = "Noctalia desktop shell";
-            PartOf = ["graphical-session.target"];
-            After = ["graphical-session.target"];
-          };
-          Service = {
-            ExecStart = "${lib.getExe myNoctalia}";
-            Environment = [
-              "PATH=/etc/profiles/per-user/tarttelin/bin:/run/current-system/sw/bin:/run/wrappers/bin"
-            ];
-            Restart = "on-failure";
-            RestartSec = 1;
-          };
-          Install.WantedBy = ["graphical-session.target"];
-        };
-
         systemd.user.services.wayland-pipewire-idle-inhibit = lib.mkIf isNoctalia {
           Unit = {
             Description = "Inhibit Wayland idle while media is playing";
@@ -412,16 +380,6 @@
 
         home.packages =
           (lib.optionals isStandard (standardPackages ++ [pkgs.hyprsunset]))
-          ++ (lib.optionals isNoctalia ([myNoctalia]
-            ++ (with pkgs; [
-              brightnessctl
-              imagemagick
-              python3
-              git
-              cliphist
-              wlsunset
-              evolution-data-server
-            ])))
           ++ (with pkgs; [
             grimblast
             wezterm

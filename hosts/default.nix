@@ -17,19 +17,12 @@
           inputs.hardware.nixosModules.common-cpu-amd
           inputs.hardware.nixosModules.common-cpu-amd-pstate
           inputs.hardware.nixosModules.common-gpu-amd
-          ({
-            config,
-            pkgs,
-            ...
-          }: let
-            selfpkgs = inputs.self.packages.${pkgs.stdenv.hostPlatform.system};
-          in {
+          ({config, ...}: {
             features = {
               desktop.enable = true;
               hyprland-desktop = {
                 enable = true;
                 desktopShell = "noctalia";
-                noctaliaPackage = selfpkgs.myNoctalia-nixshark;
                 monitors = [
                   "DP-1,preferred,1920x0,1,vrr,1"
                   "HDMI-A-1,preferred,4480x0,1"
@@ -78,19 +71,12 @@
           ./nixwork
           {home-manager.users.tarttelin.imports = homeImports."tarttelin@nixwork";}
           inputs.hardware.nixosModules.framework-13-7040-amd
-          ({
-            config,
-            pkgs,
-            ...
-          }: let
-            selfpkgs = inputs.self.packages.${pkgs.stdenv.hostPlatform.system};
-          in {
+          ({config, ...}: {
             features = {
               desktop.enable = true;
               hyprland-desktop = {
                 enable = true;
                 desktopShell = "noctalia";
-                noctaliaPackage = selfpkgs.myNoctalia-nixwork;
                 monitors = ["eDP-1,preferred,auto,1"];
                 idleLockTimeoutSeconds = 300;
               };
