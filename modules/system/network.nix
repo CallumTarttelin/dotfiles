@@ -1,5 +1,5 @@
 _: {
-  flake.nixosModules.network = {lib, ...}: {
+  flake.nixosModules.network = _: {
     services.tailscale = {
       enable = true;
       openFirewall = true;
@@ -7,11 +7,24 @@ _: {
     };
 
     services.resolved.enable = true;
-    systemd.network.enable = true;
 
     networking = {
-      wireless.iwd.enable = true;
-      useNetworkd = true;
+      networkmanager = {
+        enable = true;
+        wifi.backend = "iwd";
+        wifi.powersave = false;
+        dns = "systemd-resolved";
+        unmanaged = [
+          "interface-name:tailscale*"
+          "interface-name:veth-*"
+          "interface-name:virbr*"
+          "interface-name:vnet*"
+          "interface-name:docker*"
+          "interface-name:br-*"
+          "interface-name:wpan*"
+        ];
+        settings.device."wifi.iwd.autoconnect" = false;
+      };
       nftables.enable = true;
 
       firewall = {
@@ -21,7 +34,6 @@ _: {
       };
 
       nameservers = [
-        "100.100.100.100"
         "1.1.1.1"
         "1.0.0.1"
       ];
@@ -29,7 +41,5 @@ _: {
         "oryx-harmonic.ts.net"
       ];
     };
-
-    systemd.services.NetworkManager-wait-online.enable = lib.mkForce false;
   };
 }

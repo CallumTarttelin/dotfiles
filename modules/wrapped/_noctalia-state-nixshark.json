@@ -154,11 +154,7 @@
             "unreadBadgeColor": "primary"
           },
           {
-            "defaultSettings": {
-              "iface": "wlan0",
-              "pollInterval": 5000
-            },
-            "id": "plugin:iwd-connections"
+            "id": "Network"
           },
           {
             "iconColor": "none",
@@ -384,11 +380,7 @@
       "shortcuts": {
         "left": [
           {
-            "defaultSettings": {
-              "iface": "wlan0",
-              "pollInterval": 5000
-            },
-            "id": "plugin:iwd-connections"
+            "id": "Network"
           },
           {
             "id": "Bluetooth"

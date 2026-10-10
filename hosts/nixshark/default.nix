@@ -1,7 +1,6 @@
 {
   pkgs,
   inputs,
-  lib,
   ...
 }: {
   imports = [
@@ -22,25 +21,30 @@
 
   networking.hostName = "nixshark";
 
-  # Let Steam configure its adapter through NetworkManager while iwd and
-  # networkd continue managing the existing LAN connection.
   networking.networkmanager = {
-    enable = true;
-    wifi.backend = "iwd";
-    dns = "systemd-resolved";
-    unmanaged = ["*" "except:interface-name:steamframe0"];
-    settings."device-steam-frame" = {
-      match-device = "interface-name:steamframe0";
-      "wifi.iwd.autoconnect" = false;
+    ensureProfiles.profiles.nixshark-ethernet = {
+      connection = {
+        id = "nixshark-ethernet";
+        type = "ethernet";
+        interface-name = "eno1";
+        autoconnect = true;
+        autoconnect-priority = 100;
+      };
+      ipv4 = {
+        method = "auto";
+        route-metric = 100;
+        ignore-auto-dns = true;
+        dns = "1.1.1.1;1.0.0.1;";
+        dns-search = "~.;";
+      };
+      ipv6 = {
+        method = "auto";
+        route-metric = 100;
+        ignore-auto-dns = true;
+      };
     };
   };
-  # NetworkManager otherwise disables the existing networkd DHCP defaults.
-  networking.useDHCP = lib.mkForce true;
   networking.wireless.iwd.settings.General.Country = "GB";
-  systemd.network.networks."10-steam-frame" = {
-    matchConfig.Name = "steamframe0";
-    linkConfig.Unmanaged = true;
-  };
 
   programs.steam.remotePlay.openFirewall = true;
 
@@ -71,7 +75,6 @@
   };
 
   services.udev.extraRules = ''
-    ACTION=="add", SUBSYSTEM=="net", ATTRS{idVendor}=="28de", ATTRS{idProduct}=="2432", NAME="steamframe0", ENV{ID_NET_MANAGED_BY}="org.freedesktop.NetworkManager"
     KERNEL=="hidraw*", SUBSYSTEM=="hidraw", MODE="0660", GROUP="100", TAG+="uaccess", TAG+="udev-acl"
     KERNEL=="hidraw*", SUBSYSTEM=="hidraw", ATTRS{serial}=="*vial:f64c2b3c*", MODE="0660", GROUP="100", TAG+="uaccess", TAG+="udev-acl"
   '';
