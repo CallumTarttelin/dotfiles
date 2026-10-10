@@ -32,6 +32,8 @@
   }: let
     cfg = config.features.firefox-work-profile;
     routesSecret = config.age.secrets.work-url-routes.path;
+    # Use the same profile root as the normal Home Manager Firefox launcher.
+    normalFirefox = config.home-manager.users.tarttelin.programs.firefox.finalPackage;
 
     configuredFirefoxWork = pkgs.writeShellScriptBin "firefox-work" ''
       set -eu
@@ -58,7 +60,7 @@
     workUrlRouter = pkgs.writeShellScriptBin "work-url-router" ''
       set -eu
 
-      exec ${pkgs.python3}/bin/python3 - ${lib.escapeShellArg routesSecret} ${lib.escapeShellArg "${configuredFirefoxWork}/bin/firefox-work"} ${lib.escapeShellArg "${pkgs.firefox}/bin/firefox"} ${lib.escapeShellArg "${pkgs.libnotify}/bin/notify-send"} "$@" <<'PY'
+      exec ${pkgs.python3}/bin/python3 - ${lib.escapeShellArg routesSecret} ${lib.escapeShellArg "${configuredFirefoxWork}/bin/firefox-work"} ${lib.escapeShellArg "${normalFirefox}/bin/firefox"} ${lib.escapeShellArg "${pkgs.libnotify}/bin/notify-send"} "$@" <<'PY'
       import fnmatch
       import json
       import subprocess
