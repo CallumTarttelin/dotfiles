@@ -7,6 +7,14 @@
   }: let
     desktop = config.features.hyprland-desktop;
     isLaptop = config.networking.hostName == "nixwork";
+    noctalia = config.home-manager.users.tarttelin.programs.noctalia.package;
+    idleSuspend = pkgs.writeShellScript "noctalia-idle-suspend" ''
+      # Spotify may let the displays sleep, but any running audio prevents suspend.
+      ${pkgs.pipewire}/bin/pw-cli i all | ${pkgs.ripgrep}/bin/rg running
+      if [ $? == 1 ]; then
+        exec ${lib.getExe noctalia} msg session lock-and-suspend
+      fi
+    '';
     sessionAction = action: shortcut: {
       inherit action shortcut;
       countdown_seconds = 10;
@@ -39,16 +47,8 @@
                 sort_by_usage = true;
               };
               session.actions = [
-                {
-                  # Hypridle's lock handler starts Hyprlock.
-                  action = "command";
-                  label = "Lock";
-                  glyph = "lock";
-                  command = "${pkgs.systemd}/bin/loginctl lock-session";
-                  shortcut = "1";
-                  countdown_seconds = 10;
-                }
-                (sessionAction "suspend" "2")
+                (sessionAction "lock" "1")
+                (sessionAction "lock_and_suspend" "2")
                 {
                   action = "command";
                   label = "Hibernate";
@@ -183,12 +183,35 @@
               auto_update = "none";
             };
 
-            # Keep idle, suspend locking, and monitor wake-up with Hypridle/Hyprlock.
-            lockscreen.enabled = false;
+            lockscreen = {
+              enabled = true;
+              lock_before_suspend = true;
+            };
             lockscreen_widgets.enabled = false;
-            idle.behavior = {
-              lock.enabled = false;
-              screen-off.enabled = false;
+            idle = {
+              pre_action_fade_seconds = 0;
+              behavior_order = ["lock" "screen-off" "suspend"];
+              behavior = {
+                lock = {
+                  enabled = desktop.idleLockTimeoutSeconds != null;
+                  timeout =
+                    if desktop.idleLockTimeoutSeconds == null
+                    then 0
+                    else desktop.idleLockTimeoutSeconds;
+                  action = "lock";
+                };
+                screen-off = {
+                  enabled = true;
+                  timeout = 660;
+                  action = "screen_off";
+                };
+                suspend = {
+                  enabled = true;
+                  timeout = 1800;
+                  action = "command";
+                  command = toString idleSuspend;
+                };
+              };
             };
           };
         };
