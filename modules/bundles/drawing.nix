@@ -4,6 +4,8 @@
       name = "drawing";
       paths = with pkgs; [
         easyeffects
+        blender
+        krita
       ];
     };
   };
