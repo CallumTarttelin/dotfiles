@@ -6,6 +6,8 @@
         easyeffects
         blender
         krita
+        freecad
+        openscad
       ];
     };
   };
