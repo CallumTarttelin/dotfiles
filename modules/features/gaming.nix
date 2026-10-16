@@ -20,6 +20,7 @@ _: {
         linuxConsoleTools
         ckan
         prismlauncher
+        bs-manager
       ];
 
       nixpkgs.config.packageOverrides = pkgs: {

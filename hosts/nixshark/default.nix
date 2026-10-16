@@ -47,6 +47,7 @@
   networking.wireless.iwd.settings.General.Country = "GB";
 
   programs.steam.remotePlay.openFirewall = true;
+  programs.moonlight-qt.enable = true;
 
   environment.systemPackages = with pkgs; [
     inputs.agenix.packages.x86_64-linux.default
