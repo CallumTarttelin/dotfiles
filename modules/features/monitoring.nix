@@ -54,11 +54,18 @@ _: {
                   ];
                   labels.group = "homelab";
                 }
+                {
+                  targets = ["192.168.123.3:9100"];
+                  labels = {
+                    group = "homelab";
+                    instance = "devbox3";
+                  };
+                }
               ];
               relabel_configs = [
                 {
-                  source_labels = ["__address__"];
-                  regex = "([^:]+):.+";
+                  source_labels = ["instance" "__address__"];
+                  regex = ";([^:]+):.+";
                   target_label = "instance";
                 }
               ];
