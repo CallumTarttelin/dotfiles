@@ -16,6 +16,33 @@
 
   networking.hostName = "nixie";
 
+  # Keep the i9-12900H within the cooling capacity during sustained VM builds.
+  boot.kernelModules = ["intel_rapl_msr"];
+  systemd.services.nixie-cpu-power-limit = {
+    description = "Set CPU package limits to 45 W sustained / 55 W boost";
+    wantedBy = ["multi-user.target"];
+    after = ["systemd-modules-load.service"];
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+    };
+    script = ''
+      set -euo pipefail
+      rapl=/sys/class/powercap/intel-rapl:0
+      test "$(cat "$rapl/name")" = package-0
+      test "$(cat "$rapl/constraint_0_name")" = long_term
+      test "$(cat "$rapl/constraint_1_name")" = short_term
+      printf '%s\n' 45000000 > "$rapl/constraint_0_power_limit_uw"
+      printf '%s\n' 55000000 > "$rapl/constraint_1_power_limit_uw"
+      printf '%s\n' 1 > "$rapl/enabled"
+      test "$(cat "$rapl/constraint_0_power_limit_uw")" = 45000000
+      test "$(cat "$rapl/constraint_1_power_limit_uw")" = 55000000
+    '';
+  };
+  powerManagement.resumeCommands = ''
+    ${pkgs.systemd}/bin/systemctl restart nixie-cpu-power-limit.service
+  '';
+
   users.users.ninassin = {
     isNormalUser = true;
     description = "ninassin";
