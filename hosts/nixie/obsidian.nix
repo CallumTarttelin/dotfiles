@@ -48,7 +48,9 @@
       ERL_EPMD_ADDRESS = "127.0.0.1";
       # Notes are an intermittent workload. Sleeping idle schedulers avoids
       # spending CPU spinning between requests and CouchDB's periodic tasks.
-      ERL_AFLAGS = "+sbwt none +sbwtdcpu none +sbwtdio none -kernel inet_dist_use_interface {127,0,0,1}";
+      # Two schedulers are sufficient for a few vaults and reduce runtime
+      # housekeeping compared with using all 20 logical CPUs on nixie.
+      ERL_AFLAGS = "+S 2:2 +sbwt none +sbwtdcpu none +sbwtdio none -kernel inet_dist_use_interface {127,0,0,1}";
     };
     restartTriggers = [config.age.secrets.couchdb-admin.file];
     serviceConfig = {
