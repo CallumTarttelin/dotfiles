@@ -8,7 +8,8 @@ background sync app. Closed vaults do not sync independently.
 ## Connect a vault
 
 - Server: `https://obsidian.callumtarttelin.com`
-- Database: `personal` or `work` (separate, initially empty databases)
+- Database: `notes` for the current vault; `personal` and `work` are also
+  provisioned for separate vaults.
 - Username: `livesync`
 - Retrieve the generated password in your own terminal with
   `ssh root@nixie 'cat /run/agenix/livesync-client'`.
@@ -106,6 +107,15 @@ On a recovery host with this configuration, stop CouchDB, restore
 `couchdb:couchdb` and private directory permissions, then start CouchDB and its
 provisioning service. Verify database access before reconnecting clients. Keep
 separate Markdown vault backups as an app-independent recovery path.
+
+Nixshark's six-hourly Documents backup also includes
+`/home/tarttelin/sync/Obsidian`, the parent of its active `Notes` vault. New vaults
+under that directory are covered automatically. These encrypted client snapshots
+are stored on Nixie and then included in both nightly off-site jobs. The added
+path takes effect after rebuilding Nixshark; the CouchDB backups are already live.
+A private Markdown archive taken during the backup audit is stored at
+`/var/backup/nixie/obsidian-markdown/nixshark-current.tar` and included off-site as
+well. That archive is a one-time recovery copy, not a recurring export.
 
 Validation includes a full Nixie system build, isolated CouchDB provisioning,
 read/write and access-control checks, repeat provisioning without changing vault

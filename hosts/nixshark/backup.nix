@@ -17,6 +17,9 @@
     repository = "sftp:nixie:/var/backup/restic/nixshark";
     paths = [
       "/home/tarttelin/Documents"
+      # The active LiveSync vault lives outside Documents. Back up its parent
+      # so future vaults here also have ordinary-file recovery copies.
+      "/home/tarttelin/sync/Obsidian"
     ];
     exclude = [
       "**/target"
