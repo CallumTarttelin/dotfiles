@@ -65,7 +65,7 @@
   };
 
   systemd.services.couchdb-livesync-init = {
-    description = "Provision LiveSync databases and a non-administrator sync account";
+    description = "Provision LiveSync databases and its server administrator account";
     wantedBy = ["multi-user.target"];
     requires = ["couchdb.service"];
     partOf = ["couchdb.service"];
