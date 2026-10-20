@@ -107,6 +107,7 @@ _: {
                     "https://nix-cache.callumtarttelin.com"
                     "https://grafana.callumtarttelin.com"
                     "https://loki.callumtarttelin.com/ready"
+                    "https://obsidian.callumtarttelin.com/_up"
                   ];
                 }
               ];

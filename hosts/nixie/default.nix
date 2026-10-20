@@ -7,6 +7,7 @@
   imports = [
     ./hardware-configuration.nix
     ./satisfactory.nix
+    ./obsidian.nix
   ];
 
   boot.loader = {

@@ -34,4 +34,6 @@ in {
   "grafana-secret-key.age".publicKeys = allKeys;
   "tail2.age".publicKeys = allKeys;
   "work-url-routes.age".publicKeys = allKeys;
+  "couchdb-admin.age".publicKeys = allKeys;
+  "livesync-client.age".publicKeys = allKeys;
 }
