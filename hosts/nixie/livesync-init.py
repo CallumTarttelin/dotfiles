@@ -1,4 +1,4 @@
-"""Provision empty vaults without granting server administration to clients."""
+"""Provision vaults and the server administrator requested for LiveSync setup."""
 
 import base64
 import configparser
@@ -56,6 +56,7 @@ def provision(base_url, credential_dir, databases):
     # Avoid rewriting salted password hashes on every boot. Rotate the password
     # only if the provisioned account cannot authenticate with the desired one.
     authenticated = False
+    session = {}
     if existing:
         try:
             session = request(base_url, (username, client["password"]), "GET", "/_session")
@@ -74,12 +75,30 @@ def provision(base_url, credential_dir, databases):
             user["_rev"] = existing["_rev"]
         request(base_url, admin, "PUT", user_path, user)
 
+    # LiveSync's setup path requires server administration. Keep the existing
+    # client password, and persist CouchDB's salted admin hash in local.ini.
+    if not authenticated or "_admin" not in session.get("userCtx", {}).get("roles", []):
+        request(base_url, admin, "PUT",
+                "/_node/_local/_config/admins/" + quote(username, safe=""),
+                client["password"])
+    # Authentication caches can briefly retain the previous non-admin role.
+    for attempt in range(20):
+        try:
+            session = request(base_url, (username, client["password"]), "GET", "/_session")
+            if "_admin" in session["userCtx"]["roles"]:
+                break
+        except RuntimeError:
+            pass
+        if attempt == 19:
+            raise RuntimeError("LiveSync server administrator access was not established")
+        time.sleep(0.5)
+
     for database in databases:
         request(base_url, admin, "PUT", "/" + quote(database, safe="") + "/_security", {
             "admins": {"names": [], "roles": []},
             "members": {"names": [username], "roles": []},
         })
-    print("LiveSync account and vault databases ready: " + ", ".join(databases))
+    print("LiveSync server administrator and vault databases ready: " + ", ".join(databases))
 
 
 if __name__ == "__main__":

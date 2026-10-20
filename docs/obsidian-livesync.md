@@ -13,17 +13,16 @@ background sync app. Closed vaults do not sync independently.
 - Retrieve the generated password in your own terminal with
   `ssh root@nixie 'cat /run/agenix/livesync-client'`.
 
-The account can read and write these two databases but cannot administer the
-server or create additional databases. Do not use the server administrator
-account in Obsidian. Both databases use the same sync account; their separation
-is organisational, not an access boundary between these credentials.
+The `livesync` account is a server administrator, as requested for Obsidian's
+LiveSync setup. It can inspect server configuration and create additional vault
+databases. Both vaults use the same account; their separation is organisational.
 
 1. Back up the existing vault and disable any other sync tool for that vault.
 2. Enable Tailscale and install **Self-hosted LiveSync** from Community plugins.
 3. On the first device, follow the new-sync setup using the CouchDB details above.
    Use this device's notes to initialise the selected empty remote database.
-   The administrator-only server configuration check is optional; the server is
-   already configured declaratively.
+   The server requirements check can inspect the existing configuration using
+   this account; the server is already configured declaratively.
 4. Enable end-to-end encryption and store its passphrase in Vaultwarden. This
    passphrase is separate from the CouchDB login password.
 5. Enable continuous LiveSync, or startup/event syncing if preferred. Allow the
@@ -35,8 +34,8 @@ is organisational, not an access boundary between these credentials.
    after ordinary notes work, keeping device-specific window layouts local.
 
 Repeat for the other vault when needed. No existing notes are moved by the
-server deployment. Adding another server database requires extending the
-`couchdb-livesync-init` arguments in `hosts/nixie/obsidian.nix` and rebuilding.
+server deployment. Additional vaults can use distinct database names in the
+plugin. The provisioning service ensures `personal` and `work` exist on boot.
 
 ## Access and credentials
 
@@ -50,8 +49,11 @@ using the repository's existing recipients. Agenix installs the administrator
 INI readable only by CouchDB, and the client JSON readable only by root.
 Provisioning uses systemd credentials and does not log either password.
 
-Client password changes are applied when the provisioning service runs. CouchDB
-may persist an administrator password hash in `/var/lib/couchdb/local.ini`;
+Provisioning grants `livesync` server administration through CouchDB's configuration
+API and verifies the role after its authentication cache refreshes. The salted
+administrator hash persists in `local.ini`, included in both off-site backups.
+Client password changes are applied to both account records when provisioning runs.
+CouchDB may persist an administrator password hash in `/var/lib/couchdb/local.ini`;
 administrator rotation must also update that persisted admin entry, rather than
 only replacing the encrypted INI.
 
@@ -111,6 +113,8 @@ documents or user revisions, client password rotation, and restoring an online
 file copy into a separate instance. Live checks cover TLS, sync-account access,
 anonymous denial, CORS, non-Tailscale denial, dashboard provisioning, and metric
 ingestion. Full Obsidian desktop/Android sync remains a client setup check.
+The later server administrator change was verified using the existing client
+credentials against the administrator configuration API over HTTPS.
 
 Sources: [LiveSync setup](https://github.com/vrtmrz/obsidian-livesync/blob/main/docs/quick_setup.md),
 [LiveSync settings](https://github.com/vrtmrz/obsidian-livesync/blob/main/docs/settings.md),
