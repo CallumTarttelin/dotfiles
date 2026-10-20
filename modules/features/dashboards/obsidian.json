@@ -1,0 +1,349 @@
+{
+  "uid": "obsidian-livesync",
+  "title": "Obsidian LiveSync",
+  "tags": [
+    "obsidian",
+    "couchdb",
+    "resources"
+  ],
+  "timezone": "browser",
+  "refresh": "1m",
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "panels": [
+    {
+      "id": 1,
+      "title": "HTTPS health",
+      "description": "",
+      "type": "stat",
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 6,
+        "h": 4
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "victoriametrics"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bool",
+          "custom": {
+            "fillOpacity": 10
+          }
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "probe_success{instance=\"https://obsidian.callumtarttelin.com/_up\"}",
+          "legendFormat": "HTTPS health"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "Service active",
+      "description": "",
+      "type": "stat",
+      "gridPos": {
+        "x": 6,
+        "y": 0,
+        "w": 6,
+        "h": 4
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "victoriametrics"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bool",
+          "custom": {
+            "fillOpacity": 10
+          }
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "couchdb_service_active{instance=\"nixie\"}",
+          "legendFormat": "Service active"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Memory (cgroup)",
+      "description": "",
+      "type": "stat",
+      "gridPos": {
+        "x": 12,
+        "y": 0,
+        "w": 6,
+        "h": 4
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "victoriametrics"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "custom": {
+            "fillOpacity": 10
+          }
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "couchdb_service_memory_bytes{instance=\"nixie\"}",
+          "legendFormat": "Memory (cgroup)"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "Sample age",
+      "description": "Normally below 90 seconds. A stale sample means the resource collection job needs attention.",
+      "type": "stat",
+      "gridPos": {
+        "x": 18,
+        "y": 0,
+        "w": 6,
+        "h": 4
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "victoriametrics"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "custom": {
+            "fillOpacity": 10
+          }
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "time() - couchdb_resource_metrics_timestamp_seconds{instance=\"nixie\"}",
+          "legendFormat": "Sample age"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "CPU usage",
+      "description": "100% equals one logical CPU. Includes all processes and threads in couchdb.service; service restarts reset the counter.",
+      "type": "timeseries",
+      "gridPos": {
+        "x": 0,
+        "y": 4,
+        "w": 12,
+        "h": 7
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "victoriametrics"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "custom": {
+            "fillOpacity": 10
+          }
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "100 * rate(couchdb_service_cpu_seconds_total{instance=\"nixie\"}[5m])",
+          "legendFormat": "CPU usage"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "title": "Memory over time",
+      "description": "Whole service cgroup, including filesystem cache; not just the main process RSS.",
+      "type": "timeseries",
+      "gridPos": {
+        "x": 12,
+        "y": 4,
+        "w": 12,
+        "h": 7
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "victoriametrics"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "custom": {
+            "fillOpacity": 10
+          }
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "couchdb_service_memory_bytes{instance=\"nixie\"}",
+          "legendFormat": "Memory over time"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "title": "Database storage",
+      "description": "Apparent size of /var/lib/couchdb, including indexes and runtime configuration.",
+      "type": "timeseries",
+      "gridPos": {
+        "x": 0,
+        "y": 11,
+        "w": 12,
+        "h": 7
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "victoriametrics"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "custom": {
+            "fillOpacity": 10
+          }
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "couchdb_data_size_bytes{instance=\"nixie\"}",
+          "legendFormat": "Database storage"
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "title": "Processes and threads",
+      "description": "",
+      "type": "timeseries",
+      "gridPos": {
+        "x": 12,
+        "y": 11,
+        "w": 12,
+        "h": 7
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "victoriametrics"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "fillOpacity": 10
+          }
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "couchdb_service_tasks{instance=\"nixie\"}",
+          "legendFormat": "Processes and threads"
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "title": "Automatic restarts",
+      "description": "",
+      "type": "timeseries",
+      "gridPos": {
+        "x": 0,
+        "y": 18,
+        "w": 12,
+        "h": 7
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "victoriametrics"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "fillOpacity": 10
+          }
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "couchdb_service_restarts_total{instance=\"nixie\"}",
+          "legendFormat": "Automatic restarts"
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "title": "Nixie available RAM",
+      "description": "",
+      "type": "timeseries",
+      "gridPos": {
+        "x": 12,
+        "y": 18,
+        "w": 12,
+        "h": 7
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "victoriametrics"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "custom": {
+            "fillOpacity": 10
+          }
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "node_memory_MemAvailable_bytes{instance=\"nixie\"}",
+          "legendFormat": "Nixie available RAM"
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "title": "CouchDB logs",
+      "type": "logs",
+      "gridPos": {
+        "x": 0,
+        "y": 25,
+        "w": 24,
+        "h": 8
+      },
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "{host=\"nixie\",unit=~\"couchdb.*\"}"
+        }
+      ]
+    }
+  ],
+  "schemaVersion": 39
+}
