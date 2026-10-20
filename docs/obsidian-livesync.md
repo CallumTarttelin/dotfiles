@@ -70,6 +70,14 @@ exporter daemon. Journal logs already flow through Alloy into Loki.
 
 Erlang scheduler busy-waiting is disabled for this intermittent workload. The
 default runtime spent substantial CPU spinning while the empty database was idle.
+The runtime uses two Erlang schedulers, sufficient for a few vaults, to reduce
+per-scheduler statistics and background housekeeping. Revisit this setting if
+sync throughput becomes a bottleneck.
+An empty-service quiet sample measured about 1.9% of one core over 90 seconds,
+down from about 2.3% with twenty schedulers and busy-waiting already disabled.
+Profiling identified internal histogram cleanup as the main remaining background
+work. Increasing the statistics interval did not materially reduce CPU and was
+reverted; this configuration retains the default interval.
 There is no arbitrary memory cap; use the dashboard to assess actual vault usage.
 
 Useful checks on Nixie:
