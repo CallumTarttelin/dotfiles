@@ -221,15 +221,17 @@
     };
   };
 
-  services.gitea-actions-runner = {
-    package = pkgs.forgejo-runner;
+  services.forgejo-runner = {
     instances.default = {
       enable = true;
-      name = "default";
-      url = "https://git.callumtarttelin.com";
-      tokenFile = config.age.secrets.forgejo-runner.path;
+      settings.server.connections.default = {
+        url = "https://git.callumtarttelin.com";
+        uuid = "33643839-3635-3931-3333-366335323135";
+        token = null;
+      };
+      secrets.server.connections.default.token_url = config.age.secrets.forgejo-runner.path;
       settings.runner.capacity = 8;
-      labels = [
+      settings.runner.labels = [
         "nixos:docker://nixos/nix:latest"
         "ubuntu-latest:docker://ubuntu:latest"
         "debian-stable:docker://debian:stable"
@@ -246,17 +248,20 @@
 
       settings.cache = {
         enabled = true;
-        dir = "/var/cache/forgejo-runner";
+        dir = "/var/lib/forgejo-runner/default/cache";
       };
     };
     # Native runner scoped to tarttelin/dotfiles in Forgejo UI
-    # Register token at: git.callumtarttelin.com/tarttelin/dotfiles/settings/actions/runners
+    # UUID/token credentials are registered together; tokens are encrypted by agenix.
     instances.nix-native = {
       enable = true;
-      name = "nix-native";
-      url = "https://git.callumtarttelin.com";
-      tokenFile = config.age.secrets.forgejo-runner-native.path;
-      labels = ["nix-native:host"];
+      settings.server.connections.default = {
+        url = "https://git.callumtarttelin.com";
+        uuid = "65623164-6335-3065-3362-653938336339";
+        token = null;
+      };
+      secrets.server.connections.default.token_url = config.age.secrets.forgejo-runner-native.path;
+      settings.runner.labels = ["nix-native:host"];
       hostPackages = with pkgs; [bash coreutils curl gawk git gnused gnutar gzip jq nix nodejs wget];
     };
   };
