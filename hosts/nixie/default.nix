@@ -6,7 +6,7 @@
 }: {
   imports = [
     ./hardware-configuration.nix
-    ./satisfactory.nix
+    # ./satisfactory.nix
     ./obsidian.nix
   ];
 
