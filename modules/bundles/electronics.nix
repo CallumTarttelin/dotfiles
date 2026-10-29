@@ -52,6 +52,14 @@
         self.packages.${pkgs.stdenv.hostPlatform.system}.electronics
       ];
 
+      # uaccess tags must be set before systemd's 73-seat-late.rules.
+      services.udev.packages = [
+        (pkgs.writeTextDir "lib/udev/rules.d/70-pmg1-kitprog3.rules" ''
+          # Infineon KitProg3: CMSIS-DAP, UART, DAPLink/UARTx2 and bootloader.
+          SUBSYSTEM=="usb|hidraw|tty", ATTRS{idVendor}=="04b4", ATTRS{idProduct}=="f146|f154|f155|f166|f168|f169|f16a", TAG+="uaccess", ENV{ID_MM_DEVICE_IGNORE}="1"
+        '')
+      ];
+
       services.udev.extraRules = ''
         # SEGGER J-Link
         SUBSYSTEM=="usb", ATTR{idVendor}=="1366", MODE="0666"
