@@ -8,6 +8,7 @@
     ./hardware-configuration.nix
     # ./satisfactory.nix
     ./obsidian.nix
+    ./storage-messaging.nix
   ];
 
   boot.loader = {
