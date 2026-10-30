@@ -18,6 +18,27 @@
 
   networking.hostName = "nixie";
 
+  # Recovery access independent of Tailscale, restricted to the home LAN.
+  services.openssh = {
+    enable = true;
+    openFirewall = false;
+    authorizedKeysInHomedir = false;
+    settings = {
+      PasswordAuthentication = false;
+      KbdInteractiveAuthentication = false;
+      AuthenticationMethods = "publickey";
+      PermitRootLogin = "no";
+      AllowUsers = ["tarttelin@192.168.1.0/24"];
+    };
+  };
+  users.users.tarttelin.openssh.authorizedKeys.keys = [
+    "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHxgENtK22oTNndrl3ODUJvxFO9EVJ+M2qv7Zfel04Dw nixshark"
+    "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAINNbVyvd7na036VTmMkgG94N/Mc2KJkAfZgNQODa5zhX nixie"
+  ];
+  networking.firewall.extraInputRules = ''
+    ip saddr 192.168.1.0/24 tcp dport 22 accept comment "LAN recovery SSH"
+  '';
+
   # Keep the i9-12900H within the cooling capacity during sustained VM builds.
   boot.kernelModules = ["intel_rapl_msr"];
   systemd.services.nixie-cpu-power-limit = {
