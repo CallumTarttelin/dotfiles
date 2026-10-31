@@ -20,7 +20,7 @@ compete for CPU time. Keep the RAM budget conservative unless memory-pressure
 monitoring and reclamation are implemented; the runner does not automatically
 balloon guests or suspend them under pressure.
 
-The input pins Igloo `8ec7086380b2b069e111d10b4391c0c402bf6de8`, including
+The input pins Igloo `971d2a6a3a7d527ff2bff83cffb548c32c87ef81`, including
 shared Nix stores, incremental evaluation, live updates, native Wayland desktops,
 the optimized minimal initrd with automatic compatibility fallback, project
 initialization and automatic local-flake transfer to the remote runner.
@@ -141,3 +141,16 @@ Git fetching is also verified with an empty inherited PATH and fresh HOME. The
 packaged runtime supplies Git explicitly; `checks.x86_64-linux.runtime-tools`
 checks prerequisite lookup with host tools removed. The exact Git URL used by
 the remote smoke test passes through an isolated packaged runner.
+
+Codex skills are managed for the fleet in `home/programs/codex.nix`. Add named
+skill directories to its `skills` attribute set; they can come from local
+directories or pinned inputs. Igloo's skill uses the same locked input as its CLI. Updating
+the lock and rebuilding deploys those skill versions; generation rollback
+restores the earlier versions. Home Manager links each declared skill folder
+under `~/.codex/skills`, alongside other installed skills. Codex's binary,
+`CODEX_HOME`, personal settings and authentication stay under their existing
+management. The Codex program module is not enabled just to install skills,
+because its XDG behavior would move the configured home directory on these hosts.
+
+On nixie, the original manual skill copy was backed up under
+`~/.codex/skill-backups` before activating the managed user generation.
