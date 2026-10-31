@@ -5,6 +5,7 @@
 }: {
   imports = [
     ./wezterm.nix
+    ./codex.nix
   ];
 
   programs = {

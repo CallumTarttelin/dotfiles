@@ -331,11 +331,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1793418166,
-        "narHash": "sha256-Yo6DMLgVbNKYXiqgE7zmXeD2ZFVu0Taq6vCCxJTlQGQ=",
+        "lastModified": 1793457033,
+        "narHash": "sha256-5yBeji2mh2/SWsAgtgFefaCZqS1iPv+wXhJH+oyTPcE=",
         "ref": "refs/heads/main",
-        "rev": "8ec7086380b2b069e111d10b4391c0c402bf6de8",
-        "revCount": 41,
+        "rev": "971d2a6a3a7d527ff2bff83cffb548c32c87ef81",
+        "revCount": 42,
         "type": "git",
         "url": "https://git.callumtarttelin.com/tarttelin/igloo.git"
       },
