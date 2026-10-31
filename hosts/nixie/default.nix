@@ -9,6 +9,7 @@
     # ./satisfactory.nix
     ./obsidian.nix
     ./storage-messaging.nix
+    ./igloo.nix
   ];
 
   boot.loader = {

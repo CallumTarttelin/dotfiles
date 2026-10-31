@@ -115,6 +115,7 @@
       modules =
         [
           ./nixie
+          inputs.igloo.nixosModules.runner
           {
             home-manager.users = {
               tarttelin.imports = homeImports."tarttelin@nixie";
