@@ -3,6 +3,10 @@
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    igloo = {
+      url = "git+https://git.callumtarttelin.com/tarttelin/igloo.git";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     nixpkgs-2511.url = "github:NixOS/nixpkgs/nixos-25.11";
     flake-parts = {
       url = "github:hercules-ci/flake-parts";
