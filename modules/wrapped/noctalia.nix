@@ -201,7 +201,7 @@
                   action = "lock";
                 };
                 screen-off = {
-                  enabled = true;
+                  enabled = desktop.idleScreenOff;
                   timeout = 660;
                   action = "screen_off";
                 };

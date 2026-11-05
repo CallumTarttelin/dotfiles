@@ -124,6 +124,11 @@
         default = null;
         description = "Seconds of inactivity before locking, or null to disable inactivity locking";
       };
+      idleScreenOff = lib.mkOption {
+        type = lib.types.bool;
+        default = true;
+        description = "Turn displays off automatically after inactivity";
+      };
     };
 
     config = lib.mkIf cfg.enable {
