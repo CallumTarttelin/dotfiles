@@ -14,6 +14,8 @@ in {
   "tarttelin.age".publicKeys = allKeys;
   "root.age".publicKeys = allKeys;
   "igloo-api.age".publicKeys = allKeys;
+  "phala-api-key.age".publicKeys = allKeys;
+  "hermes-dashboard.age".publicKeys = allKeys;
   "borgrepo.age".publicKeys = allKeys;
   "borgpass.age".publicKeys = allKeys;
   "forgejo-runner.age".publicKeys = allKeys;

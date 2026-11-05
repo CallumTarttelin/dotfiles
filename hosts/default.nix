@@ -117,6 +117,7 @@
         [
           ./nixie
           inputs.igloo.nixosModules.runner
+          inputs.hermes-agent.nixosModules.default
           {
             home-manager.users = {
               tarttelin.imports = homeImports."tarttelin@nixie";

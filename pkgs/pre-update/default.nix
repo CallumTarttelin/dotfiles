@@ -1,6 +1,7 @@
 {
   updateJetbrainsToolbox,
   updateT3code,
+  updateInference,
   writeShellApplication,
 }:
 writeShellApplication {
@@ -9,6 +10,7 @@ writeShellApplication {
   runtimeInputs = [
     updateJetbrainsToolbox
     updateT3code
+    updateInference
   ];
 
   text = ''
@@ -23,12 +25,16 @@ writeShellApplication {
       all)
         update-t3code
         update-jetbrains-toolbox
+        update-inference
         ;;
       t3code)
         update-t3code "$@"
         ;;
       jetbrains-toolbox|toolbox)
         update-jetbrains-toolbox "$@"
+        ;;
+      inference|hermes|phala|cliproxyapi)
+        update-inference "$@"
         ;;
       *)
         update-t3code "$target" "$@"

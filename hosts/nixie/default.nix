@@ -10,6 +10,7 @@
     ./obsidian.nix
     ./storage-messaging.nix
     ./igloo.nix
+    ./inference.nix
   ];
 
   boot.loader = {

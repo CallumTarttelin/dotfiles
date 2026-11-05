@@ -1,0 +1,38 @@
+[package]
+name = "inference-gateway"
+version = "0.2.0"
+edition = "2024"
+rust-version = "1.88"
+license = "MIT"
+
+[dependencies]
+anyhow = "1"
+arrow-array = "60.1"
+arrow-schema = "60.1"
+axum = "0.8"
+base64 = "0.22"
+bytes = "1"
+chrono = { version = "0.4", default-features = false, features = ["clock"] }
+clap = { version = "4", features = ["derive"] }
+fs2 = "0.4"
+futures-util = "0.3"
+getrandom = "0.3"
+nix = { version = "0.30", features = ["user", "fs"] }
+parquet = { version = "60.1", default-features = false, features = ["arrow", "zstd"] }
+reqwest = { version = "0.13", default-features = false, features = ["stream", "json"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+sha2 = "0.10"
+subtle = "2"
+tokio = { version = "1", features = ["full"] }
+tokio-stream = "0.1"
+tokio-util = { version = "0.7", features = ["rt"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+uuid = { version = "1", features = ["v4"] }
+
+[dev-dependencies]
+tempfile = "3"
+
+[profile.release]
+strip = true
