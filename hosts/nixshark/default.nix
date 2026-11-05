@@ -61,6 +61,10 @@
 
   services.xserver.videoDrivers = ["amdgpu"];
 
+  # DPMS off preceded AMD SMU timeouts and session loss on Nov 1 and 4, 2026.
+  # Avoid that transition until the compositor/driver failure is resolved.
+  features.hyprland-desktop.idleScreenOff = false;
+
   services.flatpak.enable = true;
 
   powerManagement = {
