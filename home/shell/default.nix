@@ -1,7 +1,6 @@
 {config, ...}: {
   imports = [
     # zsh, cli, atuin, starship replaced by wrapped packages
-    ./nushell.nix
     ./nix.nix
   ];
 

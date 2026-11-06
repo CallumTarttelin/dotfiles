@@ -20,8 +20,6 @@ in {
   "forgejo-runner-native.age".publicKeys = allKeys;
   "vaultwarden.age".publicKeys = allKeys;
   "cloudflare.age".publicKeys = allKeys;
-  "k8s-minio.age".publicKeys = allKeys;
-  "k8s-grafana.age".publicKeys = allKeys;
   "cache-key.age".publicKeys = allKeys;
   "restic-s3.age".publicKeys = allKeys;
   "ses-smtp-addr.age".publicKeys = allKeys;

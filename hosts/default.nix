@@ -54,6 +54,7 @@
               python-tools.enable = true;
               beam-tools.enable = true;
               infra-tools.enable = true;
+              infra-tools.kubernetes.enable = false;
               build-tools.enable = true;
               rust-tools.enable = true;
               lean-tools.enable = true;

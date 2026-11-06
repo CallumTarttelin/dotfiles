@@ -99,8 +99,6 @@ _: {
         forgejo-runner-native.file = ../../secrets/forgejo-runner-native.age;
         vaultwarden.file = ../../secrets/vaultwarden.age;
         cloudflare.file = ../../secrets/cloudflare.age;
-        k8s-minio.file = ../../secrets/k8s-minio.age;
-        k8s-grafana.file = ../../secrets/k8s-grafana.age;
         cache-key.file = ../../secrets/cache-key.age;
         restic-s3.file = ../../secrets/restic-s3.age;
         ses-smtp-addr.file = ../../secrets/ses-smtp-addr.age;
