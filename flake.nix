@@ -39,7 +39,7 @@
     llm-agents = {
       url = "github:numtide/llm-agents.nix";
     };
-    hermes-agent.url = "github:NousResearch/hermes-agent/v0.22.7";
+    hermes-agent.url = "github:NousResearch/hermes-agent/v0.23.0";
     codex-desktop-linux = {
       url = "github:ilysenko/codex-desktop-linux";
       inputs.nixpkgs.follows = "nixpkgs";
