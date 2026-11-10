@@ -19,6 +19,7 @@ in {
 
   jetbrains-toolbox = pkgs.jetbrains-toolbox;
   gcloud-remote-login = pkgs.callPackage ./gcloud-remote-login {};
+  remote-oidc-token = pkgs.callPackage ./remote-oidc-token {};
   localproxy = pkgs.callPackage ./localproxy {};
   inherit (inferenceTools) cliproxyapi private-ai-proxy;
   inference-gateway = pkgs.callPackage ./inference-gateway {};

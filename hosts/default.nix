@@ -30,6 +30,7 @@
                 ];
               };
               firefox-work-profile.enable = true;
+              remote-oidc-token.enable = true;
               logiops.enable = true;
               ddc-brightness.enable = true;
               bluetooth.enable = true;
@@ -80,6 +81,7 @@
                 idleLockTimeoutSeconds = 300;
               };
               firefox-work-profile.enable = true;
+              remote-oidc-token.enable = true;
               logiops.enable = true;
               bluetooth.enable = true;
               security.yubikey = true;
