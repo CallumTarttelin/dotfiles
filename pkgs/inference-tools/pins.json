@@ -1,12 +1,12 @@
 {
   "cliproxyapi": {
-    "version": "8.0.69",
-    "url": "https://github.com/router-for-me/CLIProxyAPI/releases/download/v8.0.69/CLIProxyAPI_8.0.69_linux_amd64.tar.gz",
-    "hash": "sha256-QhNyPVcJa8l60y2BC4llO6Pt6zhAh87MkJVsTDPoryI="
+    "version": "8.0.72",
+    "url": "https://github.com/router-for-me/CLIProxyAPI/releases/download/v8.0.72/CLIProxyAPI_8.0.72_linux_amd64.tar.gz",
+    "hash": "sha256-zo5XoQ4IHB3v9I4hTKGTKwwt9RqzXTYo9qFjjEvpD/c="
   },
   "private-ai-proxy": {
-    "version": "0.8.4",
-    "url": "https://github.com/Dstack-TEE/private-ai-gateway/releases/download/desktop-v0.8.4/private-ai-proxy-cli-0.8.4-linux-x64.tar.gz",
-    "hash": "sha256-5K06xyRJ3N4pZGq8VpihGdCDM/Lofzf3gYOpj0bqCUI="
+    "version": "0.8.5",
+    "url": "https://github.com/Dstack-TEE/private-ai-gateway/releases/download/desktop-v0.8.5/private-ai-proxy-cli-0.8.5-linux-x64.tar.gz",
+    "hash": "sha256-5E0HtYPg37UJUX7QPqZ7VaZh/DvncWvgG/BGOQ09W2g="
   }
 }
