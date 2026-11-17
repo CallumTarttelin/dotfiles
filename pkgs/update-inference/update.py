@@ -14,6 +14,22 @@ def fetch(url, target):
                     "--retry", "3", url, "--output", str(target)], check=True)
 
 
+def latest_desktop_release(repo, target):
+    # This repository also publishes client-library and gateway releases.
+    # GitHub's /latest endpoint can select one of those unrelated products.
+    page = 1
+    while True:
+        fetch(f"https://api.github.com/repos/{repo}/releases?per_page=100&page={page}", target)
+        releases = json.loads(target.read_text())
+        if not releases:
+            raise ValueError("Could not find a stable private-ai-proxy desktop release")
+        for release in releases:
+            if (not release.get("draft") and not release.get("prerelease")
+                    and re.fullmatch(r"desktop-v\d+\.\d+\.\d+", release["tag_name"])):
+                return release
+        page += 1
+
+
 def main(root):
     root = Path(root)
     pin_file = root / "pkgs/inference-tools/pins.json"
@@ -26,8 +42,11 @@ def main(root):
         for name, repo in (("cliproxyapi", "router-for-me/CLIProxyAPI"),
                            ("private-ai-proxy", "Dstack-TEE/private-ai-gateway"),
                            ("hermes", "NousResearch/hermes-agent")):
-            fetch(f"https://api.github.com/repos/{repo}/releases/latest", temp / "release.json")
-            release = json.loads((temp / "release.json").read_text())
+            if name == "private-ai-proxy":
+                release = latest_desktop_release(repo, temp / "release.json")
+            else:
+                fetch(f"https://api.github.com/repos/{repo}/releases/latest", temp / "release.json")
+                release = json.loads((temp / "release.json").read_text())
             releases[name] = release
             if name == "hermes":
                 continue
